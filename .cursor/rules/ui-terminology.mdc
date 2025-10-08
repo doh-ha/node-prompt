@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+
+# UI Terminology (Korean)
+
+이 프로젝트에서는 화면의 3개 영역을 다음과 같이 명명합니다. 모든 문서, 커밋 메시지, 변수/컴포넌트/주석/텍스트 UI 라벨에서 동일한 용어를 사용하세요.
+
+- 왼쪽 패널: 라이브러리
+- 가운데 패널: 캔버스
+- 오른쪽 패널: 프리뷰
+
+참고 매핑 (파일 기준):
+
+- `src/components/NodePalette.tsx` → 라이브러리
+- `src/components/WorkflowEditor.tsx` → 캔버스
+- `src/components/PreviewPanel.tsx` → 프리뷰
+
+가이드라인:
+
+- 사용자 안내 문구, 버튼/헤더 타이틀, 툴팁에서도 위 용어를 그대로 사용합니다.
+- 새 컴포넌트/상수/함수명을 지을 때 영역 접두어로 `Library`, `Canvas`, `Preview`를 사용하고, 한국어 라벨 텍스트는 각각 "라이브러리", "캔버스", "프리뷰"를 사용합니다.
