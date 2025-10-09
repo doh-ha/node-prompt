@@ -29,6 +29,7 @@ const NodeHeader = styled.div`
   margin-bottom: 8px;
   font-weight: 600;
   color: #374151;
+  position: relative;
 `;
 
 const NodeIcon = styled.div`
@@ -47,14 +48,40 @@ const NodeContent = styled.div`
   color: #6b7280;
 `;
 
+const DeleteButton = styled.button`
+  position: absolute;
+  right: 0;
+  top: -4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #ef4444;
+  background: #fff1f2;
+  color: #ef4444;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+
+  ${NodeContainer}.selected & {
+    display: inline-flex;
+  }
+`;
+
 // 역할 노드 컴포넌트
-export const RoleNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const RoleNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   return (
     <NodeContainer className={selected ? "selected" : ""}>
       <Handle type="target" position={Position.Top} />
       <NodeHeader>
         <NodeIcon style={{ background: "#fef3c7", color: "#d97706" }}>🎭</NodeIcon>
         역할 정의
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div>
@@ -68,7 +95,7 @@ export const RoleNode: React.FC<{ data: any; selected?: boolean }> = ({ data, se
 };
 
 // 출력 형식 노드 컴포넌트
-export const OutputFormatNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const OutputFormatNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   const formatLabels: Record<string, string> = {
     text: "텍스트",
     json: "JSON",
@@ -83,6 +110,11 @@ export const OutputFormatNode: React.FC<{ data: any; selected?: boolean }> = ({ 
       <NodeHeader>
         <NodeIcon style={{ background: "#dbeafe", color: "#2563eb" }}>📄</NodeIcon>
         출력 형식
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div>
@@ -96,7 +128,7 @@ export const OutputFormatNode: React.FC<{ data: any; selected?: boolean }> = ({ 
 };
 
 // 조건 노드 컴포넌트
-export const ConditionNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const ConditionNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   const operatorLabels: Record<string, string> = {
     equals: "=",
     contains: "포함",
@@ -111,6 +143,11 @@ export const ConditionNode: React.FC<{ data: any; selected?: boolean }> = ({ dat
       <NodeHeader>
         <NodeIcon style={{ background: "#fecaca", color: "#dc2626" }}>⚡</NodeIcon>
         조건
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div>
@@ -126,7 +163,7 @@ export const ConditionNode: React.FC<{ data: any; selected?: boolean }> = ({ dat
 };
 
 // 컨텍스트 노드 컴포넌트
-export const ContextNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const ContextNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   const contextLabels: Record<string, string> = {
     subject: "주제",
     level: "수준",
@@ -140,6 +177,11 @@ export const ContextNode: React.FC<{ data: any; selected?: boolean }> = ({ data,
       <NodeHeader>
         <NodeIcon style={{ background: "#d1fae5", color: "#059669" }}>📚</NodeIcon>
         컨텍스트
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div>
@@ -153,13 +195,18 @@ export const ContextNode: React.FC<{ data: any; selected?: boolean }> = ({ data,
 };
 
 // 프롬프트 템플릿 노드 컴포넌트
-export const PromptTemplateNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const PromptTemplateNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   return (
     <NodeContainer className={selected ? "selected" : ""}>
       <Handle type="target" position={Position.Top} />
       <NodeHeader>
         <NodeIcon style={{ background: "#e0e7ff", color: "#7c3aed" }}>📝</NodeIcon>
         프롬프트 템플릿
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div style={{ maxHeight: "60px", overflow: "hidden" }}>{data.template.substring(0, 100)}...</div>
@@ -171,13 +218,18 @@ export const PromptTemplateNode: React.FC<{ data: any; selected?: boolean }> = (
 };
 
 // 모델 노드 컴포넌트
-export const ModelNode: React.FC<{ data: any; selected?: boolean }> = ({ data, selected }) => {
+export const ModelNode: React.FC<{ data: any; selected?: boolean; id?: string }> = ({ data, selected, id }) => {
   return (
     <NodeContainer className={selected ? "selected" : ""}>
       <Handle type="target" position={Position.Top} />
       <NodeHeader>
         <NodeIcon style={{ background: "#f3e8ff", color: "#9333ea" }}>🤖</NodeIcon>
         AI 모델
+        {selected && (
+          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
+            🗑️
+          </DeleteButton>
+        )}
       </NodeHeader>
       <NodeContent>
         <div>

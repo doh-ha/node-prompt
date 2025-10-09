@@ -4,6 +4,7 @@ import "reactflow/dist/style.css";
 import styled from "styled-components";
 import { LibraryPanel } from "./LibraryPanel";
 import { nodeComponents } from "./nodes/NodeComponents";
+import { BlockCanvas, BlockItem } from "./blocks/BlockCanvas";
 
 const EditorContainer = styled.div`
   width: 100vw;
@@ -67,6 +68,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<BlockItem[]>([]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -81,6 +83,23 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
+
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((prev) => {
+        const newNodes = prev.filter((n) => n.id !== nodeId);
+        onNodesChange(newNodes);
+        return newNodes;
+      });
+      setEdges((prev) => {
+        const newEdges = prev.filter((e) => e.source !== nodeId && e.target !== nodeId);
+        onEdgesChange(newEdges);
+        return newEdges;
+      });
+      setSelectedNodeId((prev) => (prev === nodeId ? null : prev));
+    },
+    [onNodesChange, onEdgesChange]
+  );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -103,15 +122,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           id: getId(),
           type,
           position,
-          data,
+          data: { ...data, onDeleteNode: handleDeleteNode },
         };
 
-        const newNodes = nodes.concat(newNode);
-        setNodes(newNodes);
-        onNodesChange(newNodes);
+        setNodes((prev) => {
+          const newNodes = prev.concat(newNode);
+          onNodesChange(newNodes);
+          return newNodes;
+        });
       }
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, onNodesChange, handleDeleteNode]
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
@@ -160,30 +181,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       </Toolbar>
 
       <FlowContainer>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={(changes) => {
-            onNodesChangeInternal(changes);
-            onNodesChange(nodes);
-          }}
-          onEdgesChange={(changes) => {
-            onEdgesChangeInternal(changes);
-            onEdgesChange(edges);
-          }}
-          onConnect={onConnect}
-          onInit={setReactFlowInstance}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onNodeClick={onNodeClick}
-          onPaneClick={onPaneClick}
-          nodeTypes={nodeComponents}
-          fitView
-          attributionPosition="bottom-left"
-        >
-          <Controls />
-          <Background />
-        </ReactFlow>
+        {/* 퍼즐형 블록 캔버스 */}
+        <BlockCanvas blocks={blocks} onChange={setBlocks} />
       </FlowContainer>
     </EditorContainer>
   );

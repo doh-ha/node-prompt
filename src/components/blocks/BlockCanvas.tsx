@@ -1,0 +1,221 @@
+import React, { useMemo, useState, useRef } from "react";
+import styled from "styled-components";
+
+type BlockType = "role" | "task" | "background" | "example" | "audience" | "edgeCase" | "constraints" | "format" | "length" | "style";
+
+export interface BlockItem {
+  id: string;
+  type: BlockType;
+  label: string;
+  payload?: Record<string, any>;
+  x?: number;
+  y?: number;
+}
+
+interface BlockCanvasProps {
+  blocks: BlockItem[];
+  onChange: (blocks: BlockItem[]) => void;
+}
+
+const CanvasWrap = styled.div`
+  position: relative;
+  margin-left: 260px; /* library 공간 */
+  padding: 24px 24px 24px 24px;
+  height: calc(100vh - 60px);
+  overflow: auto;
+`;
+
+const CanvasArea = styled.div`
+  position: relative;
+  width: 1600px;
+  min-height: 1200px;
+`;
+
+const BlockCard = styled.div<{ selected: boolean; color: string }>`
+  position: relative;
+  background: ${(p) => p.color};
+  border-radius: 10px;
+  padding: 10px 12px 14px 12px;
+  min-height: 56px;
+  cursor: grab;
+  user-select: none;
+  color: #0b1020;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+
+  /* 퍼즐 탭 (상단) */
+  &::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 32px;
+    width: 24px;
+    height: 16px;
+    background: ${(p) => p.color};
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    box-shadow: 0 -2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  /* 퍼즐 노치 (하단) */
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 32px;
+    width: 24px;
+    height: 16px;
+    background: white;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05) inset;
+  }
+`;
+
+const BlockHeader = styled.div`
+  font-weight: 700;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const BlockBody = styled.div`
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 14px;
+`;
+
+const DeleteBtn = styled.button`
+  border: 1px solid #ef4444;
+  background: #fff1f2;
+  color: #ef4444;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+`;
+
+const DropZone = styled.div`
+  background: #f8fafc;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+`;
+
+const Positioned = styled.div<{ x: number; y: number }>`
+  position: absolute;
+  left: ${(p) => p.x}px;
+  top: ${(p) => p.y}px;
+`;
+
+export const BlockCanvas: React.FC<BlockCanvasProps> = ({ blocks, onChange }) => {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
+  const draggingIdRef = useRef<string | null>(null);
+
+  const paletteColors: Record<string, string> = useMemo(
+    () => ({
+      role: "#FFD166",
+      task: "#06D6A0",
+      background: "#A8E6FF",
+      example: "#C3F0CA",
+      audience: "#FDE68A",
+      edgeCase: "#FECACA",
+      constraints: "#FDE2E4",
+      format: "#DBEAFE",
+      length: "#E2E8F0",
+      style: "#F5D0FE",
+    }),
+    []
+  );
+
+  const onDropFromLibrary = (event: React.DragEvent) => {
+    event.preventDefault();
+    const type = event.dataTransfer.getData("application/reactflow");
+    const raw = event.dataTransfer.getData("application/reactflow-data");
+    if (!type || !raw) return;
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const id = `b_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const label = data?.label || data?.name || type;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const x = rect ? event.clientX - rect.left : 40;
+    const y = rect ? event.clientY - rect.top : 40;
+    const newBlock: BlockItem = { id, type: type as any, label, payload: data, x, y };
+    onChange([...blocks, newBlock]);
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    // 드래그가 블록 이동인지, 라이브러리 드롭인지 구분 필요 없음. 단, JSON 파싱은 드롭 시에만 수행.
+  };
+
+  const removeBlock = (id: string) => {
+    onChange(blocks.filter((b) => b.id !== id));
+    setSelectedId((prev) => (prev === id ? null : prev));
+  };
+
+  // 캔버스 내부 이동 (절대 좌표)
+  const onBlockDragStart =
+    (id: string, x: number = 0, y: number = 0) =>
+    (e: React.DragEvent) => {
+      draggingIdRef.current = id;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      const dx = rect ? e.clientX - (rect.left + x) : 0;
+      const dy = rect ? e.clientY - (rect.top + y) : 0;
+      dragOffsetRef.current = { dx, dy };
+      e.dataTransfer.effectAllowed = "move";
+      // 원본 카드 요소를 드래그 프리뷰로 사용
+      const card = (e.currentTarget as HTMLElement).closest('[data-block-card="1"]') as HTMLElement | null;
+      if (card) {
+        const rect2 = card.getBoundingClientRect();
+        e.dataTransfer.setDragImage(card, Math.min(40, rect2.width / 3), Math.min(20, rect2.height / 3));
+      }
+    };
+
+  const onBlockDragEnd = (id: string) => (e: React.DragEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const offset = dragOffsetRef.current;
+    dragOffsetRef.current = null;
+    draggingIdRef.current = null;
+    if (!rect || !offset) return;
+    const x = e.clientX - rect.left - offset.dx;
+    const y = e.clientY - rect.top - offset.dy;
+    const next = blocks.map((b) => (b.id === id ? { ...b, x, y } : b));
+    onChange(next);
+  };
+
+  return (
+    <CanvasWrap onDrop={onDropFromLibrary} onDragOver={onDragOver}>
+      {blocks.length === 0 && (
+        <DropZone onDrop={onDropFromLibrary} onDragOver={onDragOver}>
+          여기에 블록을 드롭하세요
+        </DropZone>
+      )}
+      <CanvasArea ref={canvasRef}>
+        {blocks.map((b) => (
+          <Positioned key={b.id} x={b.x ?? 40} y={b.y ?? 40} data-block-card="1">
+            <BlockCard selected={selectedId === b.id} color={paletteColors[b.type] || "#E5E7EB"} onClick={() => setSelectedId(b.id)}>
+              <BlockHeader draggable onDragStart={onBlockDragStart(b.id, b.x, b.y)} onDragEnd={onBlockDragEnd(b.id)}>
+                <span>{b.label}</span>
+                <DeleteBtn onMouseDown={(e) => e.stopPropagation()} onClick={() => removeBlock(b.id)} draggable={false}>
+                  삭제
+                </DeleteBtn>
+              </BlockHeader>
+              <BlockBody>{b.type}</BlockBody>
+            </BlockCard>
+          </Positioned>
+        ))}
+      </CanvasArea>
+    </CanvasWrap>
+  );
+};
