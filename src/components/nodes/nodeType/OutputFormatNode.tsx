@@ -1,6 +1,7 @@
 import React from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
+import { RadioSuggestions } from "../RadioSuggestions";
 import { formatLabels } from "../../../constants/labels";
 
 interface OutputFormatNodeProps {
@@ -8,6 +9,7 @@ interface OutputFormatNodeProps {
     format: string;
     structure?: string;
     content?: string;
+    suggestions?: string[];
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
   };
@@ -26,6 +28,7 @@ export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, select
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
+      {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={data.suggestions} selectedValue={data.content} onSelectionChange={(value) => data.onContentChange?.(value)} />}
       <NodeInput
         placeholder="출력 형식 내용을 입력하세요..."
         defaultValue={data.content ?? ""}

@@ -20,6 +20,7 @@ interface NodeMeta {
   iconColor: string;
   group: string;
   contextType?: string;
+  defaultSuggestions?: string[];
 }
 
 interface NodeEntry {
@@ -64,8 +65,8 @@ export const nodesRegistry = {
       description: "출력 형식 및 구조 정의",
       icon: "💬",
       iconColor: "#059669",
-
       group: "output",
+      defaultSuggestions: ["자유 형식", "목록 형식", "표 형식", "단계별 형식"],
     },
     component: OutputFormatNode,
     toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
@@ -93,6 +94,7 @@ export const nodesRegistry = {
       icon: "🎨",
       iconColor: "#7c3aed",
       group: "context",
+      defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
     component: StyleNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n답변은 ${d.content} 스타일로 작성하세요.` : null),
@@ -107,6 +109,7 @@ export const nodesRegistry = {
       icon: "📏",
       iconColor: "#7c3aed",
       group: "output",
+      defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n권장 길이: ${d.content}` : null),

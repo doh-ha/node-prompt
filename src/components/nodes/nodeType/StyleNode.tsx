@@ -1,6 +1,7 @@
 import React from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
+import { RadioSuggestions } from "../RadioSuggestions";
 
 interface StyleNodeProps {
   data: {
@@ -9,6 +10,7 @@ interface StyleNodeProps {
     icon?: string;
     iconColor?: string;
     nodeBg?: string;
+    suggestions?: string[];
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
   };
@@ -19,6 +21,7 @@ interface StyleNodeProps {
 export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
   return (
     <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+      {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={data.suggestions} selectedValue={data.content} onSelectionChange={(value) => data.onContentChange?.(value)} />}
       <NodeInput
         placeholder="문체/톤/말투를 입력하세요..."
         defaultValue={data.content ?? ""}

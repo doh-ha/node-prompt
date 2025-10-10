@@ -4,7 +4,7 @@ import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { LibraryPanel } from "./LibraryPanel";
-import { nodeComponents } from "./nodes/registry";
+import { nodeComponents, nodesRegistry } from "./nodes/registry";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
@@ -153,18 +153,26 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         <ReactFlow
           nodes={useMemo(
             () =>
-              nodes.map((node) => ({
-                ...node,
-                data: {
-                  ...node.data,
-                  onContentChange: (content: string) => handleNodeContentChange(node.id, content),
-                  onDeleteNode: handleDeleteNode,
-                  onModelChange: (model: string) => handleModelChange(node.id, model),
-                },
-                // 그룹별 배경색 적용
-                style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
-                type: node.type === "context" ? "context" : node.type,
-              })),
+              nodes.map((node) => {
+                // 레지스트리에서 suggestions 가져오기
+                const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
+                const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
+                const suggestions = registryEntry?.meta?.defaultSuggestions;
+
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    suggestions,
+                    onContentChange: (content: string) => handleNodeContentChange(node.id, content),
+                    onDeleteNode: handleDeleteNode,
+                    onModelChange: (model: string) => handleModelChange(node.id, model),
+                  },
+                  // 그룹별 배경색 적용
+                  style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
+                  type: node.type === "context" ? "context" : node.type,
+                };
+              }),
             [nodes]
           )}
           edges={edges}
@@ -188,7 +196,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           attributionPosition="bottom-left"
         >
           <Controls />
-          <Background variant={BackgroundVariant.Dots} gap={28} size={0.75} color="#e5e7eb" />
+          <Background variant={BackgroundVariant.Dots} gap={40} size={1} color="#e5e7eb" />
         </ReactFlow>
       </FlowContainer>
     </EditorContainer>
