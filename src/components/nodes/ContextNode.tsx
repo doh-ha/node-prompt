@@ -25,8 +25,8 @@ export const ContextNode: React.FC<ContextNodeProps> = ({ data, selected, id }) 
     <NodeShell id={id} selected={selected} title={headerTitle} icon={headerIcon} iconBg={data.iconBg} iconColor={data.iconColor} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="컨텍스트 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
+        defaultValue={data.content || ""}
+        onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);
           }

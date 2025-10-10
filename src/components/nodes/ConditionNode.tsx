@@ -31,8 +31,8 @@ export const ConditionNode: React.FC<ConditionNodeProps> = ({ data, selected, id
     >
       <NodeInput
         placeholder="조건 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
+        defaultValue={data.content || ""}
+        onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);
           }

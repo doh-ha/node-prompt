@@ -30,8 +30,8 @@ export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, select
     >
       <NodeInput
         placeholder="출력 형식 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
+        defaultValue={data.content || ""}
+        onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);
           }

@@ -34,8 +34,8 @@ export const nodesRegistry = {
       name: "Role",
       description: "AI의 역할과 전문성을 정의",
       icon: "🎭",
-      iconColor: "#d97706",
-      iconBg: "#fef3c7",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { role: "학습 도우미", description: "", examples: [] },
       group: "setup",
     },
@@ -63,8 +63,8 @@ export const nodesRegistry = {
       name: "Format",
       description: "출력 형식 및 구조 정의",
       icon: "💬",
-      iconColor: "#2563eb",
-      iconBg: "#dbeafe",
+      iconColor: "#059669",
+      iconBg: "#ecfdf5",
       defaultData: { format: "text", structure: "" },
       group: "output",
     },
@@ -77,8 +77,8 @@ export const nodesRegistry = {
       name: "Condition",
       description: "조건/규칙",
       icon: "⚡",
-      iconColor: "#dc2626",
-      iconBg: "#fecaca",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { condition: "", operator: "equals", value: "" },
       group: "constraints",
     },
@@ -91,8 +91,8 @@ export const nodesRegistry = {
       name: "Context",
       description: "컨텍스트 정보",
       icon: "📚",
-      iconColor: "#059669",
-      iconBg: "#d1fae5",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { contextType: "background", content: "" },
       group: "constraints",
     },
@@ -108,8 +108,8 @@ export const nodesRegistry = {
       name: "Audience",
       description: "대상 사용자(학습자)",
       icon: "🧑‍🎓",
-      iconColor: "#0ea5e9",
-      iconBg: "#e0f2fe",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { contextType: "audience", content: "" },
       group: "setup",
     },
@@ -123,8 +123,8 @@ export const nodesRegistry = {
       name: "Style",
       description: "문체/톤/말투",
       icon: "🎨",
-      iconColor: "#a855f7",
-      iconBg: "#f3e8ff",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { contextType: "style", content: "" },
       group: "constraints",
     },
@@ -138,13 +138,28 @@ export const nodesRegistry = {
       name: "Example",
       description: "예시/샘플",
       icon: "💡",
-      iconColor: "#16a34a",
-      iconBg: "#dcfce7",
+      iconColor: "#0ea5e9",
+      iconBg: "#e0f2fe",
       defaultData: { contextType: "example", content: "" },
       group: "input",
     },
     component: ContextNode,
     toPrompt: (d: any) => (d.content ? `예시: ${d.content}` : null),
+  },
+  // 입력용 자유 텍스트
+  text: {
+    type: "context" as any,
+    meta: {
+      name: "Text",
+      description: "자유 텍스트 입력",
+      icon: "✍️",
+      iconColor: "#111827",
+      iconBg: "#f3f4f6",
+      defaultData: { contextType: "text", content: "" },
+      group: "input",
+    },
+    component: ContextNode,
+    toPrompt: (d: any) => (d.content ? d.content : null),
   },
   promptTemplate: {
     type: "promptTemplate",
@@ -153,7 +168,7 @@ export const nodesRegistry = {
       description: "프롬프트 템플릿",
       icon: "📝",
       iconColor: "#7c3aed",
-      iconBg: "#e0e7ff",
+      iconBg: "#f5f3ff",
       defaultData: { template: "", variables: [] },
       group: "setup",
     },
@@ -166,8 +181,8 @@ export const nodesRegistry = {
       name: "Model",
       description: "AI 모델 설정",
       icon: "🤖",
-      iconColor: "#9333ea",
-      iconBg: "#f3e8ff",
+      iconColor: "#7c3aed",
+      iconBg: "#f5f3ff",
       defaultData: { model: "gpt-3.5-turbo", temperature: 0.7, maxTokens: 1000 },
       group: "model",
     },
@@ -194,8 +209,8 @@ export const nodesRegistry = {
       name: "Result",
       description: "최종 결과",
       icon: "🏁",
-      iconColor: "#0ea5e9",
-      iconBg: "#e0f2fe",
+      iconColor: "#059669",
+      iconBg: "#ecfdf5",
       defaultData: { content: "" },
       group: "output",
     },
@@ -211,9 +226,11 @@ export const nodeComponents = Object.fromEntries(
 
 export const groupedTemplates = Object.values(nodesRegistry).reduce(
   (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; defaultData: any }> }[], entry) => {
-    let group = acc.find((g) => g.title === entry.meta.group);
+    const original = entry.meta.group;
+    const mappedTitle = original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "Model";
+    let group = acc.find((g) => g.title === mappedTitle);
     if (!group) {
-      group = { title: entry.meta.group, items: [] };
+      group = { title: mappedTitle, items: [] };
       acc.push(group);
     }
     group.items.push({

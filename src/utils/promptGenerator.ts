@@ -119,8 +119,8 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
     .filter(Boolean)
     .join("\n");
 
-  // registry에서 생성된 조각이 있으면 이를 우선 렌더링, 없으면 기존 방식으로 구성
-  const finalPrompt = registryFragments.length > 0 ? [registryFragments.join("\n"), inputContents].filter(Boolean).join("\n\n") : buildFinalPrompt(components, inputContents);
+  // registry 조각이 있으면 그것만 사용(중복 표시 방지). 없으면 기본 조합 로직 사용
+  const finalPrompt = registryFragments.length > 0 ? registryFragments.join("\n") : buildFinalPrompt(components, inputContents);
 
   return {
     finalPrompt,

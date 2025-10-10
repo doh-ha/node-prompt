@@ -34,8 +34,8 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
     >
       <NodeInput
         placeholder="역할 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
+        defaultValue={data.content || ""}
+        onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);
           }

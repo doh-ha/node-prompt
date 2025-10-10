@@ -30,12 +30,8 @@ export const PromptTemplateNode: React.FC<PromptTemplateNodeProps> = ({ data, se
       {/* 프리뷰 텍스트 제거 (… 표시 제거) */}
       <NodeInput
         placeholder="프롬프트 템플릿 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
+        defaultValue={data.content || ""}
+        onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />
