@@ -10,6 +10,7 @@ export interface BlockItem {
   payload?: Record<string, any>;
   x?: number;
   y?: number;
+  content?: string;
 }
 
 interface BlockCanvasProps {
@@ -83,6 +84,25 @@ const BlockBody = styled.div`
   margin-top: 6px;
   color: #6b7280;
   font-size: 14px;
+`;
+
+const BlockInput = styled.textarea`
+  width: 100%;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.8);
+
+  &:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+  }
 `;
 
 const DeleteBtn = styled.button`
@@ -164,6 +184,11 @@ export const BlockCanvas: React.FC<BlockCanvasProps> = ({ blocks, onChange }) =>
     setSelectedId((prev) => (prev === id ? null : prev));
   };
 
+  const updateBlockContent = (id: string, content: string) => {
+    const next = blocks.map((b) => (b.id === id ? { ...b, content } : b));
+    onChange(next);
+  };
+
   // 캔버스 내부 이동 (절대 좌표)
   const onBlockDragStart =
     (id: string, x: number = 0, y: number = 0) =>
@@ -211,7 +236,16 @@ export const BlockCanvas: React.FC<BlockCanvasProps> = ({ blocks, onChange }) =>
                   삭제
                 </DeleteBtn>
               </BlockHeader>
-              <BlockBody>{b.type}</BlockBody>
+              <BlockBody>
+                <div>{b.type}</div>
+                <BlockInput
+                  placeholder={`${b.label} 내용을 입력하세요...`}
+                  value={b.content || ""}
+                  onChange={(e) => updateBlockContent(b.id, e.target.value)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </BlockBody>
             </BlockCard>
           </Positioned>
         ))}
