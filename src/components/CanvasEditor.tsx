@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, ReactFlowProvider, ReactFlowInstance } from "reactflow";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
@@ -23,6 +23,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectionRafRef = useRef<number | null>(null);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -161,14 +162,16 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           selectionOnDrag
           onSelectionChange={(sel) => {
             const ids = (sel?.nodes || []).map((n) => n.id);
-            setSelectedIds(ids);
+            if (selectionRafRef.current) cancelAnimationFrame(selectionRafRef.current);
+            selectionRafRef.current = requestAnimationFrame(() => setSelectedIds(ids));
           }}
           nodeTypes={nodeComponents}
           fitView
+          proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"
         >
           <Controls />
-          <Background />
+          <Background variant={BackgroundVariant.Dots} gap={28} size={0.75} color="#e5e7eb" />
         </ReactFlow>
       </FlowContainer>
     </EditorContainer>
