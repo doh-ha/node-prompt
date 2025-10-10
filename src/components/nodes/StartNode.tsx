@@ -25,8 +25,8 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
       selected={selected}
       title={headerTitle}
       icon={headerIcon}
-      iconBg={data.iconBg || "#dcfce7"}
       iconColor={data.iconColor || "#16a34a"}
+      bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput

@@ -22,7 +22,7 @@ export const ContextNode: React.FC<ContextNodeProps> = ({ data, selected, id }) 
   const headerTitle = (data as any).label || contextLabels[data.contextType] || data.contextType;
   const headerIcon = data.icon || "📚";
   return (
-    <NodeShell id={id} selected={selected} title={headerTitle} icon={headerIcon} iconBg={data.iconBg} iconColor={data.iconColor} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+    <NodeShell id={id} selected={selected} title={headerTitle} icon={headerIcon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="컨텍스트 내용을 입력하세요..."
         defaultValue={data.content || ""}

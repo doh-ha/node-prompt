@@ -17,6 +17,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
             <NodeItem
               key={`${gi}-${ti}`}
               draggable
+              style={{ background: template.nodeBg, borderRadius: 8 }}
               onDragStart={(e) => {
                 onDragStart(e, template.type, {
                   ...template.defaultData,
@@ -24,7 +25,8 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
                   name: template.name,
                   icon: template.icon,
                   iconColor: template.iconColor,
-                  iconBg: template.iconBg,
+                  iconBg: undefined,
+                  nodeBg: template.nodeBg,
                 });
                 // Set custom drag image
                 const img = e.currentTarget;
@@ -33,14 +35,14 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
             >
               <LibraryNodeIcon
                 style={{
-                  background: template.iconBg,
+                  background: "transparent",
                   color: template.iconColor,
                 }}
               >
                 {template.icon}
               </LibraryNodeIcon>
               <NodeInfo>
-                <NodeName>{template.name}</NodeName>
+                <NodeName style={{ background: template.nodeBg, padding: 2, borderRadius: 4 }}>{template.name}</NodeName>
                 <NodeDescription>{template.description}</NodeDescription>
               </NodeInfo>
             </NodeItem>

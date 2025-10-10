@@ -14,7 +14,7 @@ interface NodeMeta {
   description: string;
   icon: string;
   iconColor: string;
-  iconBg: string;
+  nodeBg: string;
   defaultData: any;
   group: string;
 }
@@ -35,7 +35,7 @@ export const nodesRegistry = {
       description: "AI의 역할과 전문성을 정의",
       icon: "🎭",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { role: "학습 도우미", description: "", examples: [] },
       group: "setup",
     },
@@ -50,7 +50,7 @@ export const nodesRegistry = {
       description: "참고 자료/문헌",
       icon: "📑",
       iconColor: "#475569",
-      iconBg: "#e2e8f0",
+      nodeBg: "#e0f2fe",
       defaultData: { contextType: "reference", content: "" },
       group: "input",
     },
@@ -64,7 +64,7 @@ export const nodesRegistry = {
       description: "출력 형식 및 구조 정의",
       icon: "💬",
       iconColor: "#059669",
-      iconBg: "#ecfdf5",
+      nodeBg: "#ecfdf5",
       defaultData: { format: "text", structure: "" },
       group: "output",
     },
@@ -78,7 +78,7 @@ export const nodesRegistry = {
       description: "조건/규칙",
       icon: "⚡",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { condition: "", operator: "equals", value: "" },
       group: "constraints",
     },
@@ -92,7 +92,7 @@ export const nodesRegistry = {
       description: "컨텍스트 정보",
       icon: "📚",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { contextType: "background", content: "" },
       group: "constraints",
     },
@@ -109,7 +109,7 @@ export const nodesRegistry = {
       description: "대상 사용자(학습자)",
       icon: "🧑‍🎓",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { contextType: "audience", content: "" },
       group: "setup",
     },
@@ -124,7 +124,8 @@ export const nodesRegistry = {
       description: "문체/톤/말투",
       icon: "🎨",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      iconBg: "transparent",
+      nodeBg: "#f5f3ff",
       defaultData: { contextType: "style", content: "" },
       group: "constraints",
     },
@@ -139,7 +140,7 @@ export const nodesRegistry = {
       description: "예시/샘플",
       icon: "💡",
       iconColor: "#0ea5e9",
-      iconBg: "#e0f2fe",
+      nodeBg: "#e0f2fe",
       defaultData: { contextType: "example", content: "" },
       group: "input",
     },
@@ -154,7 +155,7 @@ export const nodesRegistry = {
       description: "자유 텍스트 입력",
       icon: "✍️",
       iconColor: "#111827",
-      iconBg: "#f3f4f6",
+      nodeBg: "#e0f2fe",
       defaultData: { contextType: "text", content: "" },
       group: "input",
     },
@@ -168,7 +169,7 @@ export const nodesRegistry = {
       description: "프롬프트 템플릿",
       icon: "📝",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { template: "", variables: [] },
       group: "setup",
     },
@@ -182,7 +183,7 @@ export const nodesRegistry = {
       description: "AI 모델 설정",
       icon: "🤖",
       iconColor: "#7c3aed",
-      iconBg: "#f5f3ff",
+      nodeBg: "#f5f3ff",
       defaultData: { model: "gpt-3.5-turbo", temperature: 0.7, maxTokens: 1000 },
       group: "model",
     },
@@ -196,7 +197,8 @@ export const nodesRegistry = {
       description: "플로우 시작",
       icon: "▶️",
       iconColor: "#16a34a",
-      iconBg: "#dcfce7",
+      iconBg: "transparent",
+      nodeBg: "#f5f3ff",
       defaultData: { content: "" },
       group: "setup",
     },
@@ -210,7 +212,7 @@ export const nodesRegistry = {
       description: "최종 결과",
       icon: "🏁",
       iconColor: "#059669",
-      iconBg: "#ecfdf5",
+      nodeBg: "#ecfdf5",
       defaultData: { content: "" },
       group: "output",
     },
@@ -225,7 +227,7 @@ export const nodeComponents = Object.fromEntries(
 ) as Record<NodeTypeKey, any>;
 
 export const groupedTemplates = Object.values(nodesRegistry).reduce(
-  (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; defaultData: any }> }[], entry) => {
+  (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; nodeBg: string; defaultData: any }> }[], entry) => {
     const original = entry.meta.group;
     const mappedTitle = original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "Model";
     let group = acc.find((g) => g.title === mappedTitle);
@@ -239,7 +241,8 @@ export const groupedTemplates = Object.values(nodesRegistry).reduce(
       description: entry.meta.description,
       icon: entry.meta.icon,
       iconColor: entry.meta.iconColor,
-      iconBg: entry.meta.iconBg,
+      iconBg: undefined as any,
+      nodeBg: entry.meta.nodeBg,
       defaultData: entry.meta.defaultData,
     });
     return acc;

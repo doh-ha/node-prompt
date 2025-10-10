@@ -23,8 +23,8 @@ export const PromptTemplateNode: React.FC<PromptTemplateNodeProps> = ({ data, se
       selected={selected}
       title={headerTitle}
       icon={headerIcon}
-      iconBg={(data as any).iconBg}
       iconColor={(data as any).iconColor}
+      bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       {/* 프리뷰 텍스트 제거 (… 표시 제거) */}

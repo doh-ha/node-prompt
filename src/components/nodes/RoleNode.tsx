@@ -28,8 +28,8 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
       selected={selected}
       title={headerTitle}
       icon={headerIcon}
-      iconBg={(data as any).iconBg}
       iconColor={(data as any).iconColor}
+      bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput

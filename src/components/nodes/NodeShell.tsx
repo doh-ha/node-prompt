@@ -7,17 +7,16 @@ interface NodeShellProps {
   selected?: boolean;
   title: string;
   icon?: string;
-  iconBg?: string;
   iconColor?: string;
+  bg?: string;
   onDelete?: () => void;
   children?: React.ReactNode;
 }
 
-export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconBg = "#eef2ff", iconColor = "#4f46e5", onDelete, children }) => {
-  const iconStyle = { background: iconBg, color: iconColor } as React.CSSProperties;
-  const containerStyle = { background: iconBg } as React.CSSProperties;
+export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = "#4f46e5", bg, onDelete, children }) => {
+  const iconStyle = { background: "transparent", color: iconColor } as React.CSSProperties;
   return (
-    <NodeContainer className={selected ? "selected" : ""} style={containerStyle}>
+    <NodeContainer className={selected ? "selected" : ""} style={bg ? { background: bg } : undefined}>
       <Handle type="target" position={Position.Top} />
       <NodeHeader>
         <NodeIcon style={iconStyle}>{icon}</NodeIcon>

@@ -161,6 +161,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
                 },
+                // 그룹별 배경색 적용
+                style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
               })),
             [nodes]
           )}
