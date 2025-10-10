@@ -1,19 +1,5 @@
 import React, { useState } from "react";
-import {
-  PreviewContainer,
-  PreviewHeader,
-  PreviewTitle,
-  TabContainer,
-  Tab,
-  PromptText,
-  ComponentList,
-  ComponentItem,
-  ComponentTitle,
-  ComponentContent,
-  TestInput,
-  TestButton,
-  ResponseArea,
-} from "../styles/nodeStyles";
+import { PreviewContainer, PreviewHeader, PreviewTitle, TabContainer, Tab, PromptText, TestInput, TestButton, ResponseArea } from "../styles/nodeStyles";
 import { usePromptGenerator } from "../hooks/usePromptGenerator";
 import { Button } from "./ui";
 
@@ -23,7 +9,7 @@ interface PreviewPanelProps {
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
-  const [activeTab, setActiveTab] = useState<"prompt" | "components" | "test">("prompt");
+  const [activeTab, setActiveTab] = useState<"prompt" | "test">("prompt");
   const [testInput, setTestInput] = useState("");
   const [testResponse, setTestResponse] = useState("");
 
@@ -50,9 +36,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
         <Tab active={activeTab === "prompt"} onClick={() => setActiveTab("prompt")}>
           프롬프트
         </Tab>
-        <Tab active={activeTab === "components"} onClick={() => setActiveTab("components")}>
-          구성요소
-        </Tab>
         <Tab active={activeTab === "test"} onClick={() => setActiveTab("test")}>
           테스트
         </Tab>
@@ -72,53 +55,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
             </div>
           )}
         </div>
-      )}
-
-      {activeTab === "components" && (
-        <ComponentList>
-          {generatedPrompt.components.role && (
-            <ComponentItem>
-              <ComponentTitle>역할</ComponentTitle>
-              <ComponentContent>{generatedPrompt.components.role}</ComponentContent>
-            </ComponentItem>
-          )}
-
-          {generatedPrompt.components.context.length > 0 && (
-            <ComponentItem>
-              <ComponentTitle>컨텍스트</ComponentTitle>
-              <ComponentContent>
-                {generatedPrompt.components.context.map((ctx, index) => (
-                  <div key={index}>• {ctx}</div>
-                ))}
-              </ComponentContent>
-            </ComponentItem>
-          )}
-
-          {generatedPrompt.components.conditions.length > 0 && (
-            <ComponentItem>
-              <ComponentTitle>조건</ComponentTitle>
-              <ComponentContent>
-                {generatedPrompt.components.conditions.map((condition, index) => (
-                  <div key={index}>• {condition}</div>
-                ))}
-              </ComponentContent>
-            </ComponentItem>
-          )}
-
-          {generatedPrompt.components.outputFormat && (
-            <ComponentItem>
-              <ComponentTitle>출력 형식</ComponentTitle>
-              <ComponentContent>{generatedPrompt.components.outputFormat}</ComponentContent>
-            </ComponentItem>
-          )}
-
-          {generatedPrompt.components.template && (
-            <ComponentItem>
-              <ComponentTitle>템플릿</ComponentTitle>
-              <ComponentContent>{generatedPrompt.components.template}</ComponentContent>
-            </ComponentItem>
-          )}
-        </ComponentList>
       )}
 
       {activeTab === "test" && (

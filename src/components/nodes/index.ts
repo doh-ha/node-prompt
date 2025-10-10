@@ -5,6 +5,9 @@ import { ConditionNode } from "./ConditionNode";
 import { ContextNode } from "./ContextNode";
 import { PromptTemplateNode } from "./PromptTemplateNode";
 import { ModelNode } from "./ModelNode";
+import { LaneNode } from "./LaneNode";
+import { StartNode } from "./StartNode";
+import { ResultNode } from "./ResultNode";
 
 export { RoleNode } from "./RoleNode";
 export { OutputFormatNode } from "./OutputFormatNode";
@@ -12,6 +15,9 @@ export { ConditionNode } from "./ConditionNode";
 export { ContextNode } from "./ContextNode";
 export { PromptTemplateNode } from "./PromptTemplateNode";
 export { ModelNode } from "./ModelNode";
+export { LaneNode } from "./LaneNode";
+export { StartNode } from "./StartNode";
+export { ResultNode } from "./ResultNode";
 
 // 노드 컴포넌트 매핑
 export const nodeComponents = {
@@ -21,4 +27,7 @@ export const nodeComponents = {
   context: ContextNode,
   promptTemplate: PromptTemplateNode,
   model: ModelNode,
+  lane: LaneNode,
+  start: StartNode,
+  result: ResultNode,
 };

@@ -4,6 +4,8 @@ import { ConditionNode } from "./ConditionNode";
 import { ContextNode } from "./ContextNode";
 import { PromptTemplateNode } from "./PromptTemplateNode";
 import { ModelNode } from "./ModelNode";
+import { StartNode } from "./StartNode";
+import { ResultNode } from "./ResultNode";
 
 type NodeTypeKey = "role" | "outputFormat" | "condition" | "context" | "promptTemplate" | "model";
 
@@ -60,7 +62,7 @@ export const nodesRegistry = {
     meta: {
       name: "Format",
       description: "출력 형식 및 구조 정의",
-      icon: "📄",
+      icon: "💬",
       iconColor: "#2563eb",
       iconBg: "#dbeafe",
       defaultData: { format: "text", structure: "" },
@@ -170,6 +172,34 @@ export const nodesRegistry = {
       group: "model",
     },
     component: ModelNode,
+  },
+  // 연결 흐름용 시작 노드
+  start: {
+    type: "context" as any,
+    meta: {
+      name: "Start",
+      description: "플로우 시작",
+      icon: "▶️",
+      iconColor: "#16a34a",
+      iconBg: "#dcfce7",
+      defaultData: { content: "" },
+      group: "setup",
+    },
+    component: StartNode,
+  },
+  // 연결 흐름용 결과 노드
+  result: {
+    type: "context" as any,
+    meta: {
+      name: "Result",
+      description: "최종 결과",
+      icon: "🏁",
+      iconColor: "#0ea5e9",
+      iconBg: "#e0f2fe",
+      defaultData: { content: "" },
+      group: "output",
+    },
+    component: ResultNode,
   },
 } as Record<string, NodeEntry>;
 
