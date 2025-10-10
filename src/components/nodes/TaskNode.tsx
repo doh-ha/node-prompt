@@ -15,8 +15,8 @@ interface TaskNodeProps {
 }
 
 export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label || "Task";
-  const headerIcon = (data as any).icon || "📝";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}

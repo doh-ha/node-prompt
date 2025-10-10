@@ -20,8 +20,8 @@ interface RoleNodeProps {
 }
 
 export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = data.label || "역할 정의";
-  const headerIcon = data.icon || "🎭";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}

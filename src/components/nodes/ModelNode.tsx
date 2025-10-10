@@ -17,8 +17,8 @@ interface ModelNodeProps {
 }
 
 export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label || "AI 모델";
-  const headerIcon = (data as any).icon || "🤖";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}

@@ -17,8 +17,8 @@ interface ConditionNodeProps {
 }
 
 export const ConditionNode: React.FC<ConditionNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label || "조건";
-  const headerIcon = (data as any).icon || "⚡";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}

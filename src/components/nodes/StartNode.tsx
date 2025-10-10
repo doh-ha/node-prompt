@@ -17,8 +17,8 @@ interface StartNodeProps {
 }
 
 export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = data.label || "Start";
-  const headerIcon = data.icon || "▶️";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}

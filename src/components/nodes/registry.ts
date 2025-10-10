@@ -38,7 +38,7 @@ export const nodesRegistry = {
       group: "context",
     },
     component: RoleNode,
-    toPrompt: (d) => (d.content || d.role ? `당신은 ${d.content || d.role}입니다.` : null),
+    toPrompt: (d) => (d.content || d.role ? `[${d.name}]\n당신은 ${d.content || d.role} 입니다.` : null),
   },
   // 추가 컨텍스트: Reference
   reference: {
@@ -52,7 +52,7 @@ export const nodesRegistry = {
       group: "input",
     },
     component: ContextNode,
-    toPrompt: (d: any) => (d.content ? `참고: ${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요:\n${d.content}` : null),
   },
   outputFormat: {
     type: "outputFormat",
@@ -65,7 +65,7 @@ export const nodesRegistry = {
       group: "output",
     },
     component: OutputFormatNode,
-    toPrompt: (d) => (d.format ? `응답 형식: ${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
+    toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
   },
 
   // 추가 컨텍스트: Audience
@@ -82,7 +82,7 @@ export const nodesRegistry = {
       group: "context",
     },
     component: ContextNode,
-    toPrompt: (d: any) => (d.content ? `대상: ${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n당신의 주요 독자(청중)는 ${d.content} 입니다.` : null),
   },
   // 추가 컨텍스트: Style
   style: {
@@ -96,7 +96,7 @@ export const nodesRegistry = {
       group: "context",
     },
     component: ContextNode,
-    toPrompt: (d: any) => (d.content ? `스타일: ${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n답변은 ${d.content} 스타일로 작성하세요.` : null),
   },
 
   // 누락 컨텍스트: Length
@@ -112,7 +112,7 @@ export const nodesRegistry = {
       group: "output",
     },
     component: ContextNode,
-    toPrompt: (d: any) => (d.content ? `길이: ${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n권장 길이: ${d.content}` : null),
   },
 
   // 추가 컨텍스트: Example
@@ -127,7 +127,7 @@ export const nodesRegistry = {
       group: "input",
     },
     component: ContextNode,
-    toPrompt: (d: any) => (d.content ? `예시: ${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n다음은 참고할 수 있는 예시입니다:\n${d.content}` : null),
   },
   // 입력용 자유 텍스트
   text: {
@@ -154,7 +154,7 @@ export const nodesRegistry = {
       group: "context",
     },
     component: TaskNode,
-    toPrompt: (d) => d.content || d.template || null,
+    toPrompt: (d) => (d.content || d.template ? `[${d.name}]\n다음 작업을 수행하세요: ${d.content || d.template}.` : null),
   },
   model: {
     type: "model",

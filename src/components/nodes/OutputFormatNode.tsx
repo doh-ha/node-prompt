@@ -16,8 +16,8 @@ interface OutputFormatNodeProps {
 }
 
 export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label || "출력 형식";
-  const headerIcon = (data as any).icon || "📄";
+  const headerTitle = (data as any).label;
+  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}
