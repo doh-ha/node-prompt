@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { LibraryPanel } from "./LibraryPanel";
-import { nodeComponents } from "./nodes";
+import { nodeComponents } from "./nodes/registry";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
@@ -22,6 +22,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -57,11 +58,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           data,
         };
 
-        setNodes((prev) => {
-          const newNodes = prev.concat(newNode);
-          onNodesChange(newNodes);
-          return newNodes;
-        });
+        setNodes((prev) => prev.concat(newNode));
       }
     },
     [reactFlowInstance, setNodes, onNodesChange]
@@ -94,10 +91,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const deleteSelectedNode = () => {
     if (selectedNodeId) {
       handleDeleteNode(selectedNodeId);
-      onNodesChange(nodes.filter((node) => node.id !== selectedNodeId));
-      onEdgesChange(edges.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId));
     }
   };
+
+  const deleteSelectedNodes = () => {
+    if (selectedIds.length === 0) return;
+    const idSet = new Set(selectedIds);
+    const newNodes = nodes.filter((n) => !idSet.has(n.id));
+    const newEdges = edges.filter((e) => !idSet.has(e.source) && !idSet.has(e.target));
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setSelectedIds([]);
+    setSelectedNodeId(null);
+  };
+
+  // 키보드 삭제는 비활성화 (툴바 버튼으로만 삭제 지원)
 
   const clearAll = () => {
     setNodes([]);
@@ -117,6 +125,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             선택된 노드 삭제
           </Button>
         )}
+        {selectedIds.length > 0 && (
+          <Button onClick={deleteSelectedNodes} variant="danger" size="small">
+            영역 선택 삭제 ({selectedIds.length})
+          </Button>
+        )}
         <Button onClick={clearAll} variant="secondary" size="small">
           전체 지우기
         </Button>
@@ -124,29 +137,32 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       <FlowContainer>
         <ReactFlow
-          nodes={nodes.map((node) => ({
-            ...node,
-            data: {
-              ...node.data,
-              onContentChange: (content: string) => handleNodeContentChange(node.id, content),
-              onDeleteNode: handleDeleteNode,
-            },
-          }))}
+          nodes={useMemo(
+            () =>
+              nodes.map((node) => ({
+                ...node,
+                data: {
+                  ...node.data,
+                  onContentChange: (content: string) => handleNodeContentChange(node.id, content),
+                  onDeleteNode: handleDeleteNode,
+                },
+              })),
+            [nodes]
+          )}
           edges={edges}
-          onNodesChange={(changes) => {
-            onNodesChangeInternal(changes);
-            onNodesChange(nodes);
-          }}
-          onEdgesChange={(changes) => {
-            onEdgesChangeInternal(changes);
-            onEdgesChange(edges);
-          }}
+          onNodesChange={onNodesChangeInternal}
+          onEdgesChange={onEdgesChangeInternal}
           onConnect={onConnect}
           onInit={setReactFlowInstance}
           onDrop={onDrop}
           onDragOver={onDragOver}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
+          selectionOnDrag
+          onSelectionChange={(sel) => {
+            const ids = (sel?.nodes || []).map((n) => n.id);
+            setSelectedIds(ids);
+          }}
           nodeTypes={nodeComponents}
           fitView
           attributionPosition="bottom-left"

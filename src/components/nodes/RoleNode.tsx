@@ -1,6 +1,6 @@
 import React from "react";
-import { Handle, Position } from "reactflow";
-import { NodeContainer, NodeHeader, NodeIcon, NodeContent, NodeInput, DeleteButton } from "../../styles/nodeStyles";
+import { NodeInput } from "../../styles/nodeStyles";
+import { NodeShell } from "./NodeShell";
 
 interface RoleNodeProps {
   data: {
@@ -10,42 +10,39 @@ interface RoleNodeProps {
     content?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
+    label?: string;
+    icon?: string;
+    iconBg?: string;
+    iconColor?: string;
   };
   selected?: boolean;
   id?: string;
 }
 
 export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
+  const headerTitle = data.label || "역할 정의";
+  const headerIcon = data.icon || "🎭";
   return (
-    <NodeContainer className={selected ? "selected" : ""}>
-      <Handle type="target" position={Position.Top} />
-      <NodeHeader>
-        <NodeIcon style={{ background: "#fef3c7", color: "#d97706" }}>🎭</NodeIcon>
-        역할 정의
-        {selected && id && (
-          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
-            X
-          </DeleteButton>
-        )}
-      </NodeHeader>
-      <NodeContent>
-        <div>
-          <strong>{data.role}</strong>
-        </div>
-        <div>{data.description}</div>
-        <NodeInput
-          placeholder="역할 내용을 입력하세요..."
-          value={data.content || ""}
-          onChange={(e) => {
-            if (data.onContentChange) {
-              data.onContentChange(e.target.value);
-            }
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        />
-      </NodeContent>
-      <Handle type="source" position={Position.Bottom} />
-    </NodeContainer>
+    <NodeShell
+      id={id}
+      selected={selected}
+      title={headerTitle}
+      icon={headerIcon}
+      iconBg={(data as any).iconBg}
+      iconColor={(data as any).iconColor}
+      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+    >
+      <NodeInput
+        placeholder="역할 내용을 입력하세요..."
+        value={data.content || ""}
+        onChange={(e) => {
+          if (data.onContentChange) {
+            data.onContentChange(e.target.value);
+          }
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </NodeShell>
   );
 };

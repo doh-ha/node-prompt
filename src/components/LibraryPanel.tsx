@@ -1,6 +1,6 @@
 import React from "react";
 import { PaletteContainer, PaletteTitle, GroupTitle, NodeItem, LibraryNodeIcon, NodeInfo, NodeName, NodeDescription } from "../styles/nodeStyles";
-import { groupedTemplates } from "../data/nodeTemplates";
+import { groupedTemplates } from "./nodes/registry";
 
 interface LibraryPanelProps {
   onDragStart: (event: React.DragEvent, nodeType: string, data: any) => void;
@@ -18,7 +18,14 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
               key={`${gi}-${ti}`}
               draggable
               onDragStart={(e) => {
-                onDragStart(e, template.type, { ...template.defaultData, label: template.name, name: template.name });
+                onDragStart(e, template.type, {
+                  ...template.defaultData,
+                  label: template.name,
+                  name: template.name,
+                  icon: template.icon,
+                  iconColor: template.iconColor,
+                  iconBg: template.iconBg,
+                });
                 // Set custom drag image
                 const img = e.currentTarget;
                 e.dataTransfer.setDragImage(img, 0, 0);

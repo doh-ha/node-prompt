@@ -1,6 +1,6 @@
 import React from "react";
-import { Handle, Position } from "reactflow";
-import { NodeContainer, NodeHeader, NodeIcon, NodeContent, NodeInput, DeleteButton } from "../../styles/nodeStyles";
+import { NodeInput } from "../../styles/nodeStyles";
+import { NodeShell } from "./NodeShell";
 
 interface ModelNodeProps {
   data: {
@@ -16,37 +16,29 @@ interface ModelNodeProps {
 }
 
 export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
+  const headerTitle = (data as any).label || "AI 모델";
+  const headerIcon = (data as any).icon || "🤖";
   return (
-    <NodeContainer className={selected ? "selected" : ""}>
-      <Handle type="target" position={Position.Top} />
-      <NodeHeader>
-        <NodeIcon style={{ background: "#f3e8ff", color: "#9333ea" }}>🤖</NodeIcon>
-        AI 모델
-        {selected && id && (
-          <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
-            X
-          </DeleteButton>
-        )}
-      </NodeHeader>
-      <NodeContent>
-        <div>
-          <strong>{data.model}</strong>
-        </div>
-        <div>온도: {data.temperature}</div>
-        <div>최대 토큰: {data.maxTokens}</div>
-        <NodeInput
-          placeholder="모델 설정 내용을 입력하세요..."
-          value={data.content || ""}
-          onChange={(e) => {
-            if (data.onContentChange) {
-              data.onContentChange(e.target.value);
-            }
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        />
-      </NodeContent>
-      <Handle type="source" position={Position.Bottom} />
-    </NodeContainer>
+    <NodeShell
+      id={id}
+      selected={selected}
+      title={headerTitle}
+      icon={headerIcon}
+      iconBg={(data as any).iconBg}
+      iconColor={(data as any).iconColor}
+      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+    >
+      <NodeInput
+        placeholder="모델 설정 내용을 입력하세요..."
+        value={data.content || ""}
+        onChange={(e) => {
+          if (data.onContentChange) {
+            data.onContentChange(e.target.value);
+          }
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </NodeShell>
   );
 };
