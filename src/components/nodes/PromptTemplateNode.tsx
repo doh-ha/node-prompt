@@ -27,7 +27,7 @@ export const PromptTemplateNode: React.FC<PromptTemplateNodeProps> = ({ data, se
       iconColor={(data as any).iconColor}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
-      <div style={{ maxHeight: "60px", overflow: "hidden" }}>{data.template.substring(0, 100)}...</div>
+      {/* 프리뷰 텍스트 제거 (… 표시 제거) */}
       <NodeInput
         placeholder="프롬프트 템플릿 내용을 입력하세요..."
         value={data.content || ""}

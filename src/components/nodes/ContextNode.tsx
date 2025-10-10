@@ -19,7 +19,7 @@ interface ContextNodeProps {
 }
 
 export const ContextNode: React.FC<ContextNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = contextLabels[data.contextType] || data.label || data.contextType;
+  const headerTitle = (data as any).label || contextLabels[data.contextType] || data.contextType;
   const headerIcon = data.icon || "📚";
   return (
     <NodeShell id={id} selected={selected} title={headerTitle} icon={headerIcon} iconBg={data.iconBg} iconColor={data.iconColor} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
