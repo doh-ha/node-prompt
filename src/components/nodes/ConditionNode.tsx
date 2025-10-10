@@ -1,7 +1,7 @@
 import React from "react";
 import { NodeInput } from "../../styles/nodeStyles";
 import { NodeShell } from "./NodeShell";
-import { operatorLabels } from "../../data/nodeTemplates";
+import { operatorLabels } from "../../constants/labels";
 
 interface ConditionNodeProps {
   data: {

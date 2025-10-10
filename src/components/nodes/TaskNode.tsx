@@ -2,7 +2,7 @@ import React from "react";
 import { NodeInput } from "../../styles/nodeStyles";
 import { NodeShell } from "./NodeShell";
 
-interface PromptTemplateNodeProps {
+interface TaskNodeProps {
   data: {
     template: string;
     variables: string[];
@@ -14,8 +14,8 @@ interface PromptTemplateNodeProps {
   id?: string;
 }
 
-export const PromptTemplateNode: React.FC<PromptTemplateNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label || "프롬프트 템플릿";
+export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
+  const headerTitle = (data as any).label || "Task";
   const headerIcon = (data as any).icon || "📝";
   return (
     <NodeShell
@@ -27,9 +27,8 @@ export const PromptTemplateNode: React.FC<PromptTemplateNodeProps> = ({ data, se
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
-      {/* 프리뷰 텍스트 제거 (… 표시 제거) */}
       <NodeInput
-        placeholder="프롬프트 템플릿 내용을 입력하세요..."
+        placeholder="수행할 작업(지시문)을 입력하세요..."
         defaultValue={data.content || ""}
         onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}

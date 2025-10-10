@@ -3,7 +3,7 @@ import { RoleNode } from "./RoleNode";
 import { OutputFormatNode } from "./OutputFormatNode";
 import { ConditionNode } from "./ConditionNode";
 import { ContextNode } from "./ContextNode";
-import { PromptTemplateNode } from "./PromptTemplateNode";
+import { TaskNode } from "./TaskNode";
 import { ModelNode } from "./ModelNode";
 import { StartNode } from "./StartNode";
 import { ResultNode } from "./ResultNode";
@@ -12,7 +12,7 @@ export { RoleNode } from "./RoleNode";
 export { OutputFormatNode } from "./OutputFormatNode";
 export { ConditionNode } from "./ConditionNode";
 export { ContextNode } from "./ContextNode";
-export { PromptTemplateNode } from "./PromptTemplateNode";
+export { TaskNode } from "./TaskNode";
 export { ModelNode } from "./ModelNode";
 export { StartNode } from "./StartNode";
 export { ResultNode } from "./ResultNode";
@@ -23,7 +23,7 @@ export const nodeComponents = {
   outputFormat: OutputFormatNode,
   condition: ConditionNode,
   context: ContextNode,
-  promptTemplate: PromptTemplateNode,
+  promptTemplate: TaskNode,
   model: ModelNode,
   start: StartNode,
   result: ResultNode,

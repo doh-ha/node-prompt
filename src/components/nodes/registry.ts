@@ -2,7 +2,7 @@ import { RoleNode } from "./RoleNode";
 import { OutputFormatNode } from "./OutputFormatNode";
 import { ConditionNode } from "./ConditionNode";
 import { ContextNode } from "./ContextNode";
-import { PromptTemplateNode } from "./PromptTemplateNode";
+import { TaskNode } from "./TaskNode";
 import { ModelNode } from "./ModelNode";
 import { StartNode } from "./StartNode";
 import { ResultNode } from "./ResultNode";
@@ -14,9 +14,8 @@ interface NodeMeta {
   description: string;
   icon: string;
   iconColor: string;
-  nodeBg: string;
-  defaultData: any;
   group: string;
+  contextType?: string;
 }
 
 interface NodeEntry {
@@ -35,9 +34,8 @@ export const nodesRegistry = {
       description: "AI의 역할과 전문성을 정의",
       icon: "🎭",
       iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { role: "학습 도우미", description: "", examples: [] },
-      group: "setup",
+
+      group: "context",
     },
     component: RoleNode,
     toPrompt: (d) => (d.content || d.role ? `당신은 ${d.content || d.role}입니다.` : null),
@@ -50,8 +48,7 @@ export const nodesRegistry = {
       description: "참고 자료/문헌",
       icon: "📑",
       iconColor: "#475569",
-      nodeBg: "#e0f2fe",
-      defaultData: { contextType: "reference", content: "" },
+      contextType: "reference",
       group: "input",
     },
     component: ContextNode,
@@ -64,41 +61,13 @@ export const nodesRegistry = {
       description: "출력 형식 및 구조 정의",
       icon: "💬",
       iconColor: "#059669",
-      nodeBg: "#ecfdf5",
-      defaultData: { format: "text", structure: "" },
+
       group: "output",
     },
     component: OutputFormatNode,
     toPrompt: (d) => (d.format ? `응답 형식: ${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
   },
-  condition: {
-    type: "condition",
-    meta: {
-      name: "Condition",
-      description: "조건/규칙",
-      icon: "⚡",
-      iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { condition: "", operator: "equals", value: "" },
-      group: "constraints",
-    },
-    component: ConditionNode,
-    toPrompt: (d) => (d.condition ? `조건: ${d.condition} ${d.operator} ${d.value}` : null),
-  },
-  context: {
-    type: "context",
-    meta: {
-      name: "Context",
-      description: "컨텍스트 정보",
-      icon: "📚",
-      iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { contextType: "background", content: "" },
-      group: "constraints",
-    },
-    component: ContextNode,
-    toPrompt: (d) => (d.content ? d.content : null),
-  },
+
   // 추가 컨텍스트: Audience
   audience: {
     // TS 키는 NodeTypeKey가 아니므로 레지스트리 빌드시 캐스팅해주기 위해 임시로 as any 처리
@@ -109,9 +78,8 @@ export const nodesRegistry = {
       description: "대상 사용자(학습자)",
       icon: "🧑‍🎓",
       iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { contextType: "audience", content: "" },
-      group: "setup",
+      contextType: "audience",
+      group: "context",
     },
     component: ContextNode,
     toPrompt: (d: any) => (d.content ? `대상: ${d.content}` : null),
@@ -124,14 +92,29 @@ export const nodesRegistry = {
       description: "문체/톤/말투",
       icon: "🎨",
       iconColor: "#7c3aed",
-      iconBg: "transparent",
-      nodeBg: "#f5f3ff",
-      defaultData: { contextType: "style", content: "" },
-      group: "constraints",
+      contextType: "style",
+      group: "context",
     },
     component: ContextNode,
     toPrompt: (d: any) => (d.content ? `스타일: ${d.content}` : null),
   },
+
+  // 누락 컨텍스트: Length
+  length: {
+    type: "context" as any,
+    meta: {
+      name: "Length",
+      description: "길이",
+      icon: "📏",
+      iconColor: "#7c3aed",
+      nodeBg: "#f5f3ff",
+      contextType: "length",
+      group: "output",
+    },
+    component: ContextNode,
+    toPrompt: (d: any) => (d.content ? `길이: ${d.content}` : null),
+  },
+
   // 추가 컨텍스트: Example
   example: {
     type: "context" as any,
@@ -140,8 +123,7 @@ export const nodesRegistry = {
       description: "예시/샘플",
       icon: "💡",
       iconColor: "#0ea5e9",
-      nodeBg: "#e0f2fe",
-      defaultData: { contextType: "example", content: "" },
+      contextType: "example",
       group: "input",
     },
     component: ContextNode,
@@ -155,8 +137,7 @@ export const nodesRegistry = {
       description: "자유 텍스트 입력",
       icon: "✍️",
       iconColor: "#111827",
-      nodeBg: "#e0f2fe",
-      defaultData: { contextType: "text", content: "" },
+      contextType: "text",
       group: "input",
     },
     component: ContextNode,
@@ -169,11 +150,10 @@ export const nodesRegistry = {
       description: "프롬프트 템플릿",
       icon: "📝",
       iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { template: "", variables: [] },
-      group: "setup",
+
+      group: "context",
     },
-    component: PromptTemplateNode,
+    component: TaskNode,
     toPrompt: (d) => d.content || d.template || null,
   },
   model: {
@@ -183,9 +163,8 @@ export const nodesRegistry = {
       description: "AI 모델 설정",
       icon: "🤖",
       iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      defaultData: { model: "gpt-3.5-turbo", temperature: 0.7, maxTokens: 1000 },
-      group: "model",
+
+      group: "context",
     },
     component: ModelNode,
   },
@@ -197,10 +176,8 @@ export const nodesRegistry = {
       description: "플로우 시작",
       icon: "▶️",
       iconColor: "#16a34a",
-      iconBg: "transparent",
-      nodeBg: "#f5f3ff",
-      defaultData: { content: "" },
-      group: "setup",
+
+      group: "input",
     },
     component: StartNode,
   },
@@ -212,8 +189,7 @@ export const nodesRegistry = {
       description: "최종 결과",
       icon: "🏁",
       iconColor: "#059669",
-      nodeBg: "#ecfdf5",
-      defaultData: { content: "" },
+
       group: "output",
     },
     component: ResultNode,
@@ -227,9 +203,10 @@ export const nodeComponents = Object.fromEntries(
 ) as Record<NodeTypeKey, any>;
 
 export const groupedTemplates = Object.values(nodesRegistry).reduce(
-  (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; nodeBg: string; defaultData: any }> }[], entry) => {
+  (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; nodeBg: string; defaultData?: any }> }[], entry) => {
     const original = entry.meta.group;
-    const mappedTitle = original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "Model";
+    const mappedTitle = original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
+    const GROUP_BG: Record<string, string> = { INPUT: "#e0f2fe", OUTPUT: "#ecfdf5", CONTEXT: "#f5f3ff" };
     let group = acc.find((g) => g.title === mappedTitle);
     if (!group) {
       group = { title: mappedTitle, items: [] };
@@ -242,8 +219,7 @@ export const groupedTemplates = Object.values(nodesRegistry).reduce(
       icon: entry.meta.icon,
       iconColor: entry.meta.iconColor,
       iconBg: undefined as any,
-      nodeBg: entry.meta.nodeBg,
-      defaultData: entry.meta.defaultData,
+      nodeBg: GROUP_BG[mappedTitle],
     });
     return acc;
   },

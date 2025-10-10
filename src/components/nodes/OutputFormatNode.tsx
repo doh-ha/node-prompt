@@ -1,7 +1,7 @@
 import React from "react";
 import { NodeInput } from "../../styles/nodeStyles";
 import { NodeShell } from "./NodeShell";
-import { formatLabels } from "../../data/nodeTemplates";
+import { formatLabels } from "../../constants/labels";
 
 interface OutputFormatNodeProps {
   data: {

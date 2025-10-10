@@ -20,7 +20,6 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
               style={{ background: template.nodeBg, borderRadius: 8 }}
               onDragStart={(e) => {
                 onDragStart(e, template.type, {
-                  ...template.defaultData,
                   label: template.name,
                   name: template.name,
                   icon: template.icon,

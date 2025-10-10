@@ -1,7 +1,7 @@
 import React from "react";
 import { NodeInput } from "../../styles/nodeStyles";
 import { NodeShell } from "./NodeShell";
-import { contextLabels } from "../../data/nodeTemplates";
+import { contextLabels } from "../../constants/labels";
 
 interface ContextNodeProps {
   data: {
