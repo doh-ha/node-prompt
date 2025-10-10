@@ -1,22 +1,25 @@
 import React from "react";
-import { NodeShell } from "./NodeShell";
-import { NodeInput } from "../../styles/nodeStyles";
+import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeShell } from "../NodeShell";
 
-interface ResultNodeProps {
+interface RoleNodeProps {
   data: {
+    role: string;
+    description: string;
+    examples: string[];
+    content?: string;
+    onContentChange?: (content: string) => void;
+    onDeleteNode?: (id: string) => void;
     label?: string;
     icon?: string;
     iconBg?: string;
     iconColor?: string;
-    content?: string;
-    onContentChange?: (content: string) => void;
-    onDeleteNode?: (id: string) => void;
   };
   selected?: boolean;
   id?: string;
 }
 
-export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) => {
+export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
   const headerTitle = (data as any).label;
   const headerIcon = (data as any).icon;
   return (
@@ -25,14 +28,18 @@ export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) =>
       selected={selected}
       title={headerTitle}
       icon={headerIcon}
-      iconColor={data.iconColor || "#0ea5e9"}
+      iconColor={(data as any).iconColor}
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput
-        placeholder="결과 설명/출력 요약을 입력하세요..."
+        placeholder="역할 내용을 입력하세요..."
         defaultValue={data.content || ""}
-        onBlur={(e) => data.onContentChange?.(e.target.value)}
+        onBlur={(e) => {
+          if (data.onContentChange) {
+            data.onContentChange(e.target.value);
+          }
+        }}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

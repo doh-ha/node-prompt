@@ -1,13 +1,14 @@
 import React from "react";
-import { NodeInput } from "../../styles/nodeStyles";
-import { NodeShell } from "./NodeShell";
-import { formatLabels } from "../../constants/labels";
+import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeShell } from "../NodeShell";
 
-interface OutputFormatNodeProps {
+interface LengthNodeProps {
   data: {
-    format: string;
-    structure?: string;
-    content?: string;
+    content: string;
+    label?: string;
+    icon?: string;
+    iconColor?: string;
+    nodeBg?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
   };
@@ -15,21 +16,19 @@ interface OutputFormatNodeProps {
   id?: string;
 }
 
-export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
+export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) => {
   return (
     <NodeShell
       id={id}
       selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
-      iconColor={(data as any).iconColor}
-      bg={(data as any).nodeBg}
+      title={data.label || "Length"}
+      icon={data.icon || "📏"}
+      iconColor={data.iconColor || "#7c3aed"}
+      bg={data.nodeBg || "#ecfdf5"}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput
-        placeholder="출력 형식 내용을 입력하세요..."
+        placeholder="권장 길이를 입력하세요..."
         defaultValue={data.content || ""}
         onBlur={(e) => {
           if (data.onContentChange) {

@@ -1,14 +1,14 @@
 import React from "react";
-import { NodeInput } from "../../styles/nodeStyles";
-import { NodeShell } from "./NodeShell";
-import { operatorLabels } from "../../constants/labels";
+import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeShell } from "../NodeShell";
 
-interface ConditionNodeProps {
+interface AudienceNodeProps {
   data: {
-    condition: string;
-    operator: string;
-    value: string;
-    content?: string;
+    content: string;
+    label?: string;
+    icon?: string;
+    iconColor?: string;
+    nodeBg?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
   };
@@ -16,21 +16,19 @@ interface ConditionNodeProps {
   id?: string;
 }
 
-export const ConditionNode: React.FC<ConditionNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
+export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }) => {
   return (
     <NodeShell
       id={id}
       selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
-      iconColor={(data as any).iconColor}
-      bg={(data as any).nodeBg}
+      title={data.label || "Audience"}
+      icon={data.icon || "🧑‍🎓"}
+      iconColor={data.iconColor || "#7c3aed"}
+      bg={data.nodeBg || "#f5f3ff"}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput
-        placeholder="조건 내용을 입력하세요..."
+        placeholder="대상 사용자(학습자)를 입력하세요..."
         defaultValue={data.content || ""}
         onBlur={(e) => {
           if (data.onContentChange) {

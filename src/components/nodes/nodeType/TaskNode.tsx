@@ -1,25 +1,20 @@
 import React from "react";
-import { NodeInput } from "../../styles/nodeStyles";
-import { NodeShell } from "./NodeShell";
+import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeShell } from "../NodeShell";
 
-interface RoleNodeProps {
+interface TaskNodeProps {
   data: {
-    role: string;
-    description: string;
-    examples: string[];
+    template: string;
+    variables: string[];
     content?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
-    label?: string;
-    icon?: string;
-    iconBg?: string;
-    iconColor?: string;
   };
   selected?: boolean;
   id?: string;
 }
 
-export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
+export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
   const headerTitle = (data as any).label;
   const headerIcon = (data as any).icon;
   return (
@@ -33,13 +28,9 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput
-        placeholder="역할 내용을 입력하세요..."
+        placeholder="수행할 작업(지시문)을 입력하세요..."
         defaultValue={data.content || ""}
-        onBlur={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
+        onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

@@ -1,13 +1,17 @@
-import { RoleNode } from "./RoleNode";
-import { OutputFormatNode } from "./OutputFormatNode";
-import { ConditionNode } from "./ConditionNode";
-import { ContextNode } from "./ContextNode";
-import { TaskNode } from "./TaskNode";
-import { ModelNode } from "./ModelNode";
-import { StartNode } from "./StartNode";
-import { ResultNode } from "./ResultNode";
+import { RoleNode } from "./nodeType/RoleNode";
+import { OutputFormatNode } from "./nodeType/OutputFormatNode";
+import { TaskNode } from "./nodeType/TaskNode";
+import { ModelNode } from "./nodeType/ModelNode";
+import { StartNode } from "./nodeType/StartNode";
+import { ResultNode } from "./nodeType/ResultNode";
+import { ReferenceNode } from "./nodeType/ReferenceNode";
+import { AudienceNode } from "./nodeType/AudienceNode";
+import { StyleNode } from "./nodeType/StyleNode";
+import { TextNode } from "./nodeType/TextNode";
+import { ExampleNode } from "./nodeType/ExampleNode";
+import { LengthNode } from "./nodeType/LengthNode";
 
-type NodeTypeKey = "role" | "outputFormat" | "condition" | "context" | "promptTemplate" | "model";
+type NodeTypeKey = "role" | "outputFormat" | "context" | "promptTemplate" | "model" | "reference" | "audience" | "style" | "text" | "example" | "length" | "start" | "result";
 
 interface NodeMeta {
   name: string;
@@ -42,16 +46,15 @@ export const nodesRegistry = {
   },
   // 추가 컨텍스트: Reference
   reference: {
-    type: "context" as any,
+    type: "reference",
     meta: {
       name: "Reference",
       description: "참고 자료/문헌",
       icon: "📑",
       iconColor: "#475569",
-      contextType: "reference",
       group: "input",
     },
-    component: ContextNode,
+    component: ReferenceNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요:\n${d.content}` : null),
   },
   outputFormat: {
@@ -67,94 +70,72 @@ export const nodesRegistry = {
     component: OutputFormatNode,
     toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
   },
-  // 내부용: generic context 노드 타입 매핑 (라이브러리에는 노출하지 않음)
-  context: {
-    type: "context" as any,
-    meta: {
-      name: "Context",
-      description: "internal generic context",
-      icon: "📚",
-      iconColor: "#7c3aed",
-      contextType: "background",
-      group: "context",
-    },
-    component: ContextNode,
-    toPrompt: (d: any) => (d?.content ? d.content : null),
-  },
 
   // 추가 컨텍스트: Audience
   audience: {
-    // TS 키는 NodeTypeKey가 아니므로 레지스트리 빌드시 캐스팅해주기 위해 임시로 as any 처리
-    // 런타임에서는 groupedTemplates로만 사용되며 ReactFlow type은 'context'로 생성됨
-    type: "context" as any,
+    type: "audience",
     meta: {
       name: "Audience",
       description: "대상 사용자(학습자)",
       icon: "🧑‍🎓",
       iconColor: "#7c3aed",
-      contextType: "audience",
       group: "context",
     },
-    component: ContextNode,
+    component: AudienceNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n당신의 주요 독자(청중)는 ${d.content} 입니다.` : null),
   },
   // 추가 컨텍스트: Style
   style: {
-    type: "context" as any,
+    type: "style",
     meta: {
       name: "Style",
       description: "문체/톤/말투",
       icon: "🎨",
       iconColor: "#7c3aed",
-      contextType: "style",
       group: "context",
     },
-    component: ContextNode,
+    component: StyleNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n답변은 ${d.content} 스타일로 작성하세요.` : null),
   },
 
   // 누락 컨텍스트: Length
   length: {
-    type: "context" as any,
+    type: "length",
     meta: {
       name: "Length",
       description: "길이",
       icon: "📏",
       iconColor: "#7c3aed",
-      nodeBg: "#f5f3ff",
-      contextType: "length",
       group: "output",
     },
-    component: ContextNode,
+    component: LengthNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n권장 길이: ${d.content}` : null),
   },
 
   // 추가 컨텍스트: Example
   example: {
-    type: "context" as any,
+    type: "example",
     meta: {
       name: "Example",
       description: "예시/샘플",
       icon: "💡",
       iconColor: "#0ea5e9",
-      contextType: "example",
       group: "input",
     },
-    component: ContextNode,
+    component: ExampleNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n다음은 참고할 수 있는 예시입니다:\n${d.content}` : null),
   },
   // 입력용 자유 텍스트
   text: {
-    type: "context" as any,
+    type: "text",
     meta: {
       name: "Text",
       description: "자유 텍스트 입력",
       icon: "✍️",
       iconColor: "#111827",
-      contextType: "text",
       group: "input",
     },
-    component: ContextNode,
+    component: TextNode,
     toPrompt: (d: any) => (d.content ? d.content : null),
   },
   promptTemplate: {
@@ -184,26 +165,24 @@ export const nodesRegistry = {
   },
   // 연결 흐름용 시작 노드
   start: {
-    type: "context" as any,
+    type: "start",
     meta: {
       name: "Start",
       description: "플로우 시작",
       icon: "▶️",
       iconColor: "#16a34a",
-
       group: "input",
     },
     component: StartNode,
   },
   // 연결 흐름용 결과 노드
   result: {
-    type: "context" as any,
+    type: "result",
     meta: {
       name: "Result",
       description: "최종 결과",
       icon: "🏁",
       iconColor: "#059669",
-
       group: "output",
     },
     component: ResultNode,
@@ -212,8 +191,8 @@ export const nodesRegistry = {
 
 export const nodeComponents = Object.fromEntries(
   Object.entries(nodesRegistry)
-    .filter(([k]) => (["role", "outputFormat", "condition", "context", "promptTemplate", "model"] as const).includes(k as any))
-    .map(([k, v]) => [k, v.component])
+    .filter(([k]) => (["role", "outputFormat", "context", "promptTemplate", "model", "reference", "audience", "style", "text", "example", "length", "start", "result"] as const).includes(k as any))
+    .map(([k, v]) => [v.type, v.component])
 ) as Record<NodeTypeKey, any>;
 
 export const groupedTemplates = Object.values(nodesRegistry).reduce(

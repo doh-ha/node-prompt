@@ -1,6 +1,6 @@
 import React from "react";
-import { NodeInput } from "../../styles/nodeStyles";
-import { NodeShell } from "./NodeShell";
+import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeShell } from "../NodeShell";
 
 interface ModelNodeProps {
   data: {
