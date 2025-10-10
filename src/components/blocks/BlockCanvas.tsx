@@ -38,6 +38,8 @@ const BlockCard = styled.div<{ selected: boolean; color: string }>`
   border-radius: 10px;
   padding: 10px 12px 14px 12px;
   min-height: 56px;
+  min-width: 280px;
+  width: max-content;
   cursor: grab;
   user-select: none;
   color: #0b1020;
@@ -89,14 +91,15 @@ const BlockBody = styled.div`
 const BlockInput = styled.textarea`
   width: 100%;
   min-height: 40px;
-  margin-top: 8px;
-  padding: 8px;
+  margin: 8px 0 0 0;
+  padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
   resize: vertical;
   background: rgba(255, 255, 255, 0.8);
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
