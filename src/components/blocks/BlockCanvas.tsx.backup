@@ -236,7 +236,7 @@ export const BlockCanvas: React.FC<BlockCanvasProps> = ({ blocks, onChange }) =>
               <BlockHeader draggable onDragStart={onBlockDragStart(b.id, b.x, b.y)} onDragEnd={onBlockDragEnd(b.id)}>
                 <span>{b.label}</span>
                 <DeleteBtn onMouseDown={(e) => e.stopPropagation()} onClick={() => removeBlock(b.id)} draggable={false}>
-                  삭제
+                  X
                 </DeleteBtn>
               </BlockHeader>
               <BlockBody>

@@ -48,6 +48,26 @@ const NodeContent = styled.div`
   color: #6b7280;
 `;
 
+const NodeInput = styled.textarea`
+  width: 100%;
+  min-height: 30px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+  }
+`;
+
 const DeleteButton = styled.button`
   position: absolute;
   right: 0;
@@ -79,7 +99,7 @@ export const RoleNode: React.FC<{ data: any; selected?: boolean; id?: string }> 
         역할 정의
         {selected && (
           <DeleteButton onClick={() => data?.onDeleteNode?.(id)} title="삭제">
-            🗑️
+            X
           </DeleteButton>
         )}
       </NodeHeader>
@@ -88,6 +108,17 @@ export const RoleNode: React.FC<{ data: any; selected?: boolean; id?: string }> 
           <strong>{data.role}</strong>
         </div>
         <div>{data.description}</div>
+        <NodeInput
+          placeholder="역할 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>
@@ -121,6 +152,17 @@ export const OutputFormatNode: React.FC<{ data: any; selected?: boolean; id?: st
           <strong>{formatLabels[data.format] || data.format}</strong>
         </div>
         {data.structure && <div>구조: {data.structure}</div>}
+        <NodeInput
+          placeholder="출력 형식 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>
@@ -156,6 +198,17 @@ export const ConditionNode: React.FC<{ data: any; selected?: boolean; id?: strin
         <div>
           {operatorLabels[data.operator]} {data.value}
         </div>
+        <NodeInput
+          placeholder="조건 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>
@@ -188,6 +241,17 @@ export const ContextNode: React.FC<{ data: any; selected?: boolean; id?: string 
           <strong>{contextLabels[data.contextType] || data.contextType}</strong>
         </div>
         <div>{data.content}</div>
+        <NodeInput
+          placeholder="컨텍스트 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>
@@ -211,6 +275,17 @@ export const PromptTemplateNode: React.FC<{ data: any; selected?: boolean; id?: 
       <NodeContent>
         <div style={{ maxHeight: "60px", overflow: "hidden" }}>{data.template.substring(0, 100)}...</div>
         <div style={{ fontSize: "12px", marginTop: "4px" }}>변수: {data.variables.join(", ")}</div>
+        <NodeInput
+          placeholder="프롬프트 템플릿 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>
@@ -237,6 +312,17 @@ export const ModelNode: React.FC<{ data: any; selected?: boolean; id?: string }>
         </div>
         <div>온도: {data.temperature}</div>
         <div>최대 토큰: {data.maxTokens}</div>
+        <NodeInput
+          placeholder="모델 설정 내용을 입력하세요..."
+          value={data.content || ""}
+          onChange={(e) => {
+            if (data.onContentChange) {
+              data.onContentChange(e.target.value);
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeContent>
       <Handle type="source" position={Position.Bottom} />
     </NodeContainer>

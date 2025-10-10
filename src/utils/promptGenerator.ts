@@ -23,7 +23,7 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
   // 역할 노드 처리
   if (nodesByType.role && nodesByType.role.length > 0) {
     const roleNode = nodesByType.role[0];
-    components.role = roleNode.data.role;
+    components.role = roleNode.data.content || roleNode.data.role || "AI 어시스턴트";
   }
 
   // 컨텍스트 노드들 처리
@@ -32,21 +32,38 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
       const contextType = contextNode.data.contextType;
       const content = contextNode.data.content;
 
-      switch (contextType) {
-        case "subject":
-          components.context.push(`주제: ${content}`);
-          break;
-        case "level":
-          components.context.push(`수준: ${content}`);
-          break;
-        case "style":
-          components.context.push(`스타일: ${content}`);
-          break;
-        case "constraints":
-          components.context.push(`제약사항: ${content}`);
-          break;
-        default:
-          components.context.push(content);
+      if (content) {
+        switch (contextType) {
+          case "subject":
+            components.context.push(`주제: ${content}`);
+            break;
+          case "level":
+            components.context.push(`수준: ${content}`);
+            break;
+          case "style":
+            components.context.push(`스타일: ${content}`);
+            break;
+          case "constraints":
+            components.context.push(`제약사항: ${content}`);
+            break;
+          case "background":
+            components.context.push(`배경: ${content}`);
+            break;
+          case "example":
+            components.context.push(`예시: ${content}`);
+            break;
+          case "audience":
+            components.context.push(`대상: ${content}`);
+            break;
+          case "edgeCase":
+            components.context.push(`특이사항: ${content}`);
+            break;
+          case "length":
+            components.context.push(`길이: ${content}`);
+            break;
+          default:
+            components.context.push(content);
+        }
       }
     });
   }
@@ -75,7 +92,7 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
   // 프롬프트 템플릿 노드 처리
   if (nodesByType.promptTemplate && nodesByType.promptTemplate.length > 0) {
     const templateNode = nodesByType.promptTemplate[0];
-    components.template = templateNode.data.template;
+    components.template = templateNode.data.content || templateNode.data.template;
   }
 
   // 최종 프롬프트 생성
