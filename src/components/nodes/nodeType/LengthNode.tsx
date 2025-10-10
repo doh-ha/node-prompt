@@ -18,18 +18,10 @@ interface LengthNodeProps {
 
 export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label || "Length"}
-      icon={data.icon || "📏"}
-      iconColor={data.iconColor || "#7c3aed"}
-      bg={data.nodeBg || "#ecfdf5"}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="권장 길이를 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);

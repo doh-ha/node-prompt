@@ -20,21 +20,11 @@ interface RoleNodeProps {
 }
 
 export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
-      iconColor={(data as any).iconColor}
-      bg={(data as any).nodeBg}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="역할 내용을 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);

@@ -5,7 +5,7 @@ import { NodeContainer, NodeHeader, NodeIcon, DeleteButton, NodeContent } from "
 interface NodeShellProps {
   id?: string;
   selected?: boolean;
-  title: string;
+  title?: string;
   icon?: string;
   iconColor?: string;
   bg?: string;
@@ -20,7 +20,7 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       <Handle type="target" position={Position.Top} />
       <NodeHeader>
         <NodeIcon style={iconStyle}>{icon}</NodeIcon>
-        {title}
+        {title || "Node"}
         {selected && onDelete && (
           <DeleteButton onClick={onDelete} title="삭제">
             X

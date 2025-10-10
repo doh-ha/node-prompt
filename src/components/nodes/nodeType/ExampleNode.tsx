@@ -18,18 +18,10 @@ interface ExampleNodeProps {
 
 export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label || "Example"}
-      icon={data.icon || "💡"}
-      iconColor={data.iconColor || "#0ea5e9"}
-      bg={data.nodeBg || "#e0f2fe"}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="예시나 샘플을 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);

@@ -17,14 +17,12 @@ interface ModelNodeProps {
 }
 
 export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}
       selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
+      title={(data as any).label}
+      icon={(data as any).icon}
       iconColor={(data as any).iconColor}
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}

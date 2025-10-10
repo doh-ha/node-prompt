@@ -18,18 +18,10 @@ interface TextNodeProps {
 
 export const TextNode: React.FC<TextNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label || "Text"}
-      icon={data.icon || "✍️"}
-      iconColor={data.iconColor || "#111827"}
-      bg={data.nodeBg || "#e0f2fe"}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="자유 텍스트를 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);

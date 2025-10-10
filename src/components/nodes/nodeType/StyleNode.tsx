@@ -18,18 +18,10 @@ interface StyleNodeProps {
 
 export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label || "Style"}
-      icon={data.icon || "🎨"}
-      iconColor={data.iconColor || "#7c3aed"}
-      bg={data.nodeBg || "#f5f3ff"}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
         placeholder="문체/톤/말투를 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => {
           if (data.onContentChange) {
             data.onContentChange(e.target.value);

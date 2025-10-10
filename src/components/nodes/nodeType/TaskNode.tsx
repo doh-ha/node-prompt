@@ -15,21 +15,19 @@ interface TaskNodeProps {
 }
 
 export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
   return (
     <NodeShell
       id={id}
       selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
+      title={(data as any).label}
+      icon={(data as any).icon}
       iconColor={(data as any).iconColor}
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
       <NodeInput
         placeholder="수행할 작업(지시문)을 입력하세요..."
-        defaultValue={data.content || ""}
+        defaultValue={data.content ?? ""}
         onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
