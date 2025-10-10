@@ -31,8 +31,8 @@ export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) =>
     >
       <NodeInput
         placeholder="결과 설명/출력 요약을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => data.onContentChange?.(e.target.value)}
+        defaultValue={data.content || ""}
+        onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

@@ -31,8 +31,8 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
     >
       <NodeInput
         placeholder="시작 조건/설명을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => data.onContentChange?.(e.target.value)}
+        defaultValue={data.content || ""}
+        onBlur={(e) => data.onContentChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

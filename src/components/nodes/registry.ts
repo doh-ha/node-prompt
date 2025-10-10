@@ -67,6 +67,20 @@ export const nodesRegistry = {
     component: OutputFormatNode,
     toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
   },
+  // 내부용: generic context 노드 타입 매핑 (라이브러리에는 노출하지 않음)
+  context: {
+    type: "context" as any,
+    meta: {
+      name: "Context",
+      description: "internal generic context",
+      icon: "📚",
+      iconColor: "#7c3aed",
+      contextType: "background",
+      group: "context",
+    },
+    component: ContextNode,
+    toPrompt: (d: any) => (d?.content ? d.content : null),
+  },
 
   // 추가 컨텍스트: Audience
   audience: {
