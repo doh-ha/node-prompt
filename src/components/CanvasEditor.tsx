@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
@@ -83,11 +83,24 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, content } } : node)));
   };
 
+  const handleModelChange = (nodeId: string, model: string) => {
+    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node)));
+  };
+
   const handleDeleteNode = (nodeId: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     setSelectedNodeId(null);
   };
+
+  // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
+  useEffect(() => {
+    onNodesChange(nodes);
+  }, [nodes, onNodesChange]);
+
+  useEffect(() => {
+    onEdgesChange(edges);
+  }, [edges, onEdgesChange]);
 
   const deleteSelectedNode = () => {
     if (selectedNodeId) {
@@ -146,6 +159,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   ...node.data,
                   onContentChange: (content: string) => handleNodeContentChange(node.id, content),
                   onDeleteNode: handleDeleteNode,
+                  onModelChange: (model: string) => handleModelChange(node.id, model),
                 },
               })),
             [nodes]

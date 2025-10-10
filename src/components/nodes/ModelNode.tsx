@@ -10,6 +10,7 @@ interface ModelNodeProps {
     content?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
+    onModelChange?: (model: string) => void;
   };
   selected?: boolean;
   id?: string;
@@ -28,17 +29,18 @@ export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
       iconColor={(data as any).iconColor}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
-      <NodeInput
-        placeholder="모델 설정 내용을 입력하세요..."
-        value={data.content || ""}
-        onChange={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
+      <select
+        value={data.model}
+        onChange={(e) => data.onModelChange?.(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
-      />
+        style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e5e7eb", width: "100%" }}
+      >
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+        <option value="gpt-4.1">gpt-4.1</option>
+        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+      </select>
     </NodeShell>
   );
 };

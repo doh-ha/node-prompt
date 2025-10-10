@@ -44,6 +44,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
       {activeTab === "prompt" && (
         <div>
           <PromptText>{generatedPrompt.finalPrompt}</PromptText>
+
           {!validation.isValid && (
             <div style={{ padding: "20px", color: "#dc2626", fontSize: "14px" }}>
               <strong>경고:</strong>

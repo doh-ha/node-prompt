@@ -1,7 +1,24 @@
 import { Node, Edge, GeneratedPrompt } from "../types/nodeTypes";
+import { nodesRegistry } from "../components/nodes/registry";
 
 // 노드 연결을 기반으로 프롬프트를 생성하는 함수
 export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): GeneratedPrompt => {
+  // 1) 우선 registry.toPrompt 기반으로 전역 프롬프트 조각을 생성
+  const registryFragments: string[] = [];
+  nodes.forEach((node: any) => {
+    let key = node.type as string;
+    if (key === "context" && node?.data?.contextType) {
+      key = node.data.contextType; // audience/style/example/reference 등 매핑
+    }
+    const entry: any = (nodesRegistry as any)[key];
+    if (entry && typeof entry.toPrompt === "function") {
+      const piece = entry.toPrompt(node.data);
+      if (piece && typeof piece === "string" && piece.trim()) {
+        registryFragments.push(piece.trim());
+      }
+    }
+  });
+
   const components = {
     role: "",
     context: [] as string[],
@@ -96,7 +113,14 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
   }
 
   // 최종 프롬프트 생성
-  const finalPrompt = buildFinalPrompt(components);
+  // 입력 필드 원문들을 수집해 기본 영역에 표시
+  const inputContents = nodes
+    .map((n: any) => (typeof n?.data?.content === "string" ? n.data.content.trim() : ""))
+    .filter(Boolean)
+    .join("\n");
+
+  // registry에서 생성된 조각이 있으면 이를 우선 렌더링, 없으면 기존 방식으로 구성
+  const finalPrompt = registryFragments.length > 0 ? [registryFragments.join("\n"), inputContents].filter(Boolean).join("\n\n") : buildFinalPrompt(components, inputContents);
 
   return {
     finalPrompt,
@@ -117,7 +141,7 @@ const getOperatorText = (operator: string): string => {
 };
 
 // 최종 프롬프트 구성
-const buildFinalPrompt = (components: any): string => {
+const buildFinalPrompt = (components: any, inputContents?: string): string => {
   let prompt = "";
 
   // 역할 정의
@@ -154,8 +178,12 @@ const buildFinalPrompt = (components: any): string => {
     prompt += "다음 템플릿을 사용하여 응답해주세요:\n";
     prompt += components.template;
   } else {
-    // 기본 응답 요청
-    prompt += "위의 지침에 따라 적절한 응답을 제공해주세요.";
+    // 기본 응답 요청 자리에 입력 필드 내용 표시
+    if (inputContents && inputContents.trim().length > 0) {
+      prompt += inputContents.trim();
+    } else {
+      prompt += "위의 지침에 따라 적절한 응답을 제공해주세요.";
+    }
   }
 
   return prompt.trim();
