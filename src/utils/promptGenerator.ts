@@ -56,23 +56,7 @@ export const validateWorkflow = (nodes: Node[], edges: Edge[]): { isValid: boole
     errors.push("최소한 하나의 노드를 추가해주세요.");
   }
 
-  // 역할 노드가 있는지 확인
-  const hasRoleNode = nodes.some((node) => node.type === "role");
-  if (!hasRoleNode) {
-    errors.push("역할 정의 노드를 추가해주세요.");
-  }
-
-  // 연결되지 않은 노드가 있는지 확인
-  const connectedNodeIds = new Set<string>();
-  edges.forEach((edge) => {
-    connectedNodeIds.add(edge.source);
-    connectedNodeIds.add(edge.target);
-  });
-
-  const isolatedNodes = nodes.filter((node) => !connectedNodeIds.has(node.id));
-  if (isolatedNodes.length > 1) {
-    errors.push("모든 노드를 연결해주세요.");
-  }
+  // 모든 노드는 선택사항이며 연결도 선택사항입니다
 
   return {
     isValid: errors.length === 0,

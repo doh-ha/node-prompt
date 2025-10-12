@@ -19,7 +19,7 @@ interface ReferenceNodeProps {
 }
 
 export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id }) => {
-  const [inputMode, setInputMode] = useState<"text" | "file">("text");
+  const [inputMode, setInputMode] = useState<"text" | "file">("file");
   const [fileName, setFileName] = useState<string>("");
   const [textContent, setTextContent] = useState<string>("");
   const [fileContent, setFileContent] = useState<string>("");
