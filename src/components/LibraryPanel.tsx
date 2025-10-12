@@ -48,6 +48,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
           ))}
         </div>
       ))}
+      <div style={{ height: "50px" }} />
     </PaletteContainer>
   );
 };
