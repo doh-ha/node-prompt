@@ -14,6 +14,14 @@ interface CanvasEditorProps {
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
+// 기본 엣지 스타일 (실선)
+const defaultEdgeOptions = {
+  style: {
+    strokeWidth: 2,
+    stroke: "#94a3b8",
+  },
+};
+
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange }) => {
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
@@ -220,6 +228,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             selectionRafRef.current = requestAnimationFrame(() => setSelectedIds(ids));
           }}
           nodeTypes={nodeComponents}
+          defaultEdgeOptions={defaultEdgeOptions}
           fitView
           proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"

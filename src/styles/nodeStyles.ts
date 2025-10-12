@@ -9,6 +9,7 @@ export const NodeContainer = styled.div`
   min-width: 200px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     border-color: #4f46e5;

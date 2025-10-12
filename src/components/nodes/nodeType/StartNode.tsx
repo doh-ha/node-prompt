@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Handle, Position } from "reactflow";
 import { NodeShell } from "../NodeShell";
 import { Button } from "../../ui";
 import { NodeInput } from "../../../styles/nodeStyles";
@@ -48,7 +49,7 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
   };
 
   return (
-    <div style={{ width: "180px", height: "120px" }}>
+    <div style={{ width: "180px", minHeight: "120px" }}>
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
         <NodeInput
           ref={textAreaRef}
