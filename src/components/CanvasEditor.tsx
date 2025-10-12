@@ -54,17 +54,41 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           y: event.clientY,
         });
 
+        // Start 노드인 경우 고유한 플로우 이름 생성 및 개수 제한
+        let nodeData = { ...data };
+        if (type === "start") {
+          const existingStartNodes = nodes.filter((n) => n.type === "start");
+
+          // 최대 3개 제한
+          if (existingStartNodes.length >= 5) {
+            alert("플로우는 최대 5개까지만 추가할 수 있습니다.");
+            return;
+          }
+
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+
+          let flowNumber = 1;
+          let newFlowName = `Flow ${flowNumber}`;
+
+          while (existingFlowNames.includes(newFlowName)) {
+            flowNumber++;
+            newFlowName = `Flow ${flowNumber}`;
+          }
+
+          nodeData.flowName = newFlowName;
+        }
+
         const newNode: Node = {
           id: getId(),
           type,
           position,
-          data,
+          data: nodeData,
         };
 
         setNodes((prev) => prev.concat(newNode));
       }
     },
-    [reactFlowInstance, setNodes, onNodesChange]
+    [reactFlowInstance, setNodes, onNodesChange, nodes]
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
@@ -87,6 +111,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const handleModelChange = (nodeId: string, model: string) => {
     setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node)));
+  };
+
+  const handleFlowNameChange = (nodeId: string, flowName: string) => {
+    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node)));
   };
 
   const handleDeleteNode = (nodeId: string) => {
@@ -153,30 +181,29 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       <FlowContainer>
         <ReactFlow
-          nodes={useMemo(
-            () =>
-              nodes.map((node) => {
-                // 레지스트리에서 suggestions 가져오기
-                const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
-                const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
-                const suggestions = registryEntry?.meta?.defaultSuggestions;
+          nodes={useMemo(() => {
+            return nodes.map((node) => {
+              // 레지스트리에서 suggestions 가져오기
+              const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
+              const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
+              const suggestions = registryEntry?.meta?.defaultSuggestions;
 
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    suggestions,
-                    onContentChange: (content: string) => handleNodeContentChange(node.id, content),
-                    onDeleteNode: handleDeleteNode,
-                    onModelChange: (model: string) => handleModelChange(node.id, model),
-                  },
-                  // 그룹별 배경색 적용
-                  style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
-                  type: node.type === "context" ? "context" : node.type,
-                };
-              }),
-            [nodes]
-          )}
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  suggestions,
+                  onContentChange: (content: string) => handleNodeContentChange(node.id, content),
+                  onDeleteNode: handleDeleteNode,
+                  onModelChange: (model: string) => handleModelChange(node.id, model),
+                  onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                },
+                // 그룹별 배경색 적용
+                style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
+                type: node.type === "context" ? "context" : node.type,
+              };
+            });
+          }, [nodes])}
           edges={edges}
           onNodesChange={onNodesChangeInternal}
           onEdgesChange={onEdgesChangeInternal}
