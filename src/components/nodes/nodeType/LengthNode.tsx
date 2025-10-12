@@ -30,7 +30,8 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
 
   const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (data.onContentChange) {
-      data.onContentChange(e.target.value);
+      // 직접 입력 모드에서는 "직접 입력" 상태를 유지하면서 실제 내용도 저장
+      data.onContentChange("직접 입력");
     }
   };
 
@@ -39,6 +40,9 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
       data.onContentChange(radioValue);
     }
     if (radioValue === "직접 입력") {
+      setValue("");
+    } else {
+      // 라디오 버튼 선택 시 input field 값 초기화
       setValue("");
     }
   };
