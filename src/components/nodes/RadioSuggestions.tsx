@@ -15,10 +15,10 @@ interface RadioSuggestionsProps {
 
 export const RadioSuggestions: React.FC<RadioSuggestionsProps> = ({ suggestions, selectedValue, onSelectionChange }) => {
   return (
-    <Paper variant="outlined" sx={{ p: 1, mb: 1 }}>
+    <div style={{ marginBottom: "8px" }}>
       <FormControl component="fieldset" fullWidth>
         <RadioGroup row value={selectedValue ?? ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onSelectionChange(e.target.value)} aria-label="suggestions" name="radio-suggestions">
-          <Stack direction="row" flexWrap="wrap" gap={1}>
+          <Stack direction="row" flexWrap="wrap" gap={1} sx={{ maxWidth: "300px" }}>
             {suggestions.map((s, i) => (
               <FormControlLabel
                 key={`${s}-${i}`}
@@ -28,15 +28,16 @@ export const RadioSuggestions: React.FC<RadioSuggestionsProps> = ({ suggestions,
                 sx={{
                   m: 0,
                   px: 1,
+                  backgroundColor: "white",
                   border: (theme: Theme) => `1px solid ${theme.palette.divider}`,
                   borderRadius: 1,
-                  "& .MuiFormControlLabel-label": { fontSize: 12 },
+                  "& .MuiFormControlLabel-label": { fontSize: 12, fontWeight: 700 },
                 }}
               />
             ))}
           </Stack>
         </RadioGroup>
       </FormControl>
-    </Paper>
+    </div>
   );
 };

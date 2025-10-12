@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
 import { RadioSuggestions } from "../RadioSuggestions";
 import { formatLabels } from "../../../constants/labels";
+import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
 
 interface OutputFormatNodeProps {
   data: {
@@ -18,6 +19,29 @@ interface OutputFormatNodeProps {
 }
 
 export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, selected, id }) => {
+  const [value, setValue] = useState(data.content === "직접 입력" ? "" : data.content ?? "");
+  const textAreaRef = useAutosizeTextArea(value);
+  const showInputField = data.content === "직접 입력" || (data.content && !data.suggestions?.includes(data.content));
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (data.onContentChange) {
+      data.onContentChange(e.target.value);
+    }
+  };
+
+  const handleRadioChange = (radioValue: string) => {
+    if (data.onContentChange) {
+      data.onContentChange(radioValue);
+    }
+    if (radioValue === "직접 입력") {
+      setValue("");
+    }
+  };
+
   return (
     <NodeShell
       id={id}
@@ -28,18 +52,18 @@ export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, select
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
     >
-      {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={data.suggestions} selectedValue={data.content} onSelectionChange={(value) => data.onContentChange?.(value)} />}
-      <NodeInput
-        placeholder="출력 형식 내용을 입력하세요..."
-        defaultValue={data.content ?? ""}
-        onBlur={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      />
+      {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={[...data.suggestions, "직접 입력"]} selectedValue={data.content} onSelectionChange={handleRadioChange} />}
+      {showInputField && (
+        <NodeInput
+          ref={textAreaRef}
+          placeholder="출력 형식 내용을 입력하세요..."
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
     </NodeShell>
   );
 };
