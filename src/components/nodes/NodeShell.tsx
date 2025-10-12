@@ -11,13 +11,19 @@ interface NodeShellProps {
   bg?: string;
   onDelete?: () => void;
   children?: React.ReactNode;
+  nodeType?: string;
 }
 
-export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = "#4f46e5", bg, onDelete, children }) => {
+export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = "#4f46e5", bg, onDelete, children, nodeType }) => {
   const iconStyle = { background: "transparent", color: iconColor } as React.CSSProperties;
+
+  // Start 노드는 상단 연결점 없음, Result 노드는 하단 연결점 없음
+  const showTopHandle = nodeType !== "start";
+  const showBottomHandle = nodeType !== "result";
+
   return (
     <NodeContainer className={selected ? "selected" : ""} style={bg ? { background: bg } : undefined}>
-      <Handle type="target" position={Position.Top} />
+      {showTopHandle && <Handle type="target" position={Position.Top} />}
       <NodeHeader>
         <NodeIcon style={iconStyle}>{icon}</NodeIcon>
         {title || "Node"}
@@ -28,7 +34,7 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
         )}
       </NodeHeader>
       <NodeContent>{children}</NodeContent>
-      <Handle type="source" position={Position.Bottom} />
+      {showBottomHandle && <Handle type="source" position={Position.Bottom} />}
     </NodeContainer>
   );
 };

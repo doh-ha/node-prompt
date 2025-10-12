@@ -17,7 +17,16 @@ interface ResultNodeProps {
 
 export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+    <NodeShell
+      id={id}
+      selected={selected}
+      title={data.label}
+      icon={data.icon}
+      iconColor={data.iconColor}
+      bg={(data as any).nodeBg}
+      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+      nodeType="result"
+    >
       <div
         style={{
           padding: "12px",
