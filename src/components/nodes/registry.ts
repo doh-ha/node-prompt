@@ -132,8 +132,8 @@ export const nodesRegistry = {
   text: {
     type: "text",
     meta: {
-      name: "Text",
-      description: "자유 텍스트 입력",
+      name: "Text Input",
+      description: "텍스트 입력",
       icon: "✍️",
       iconColor: "#111827",
       group: "input",

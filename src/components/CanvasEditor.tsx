@@ -14,9 +14,6 @@ interface CanvasEditorProps {
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-let id = 0;
-const getId = () => `node_${id++}`;
-
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange }) => {
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
@@ -24,6 +21,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectionRafRef = useRef<number | null>(null);
+  const nodeIdCounter = useRef(0);
+
+  const getId = useCallback(() => {
+    return `node_${Date.now()}_${nodeIdCounter.current++}`;
+  }, []);
 
   const onConnect = useCallback(
     (params: Connection) => {

@@ -1,6 +1,5 @@
 import React from "react";
 import { NodeShell } from "../NodeShell";
-import { NodeInput } from "../../../styles/nodeStyles";
 
 interface ResultNodeProps {
   data: {
@@ -19,13 +18,23 @@ interface ResultNodeProps {
 export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) => {
   return (
     <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
-      <NodeInput
-        placeholder="결과 설명/출력 요약을 입력하세요..."
-        defaultValue={data.content ?? ""}
-        onBlur={(e) => data.onContentChange?.(e.target.value)}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div
+        style={{
+          padding: "12px",
+          backgroundColor: "#f8fafc",
+          borderRadius: "6px",
+          border: "1px solid #e5e7eb",
+          marginTop: "8px",
+          minHeight: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#6b7280",
+          fontSize: "14px",
+        }}
+      >
+        {data.content || "결과가 여기에 표시됩니다"}
+      </div>
     </NodeShell>
   );
 };

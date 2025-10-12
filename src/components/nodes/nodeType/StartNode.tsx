@@ -1,6 +1,6 @@
 import React from "react";
 import { NodeShell } from "../NodeShell";
-import { NodeInput } from "../../../styles/nodeStyles";
+import { Button } from "../../ui";
 
 interface StartNodeProps {
   data: {
@@ -17,15 +17,17 @@ interface StartNodeProps {
 }
 
 export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
+  const handleStart = () => {
+    if (data.onContentChange) {
+      data.onContentChange("START");
+    }
+  };
+
   return (
     <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
-      <NodeInput
-        placeholder="시작 조건/설명을 입력하세요..."
-        defaultValue={data.content ?? ""}
-        onBlur={(e) => data.onContentChange?.(e.target.value)}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      />
+      <Button onClick={handleStart} variant="primary" size="large" style={{ width: "100%", marginTop: "8px" }}>
+        START
+      </Button>
     </NodeShell>
   );
 };
