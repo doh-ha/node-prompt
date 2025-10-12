@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
 import { Button } from "../../ui";
+import { RadioSuggestions } from "../RadioSuggestions";
 
 interface ReferenceNodeProps {
   data: {
@@ -32,6 +33,8 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
       reader.onload = (e) => {
         const content = e.target?.result as string;
         setFileContent(content);
+        // 파일 업로드 시 직접 입력 필드 비우기
+        setTextContent("");
         if (data.onContentChange) {
           data.onContentChange(content);
         }
@@ -42,8 +45,27 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
 
   const handleTextChange = (content: string) => {
     setTextContent(content);
-    if (data.onContentChange) {
+    if (inputMode === "text" && data.onContentChange) {
       data.onContentChange(content);
+    }
+  };
+
+  const handleModeChange = (mode: "text" | "file") => {
+    setInputMode(mode);
+    if (mode === "text") {
+      // 직접 입력 모드로 전환 시 파일 관련 상태 초기화
+      setFileName("");
+      setFileContent("");
+      setTextContent("");
+      if (data.onContentChange) {
+        data.onContentChange("");
+      }
+    } else {
+      // 파일 업로드 모드로 전환 시 텍스트 내용 초기화
+      setTextContent("");
+      if (data.onContentChange) {
+        data.onContentChange("");
+      }
     }
   };
 
@@ -53,19 +75,22 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
 
   return (
     <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-        <Button size="small" variant={inputMode === "file" ? "primary" : "secondary"} onClick={() => setInputMode("file")}>
-          파일 업로드
-        </Button>
-        <Button size="small" variant={inputMode === "text" ? "primary" : "secondary"} onClick={() => setInputMode("text")}>
-          직접 입력
-        </Button>
-      </div>
+      <RadioSuggestions
+        suggestions={["파일 업로드", "직접 입력"]}
+        selectedValue={inputMode === "file" ? "파일 업로드" : "직접 입력"}
+        onSelectionChange={(value) => {
+          if (value === "파일 업로드") {
+            handleModeChange("file");
+          } else {
+            handleModeChange("text");
+          }
+        }}
+      />
 
       {inputMode === "text" ? (
         <NodeInput
           placeholder="참고 자료나 문헌을 입력하세요..."
-          defaultValue={data.content ?? ""}
+          defaultValue={textContent}
           onBlur={(e) => {
             handleTextChange(e.target.value);
           }}
