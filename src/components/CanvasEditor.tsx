@@ -96,11 +96,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
   useEffect(() => {
     onNodesChange(nodes);
-  }, [nodes, onNodesChange]);
+  }, [nodes.length, onNodesChange]); // nodes.length만 의존성으로 변경
 
   useEffect(() => {
     onEdgesChange(edges);
-  }, [edges, onEdgesChange]);
+  }, [edges.length, onEdgesChange]); // edges.length만 의존성으로 변경
 
   const deleteSelectedNode = () => {
     if (selectedNodeId) {

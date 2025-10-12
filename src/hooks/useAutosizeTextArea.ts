@@ -17,5 +17,14 @@ export const useAutosizeTextArea = (value: string) => {
     }
   }, [value]);
 
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (textAreaRef.current) {
+        textAreaRef.current.style.height = "auto";
+      }
+    };
+  }, []);
+
   return textAreaRef;
 };
