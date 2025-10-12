@@ -56,7 +56,7 @@ export const nodesRegistry = {
       group: "input",
     },
     component: ReferenceNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요:\n${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요.` : null),
   },
   outputFormat: {
     type: "outputFormat",
