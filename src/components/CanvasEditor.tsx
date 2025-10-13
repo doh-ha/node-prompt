@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
@@ -217,7 +217,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"
         >
-          <Controls />
           <Background variant={BackgroundVariant.Dots} gap={40} size={1} color="#e5e7eb" />
         </ReactFlow>
       </FlowContainer>
