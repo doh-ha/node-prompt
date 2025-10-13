@@ -4,12 +4,35 @@ import { groupedTemplates } from "./nodes/registry";
 
 interface LibraryPanelProps {
   onDragStart: (event: React.DragEvent, nodeType: string, data: any) => void;
+  onClose?: () => void;
 }
 
-export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
+export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart, onClose }) => {
   return (
     <PaletteContainer>
-      <PaletteTitle>라이브러리</PaletteTitle>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <PaletteTitle style={{ margin: 0 }}>라이브러리</PaletteTitle>
+        {onClose && (
+          <div
+            onClick={onClose}
+            style={{
+              width: "0",
+              height: "0",
+              borderTop: "8px solid transparent",
+              borderBottom: "8px solid transparent",
+              borderRight: "12px solid #4f46e5",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderRightColor = "#4338ca";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderRightColor = "#4f46e5";
+            }}
+          />
+        )}
+      </div>
       {groupedTemplates.map((group, gi) => (
         <div key={gi}>
           <GroupTitle>{group.title}</GroupTitle>

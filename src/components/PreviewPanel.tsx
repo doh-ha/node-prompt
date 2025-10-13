@@ -7,9 +7,10 @@ import { nodesRegistry } from "./nodes/registry";
 interface PreviewPanelProps {
   nodes: any[];
   edges: any[];
+  onClose?: () => void;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClose }) => {
   const [selectedFlow, setSelectedFlow] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"prompt" | "test">("prompt");
   const [testInput, setTestInput] = useState("");
@@ -88,7 +89,29 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
   return (
     <PreviewContainer>
       <PreviewHeader>
-        <PreviewTitle>AI 에이전트 미리보기</PreviewTitle>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <PreviewTitle>AI 에이전트 미리보기</PreviewTitle>
+          {onClose && (
+            <div
+              onClick={onClose}
+              style={{
+                width: "0",
+                height: "0",
+                borderTop: "8px solid transparent",
+                borderBottom: "8px solid transparent",
+                borderLeft: "12px solid #4f46e5",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderLeftColor = "#4338ca";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderLeftColor = "#4f46e5";
+              }}
+            />
+          )}
+        </div>
       </PreviewHeader>
 
       {/* 플로우 선택 */}

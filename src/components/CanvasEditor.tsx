@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
-import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
+import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
-import { LibraryPanel } from "./LibraryPanel";
 import { nodeComponents, nodesRegistry } from "./nodes/registry";
 
 interface CanvasEditorProps {
@@ -169,8 +168,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   return (
     <EditorContainer>
-      <LibraryPanel onDragStart={onDragStart} />
-
       <FlowContainer>
         <ReactFlow
           nodes={useMemo(() => {
