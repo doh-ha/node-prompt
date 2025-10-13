@@ -15,12 +15,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
   const [activeTab, setActiveTab] = useState<"prompt" | "test">("prompt");
   const [testInput, setTestInput] = useState("");
   const [testResponse, setTestResponse] = useState("");
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   const { generatedPrompt, validation } = usePromptGenerator(nodes, edges);
 
   // 플로우별로 노드들을 그룹화
   const flowGroups = useMemo(() => {
-    console.log("PreviewPanel flowGroups 재계산됨");
     const groups: { [key: string]: any[] } = {};
 
     // Start 노드들을 찾아서 각각을 독립적인 플로우로 생성
@@ -66,7 +66,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
     });
 
     return groups;
-  }, [nodes.map((node) => `${node.id}-${node.data?.flowName}`).join(",")]);
+  }, [nodes, forceUpdate]);
+
+  // 노드의 flowName이 변경될 때마다 강제로 재계산
+  React.useEffect(() => {
+    setForceUpdate((prev) => prev + 1);
+  }, [nodes]);
 
   // 선택된 플로우가 없으면 첫 번째 플로우를 자동 선택
   React.useEffect(() => {
