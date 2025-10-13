@@ -20,6 +20,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
 
   // 플로우별로 노드들을 그룹화
   const flowGroups = useMemo(() => {
+    console.log("PreviewPanel flowGroups 재계산됨");
     const groups: { [key: string]: any[] } = {};
 
     // Start 노드들을 찾아서 각각을 독립적인 플로우로 생성
@@ -65,13 +66,18 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
     });
 
     return groups;
-  }, [nodes]);
+  }, [nodes.map((node) => `${node.id}-${node.data?.flowName}`).join(",")]);
 
   // 선택된 플로우가 없으면 첫 번째 플로우를 자동 선택
   React.useEffect(() => {
     const flowNames = Object.keys(flowGroups);
     if (flowNames.length > 0 && !selectedFlow) {
       setSelectedFlow(flowNames[0]);
+    }
+
+    // 현재 선택된 플로우가 더 이상 존재하지 않으면 첫 번째 플로우로 변경
+    if (selectedFlow && !flowNames.includes(selectedFlow)) {
+      setSelectedFlow(flowNames[0] || "");
     }
   }, [flowGroups, selectedFlow]);
 

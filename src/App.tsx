@@ -110,7 +110,7 @@ function App() {
               textOrientation: "mixed",
             }}
           >
-            프리뷰
+            미리보기
           </div>
         )}
       </AppContainer>

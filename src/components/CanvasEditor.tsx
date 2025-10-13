@@ -121,6 +121,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
 
   const handleFlowNameChange = (nodeId: string, flowName: string) => {
+    console.log("CanvasEditor handleFlowNameChange 호출됨:", nodeId, flowName);
     setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node)));
   };
 

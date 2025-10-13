@@ -39,10 +39,17 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
   };
 
   const handleFlowNameChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFlowName(e.target.value);
+    const newFlowName = e.target.value;
+    setFlowName(newFlowName);
+
+    // 실시간으로 부모 컴포넌트에 변경사항 전달
+    if (data.onFlowNameChange) {
+      data.onFlowNameChange(newFlowName);
+    }
   };
 
   const handleFlowNameBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    console.log("StartNode onBlur 호출됨:", e.target.value);
     if (data.onFlowNameChange) {
       data.onFlowNameChange(e.target.value);
     }
