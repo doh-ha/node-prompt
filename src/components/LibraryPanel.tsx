@@ -13,24 +13,33 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart, onClose
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <PaletteTitle style={{ margin: 0 }}>라이브러리</PaletteTitle>
         {onClose && (
-          <div
+          <button
             onClick={onClose}
             style={{
-              width: "0",
-              height: "0",
-              borderTop: "8px solid transparent",
-              borderBottom: "8px solid transparent",
-              borderRight: "12px solid #4f46e5",
+              background: "none",
+              border: "none",
               cursor: "pointer",
+              padding: "4px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               transition: "all 0.2s ease",
+              color: "#6b7280",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderRightColor = "#4338ca";
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.color = "#374151";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderRightColor = "#4f46e5";
+              e.currentTarget.style.background = "none";
+              e.currentTarget.style.color = "#6b7280";
             }}
-          />
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         )}
       </div>
       {groupedTemplates.map((group, gi) => (
