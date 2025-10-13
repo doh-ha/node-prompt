@@ -60,3 +60,12 @@ body {
 .react-flow__background {
   background-color: #f8fafc;
 }
+
+/* ReactFlow 성능 최적화 */
+.react-flow__renderer {
+  contain: layout size style;
+}
+
+.react-flow__viewport {
+  contain: layout size style;
+}

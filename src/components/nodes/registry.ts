@@ -11,7 +11,7 @@ import { TextNode } from "./nodeType/TextNode";
 import { ExampleNode } from "./nodeType/ExampleNode";
 import { LengthNode } from "./nodeType/LengthNode";
 
-type NodeTypeKey = "role" | "outputFormat" | "context" | "promptTemplate" | "model" | "reference" | "audience" | "style" | "text" | "example" | "length" | "start" | "result";
+type NodeTypeKey = "role" | "format" | "context" | "promptTemplate" | "model" | "reference" | "audience" | "style" | "text" | "example" | "length" | "start" | "result";
 
 interface NodeMeta {
   name: string;
@@ -20,6 +20,7 @@ interface NodeMeta {
   iconColor: string;
   group: string;
   contextType?: string;
+  defaultSuggestions?: string[];
 }
 
 interface NodeEntry {
@@ -35,7 +36,7 @@ export const nodesRegistry = {
     type: "role",
     meta: {
       name: "Role",
-      description: "AI의 역할과 전문성을 정의",
+      description: "AI의 역할을 정의",
       icon: "🎭",
       iconColor: "#7c3aed",
 
@@ -55,17 +56,17 @@ export const nodesRegistry = {
       group: "input",
     },
     component: ReferenceNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요:\n${d.content}` : null),
+    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요.` : null),
   },
-  outputFormat: {
-    type: "outputFormat",
+  format: {
+    type: "format",
     meta: {
       name: "Format",
       description: "출력 형식 및 구조 정의",
       icon: "💬",
       iconColor: "#059669",
-
       group: "output",
+      defaultSuggestions: ["자유 형식", "목록 형식", "표 형식", "단계별 형식"],
     },
     component: OutputFormatNode,
     toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
@@ -93,6 +94,7 @@ export const nodesRegistry = {
       icon: "🎨",
       iconColor: "#7c3aed",
       group: "context",
+      defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
     component: StyleNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n답변은 ${d.content} 스타일로 작성하세요.` : null),
@@ -107,6 +109,7 @@ export const nodesRegistry = {
       icon: "📏",
       iconColor: "#7c3aed",
       group: "output",
+      defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n권장 길이: ${d.content}` : null),
@@ -117,7 +120,7 @@ export const nodesRegistry = {
     type: "example",
     meta: {
       name: "Example",
-      description: "예시/샘플",
+      description: "예시",
       icon: "💡",
       iconColor: "#0ea5e9",
       group: "input",
@@ -129,8 +132,8 @@ export const nodesRegistry = {
   text: {
     type: "text",
     meta: {
-      name: "Text",
-      description: "자유 텍스트 입력",
+      name: "Text Input",
+      description: "텍스트 입력",
       icon: "✍️",
       iconColor: "#111827",
       group: "input",
@@ -159,7 +162,7 @@ export const nodesRegistry = {
       icon: "🤖",
       iconColor: "#7c3aed",
 
-      group: "context",
+      group: "flow",
     },
     component: ModelNode,
   },
@@ -171,7 +174,7 @@ export const nodesRegistry = {
       description: "플로우 시작",
       icon: "▶️",
       iconColor: "#16a34a",
-      group: "input",
+      group: "flow",
     },
     component: StartNode,
   },
@@ -183,7 +186,7 @@ export const nodesRegistry = {
       description: "최종 결과",
       icon: "🏁",
       iconColor: "#059669",
-      group: "output",
+      group: "flow",
     },
     component: ResultNode,
   },
@@ -195,26 +198,59 @@ export const nodeComponents = Object.fromEntries(
     .map(([k, v]) => [v.type, v.component])
 ) as Record<NodeTypeKey, any>;
 
-export const groupedTemplates = Object.values(nodesRegistry).reduce(
-  (acc: { title: string; items: Array<{ type: any; name: string; description: string; icon: string; iconColor: string; iconBg: string; nodeBg: string; defaultData?: any }> }[], entry) => {
-    const original = entry.meta.group;
-    const mappedTitle = original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
-    const GROUP_BG: Record<string, string> = { INPUT: "#e0f2fe", OUTPUT: "#ecfdf5", CONTEXT: "#f5f3ff" };
-    let group = acc.find((g) => g.title === mappedTitle);
-    if (!group) {
-      group = { title: mappedTitle, items: [] };
-      acc.push(group);
-    }
-    group.items.push({
-      type: entry.type,
-      name: entry.meta.name,
-      description: entry.meta.description,
-      icon: entry.meta.icon,
-      iconColor: entry.meta.iconColor,
-      iconBg: undefined as any,
-      nodeBg: GROUP_BG[mappedTitle],
-    });
-    return acc;
-  },
-  []
-);
+// 그룹별로 명시적으로 정의
+const GROUP_CONFIG = {
+  FLOW: { title: "FLOW", bg: "#fef3c7", order: 0 },
+  INPUT: { title: "INPUT", bg: "#e0f2fe", order: 1 },
+  CONTEXT: { title: "CONTEXT", bg: "#f5f3ff", order: 2 },
+  OUTPUT: { title: "OUTPUT", bg: "#ecfdf5", order: 3 },
+};
+
+// 각 그룹별 노드 순서 정의
+const NODE_ORDERS = {
+  FLOW: { start: 0, model: 1, result: 2 },
+  INPUT: { text: 0, reference: 1, example: 2 },
+  CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
+  OUTPUT: { outputFormat: 0, length: 1 },
+};
+
+export const groupedTemplates = Object.entries(GROUP_CONFIG)
+  .sort(([, a], [, b]) => a.order - b.order)
+  .map(([groupKey, config]) => {
+    const items = Object.values(nodesRegistry)
+      .filter((entry) => {
+        const original = entry.meta.group;
+        const mappedTitle = original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
+        return mappedTitle === groupKey;
+      })
+      .map((entry) => ({
+        type: entry.type,
+        name: entry.meta.name,
+        description: entry.meta.description,
+        icon: entry.meta.icon,
+        iconColor: entry.meta.iconColor,
+        iconBg: undefined as any,
+        nodeBg: config.bg,
+      }))
+      .sort((a, b) => {
+        // 각 그룹별로 정의된 순서 사용
+        const nodeOrder = NODE_ORDERS[groupKey as keyof typeof NODE_ORDERS];
+        if (nodeOrder) {
+          const aOrder = (nodeOrder as any)[a.type];
+          const bOrder = (nodeOrder as any)[b.type];
+
+          // 정의되지 않은 노드는 맨 뒤로
+          if (aOrder === undefined && bOrder === undefined) return 0;
+          if (aOrder === undefined) return 1;
+          if (bOrder === undefined) return -1;
+
+          return aOrder - bOrder;
+        }
+        return 0; // 순서가 정의되지 않은 경우 기존 순서 유지
+      });
+
+    return {
+      title: config.title,
+      items,
+    };
+  });

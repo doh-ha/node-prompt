@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
+import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
 
 interface TextNodeProps {
   data: {
@@ -17,24 +18,27 @@ interface TextNodeProps {
 }
 
 export const TextNode: React.FC<TextNodeProps> = ({ data, selected, id }) => {
+  const [value, setValue] = useState(data.content ?? "");
+  const textAreaRef = useAutosizeTextArea(value);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (data.onContentChange) {
+      data.onContentChange(e.target.value);
+    }
+  };
+
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label || "Text"}
-      icon={data.icon || "✍️"}
-      iconColor={data.iconColor || "#111827"}
-      bg={data.nodeBg || "#e0f2fe"}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
+        ref={textAreaRef}
         placeholder="자유 텍스트를 입력하세요..."
-        defaultValue={data.content || ""}
-        onBlur={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

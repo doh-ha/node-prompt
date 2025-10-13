@@ -9,6 +9,7 @@ export const NodeContainer = styled.div`
   min-width: 200px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     border-color: #4f46e5;
@@ -53,15 +54,17 @@ export const NodeContent = styled.div`
 export const NodeInput = styled.textarea`
   width: 100%;
   min-height: 30px;
+  max-height: 100px;
   margin-top: 8px;
   padding: 6px 8px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: 12px;
   font-family: inherit;
-  resize: vertical;
   background: rgba(255, 255, 255, 0.9);
   box-sizing: border-box;
+  overflow-y: auto;
+  resize: none;
 
   &:focus {
     outline: none;

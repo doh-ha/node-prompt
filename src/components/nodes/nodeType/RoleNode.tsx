@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
+import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
 
 interface RoleNodeProps {
   data: {
@@ -20,26 +21,27 @@ interface RoleNodeProps {
 }
 
 export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
-  const headerTitle = (data as any).label;
-  const headerIcon = (data as any).icon;
+  const [value, setValue] = useState(data.content ?? "");
+  const textAreaRef = useAutosizeTextArea(value);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (data.onContentChange) {
+      data.onContentChange(e.target.value);
+    }
+  };
+
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={headerTitle}
-      icon={headerIcon}
-      iconColor={(data as any).iconColor}
-      bg={(data as any).nodeBg}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-    >
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
       <NodeInput
+        ref={textAreaRef}
         placeholder="역할 내용을 입력하세요..."
-        defaultValue={data.content || ""}
-        onBlur={(e) => {
-          if (data.onContentChange) {
-            data.onContentChange(e.target.value);
-          }
-        }}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       />

@@ -8,6 +8,7 @@ interface ButtonProps {
   size?: "small" | "medium" | "large";
   disabled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const StyledButton = styled.button<{ variant: string; size: string; disabled: boolean }>`
@@ -93,9 +94,9 @@ const StyledButton = styled.button<{ variant: string; size: string; disabled: bo
   }}
 `;
 
-export const Button: React.FC<ButtonProps> = ({ children, onClick, variant = "secondary", size = "medium", disabled = false, className }) => {
+export const Button: React.FC<ButtonProps> = ({ children, onClick, variant = "secondary", size = "medium", disabled = false, className, style }) => {
   return (
-    <StyledButton variant={variant} size={size} disabled={disabled} onClick={onClick} className={className}>
+    <StyledButton variant={variant} size={size} disabled={disabled} onClick={onClick} className={className} style={style}>
       {children}
     </StyledButton>
   );

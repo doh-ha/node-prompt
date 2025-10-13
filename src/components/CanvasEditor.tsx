@@ -4,7 +4,7 @@ import "reactflow/dist/style.css";
 import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { LibraryPanel } from "./LibraryPanel";
-import { nodeComponents } from "./nodes/registry";
+import { nodeComponents, nodesRegistry } from "./nodes/registry";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
@@ -14,8 +14,13 @@ interface CanvasEditorProps {
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-let id = 0;
-const getId = () => `node_${id++}`;
+// 기본 엣지 스타일 (실선)
+const defaultEdgeOptions = {
+  style: {
+    strokeWidth: 2,
+    stroke: "#94a3b8",
+  },
+};
 
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange }) => {
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
@@ -24,6 +29,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectionRafRef = useRef<number | null>(null);
+  const nodeIdCounter = useRef(0);
+
+  const getId = useCallback(() => {
+    return `node_${Date.now()}_${nodeIdCounter.current++}`;
+  }, []);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -52,17 +62,41 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           y: event.clientY,
         });
 
+        // Start 노드인 경우 고유한 플로우 이름 생성 및 개수 제한
+        let nodeData = { ...data };
+        if (type === "start") {
+          const existingStartNodes = nodes.filter((n) => n.type === "start");
+
+          // 최대 3개 제한
+          if (existingStartNodes.length >= 5) {
+            alert("플로우는 최대 5개까지만 추가할 수 있습니다.");
+            return;
+          }
+
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+
+          let flowNumber = 1;
+          let newFlowName = `Flow ${flowNumber}`;
+
+          while (existingFlowNames.includes(newFlowName)) {
+            flowNumber++;
+            newFlowName = `Flow ${flowNumber}`;
+          }
+
+          nodeData.flowName = newFlowName;
+        }
+
         const newNode: Node = {
           id: getId(),
           type,
           position,
-          data,
+          data: nodeData,
         };
 
         setNodes((prev) => prev.concat(newNode));
       }
     },
-    [reactFlowInstance, setNodes, onNodesChange]
+    [reactFlowInstance, setNodes, onNodesChange, nodes]
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
@@ -87,6 +121,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node)));
   };
 
+  const handleFlowNameChange = (nodeId: string, flowName: string) => {
+    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node)));
+  };
+
   const handleDeleteNode = (nodeId: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
@@ -96,11 +134,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
   useEffect(() => {
     onNodesChange(nodes);
-  }, [nodes, onNodesChange]);
+  }, [nodes.length, onNodesChange]); // nodes.length만 의존성으로 변경
 
   useEffect(() => {
     onEdgesChange(edges);
-  }, [edges, onEdgesChange]);
+  }, [edges.length, onEdgesChange]); // edges.length만 의존성으로 변경
 
   const deleteSelectedNode = () => {
     if (selectedNodeId) {
@@ -151,22 +189,29 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       <FlowContainer>
         <ReactFlow
-          nodes={useMemo(
-            () =>
-              nodes.map((node) => ({
+          nodes={useMemo(() => {
+            return nodes.map((node) => {
+              // 레지스트리에서 suggestions 가져오기
+              const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
+              const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
+              const suggestions = registryEntry?.meta?.defaultSuggestions;
+
+              return {
                 ...node,
                 data: {
                   ...node.data,
+                  suggestions,
                   onContentChange: (content: string) => handleNodeContentChange(node.id, content),
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
+                  onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
                 },
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
                 type: node.type === "context" ? "context" : node.type,
-              })),
-            [nodes]
-          )}
+              };
+            });
+          }, [nodes])}
           edges={edges}
           onNodesChange={onNodesChangeInternal}
           onEdgesChange={onEdgesChangeInternal}
@@ -183,12 +228,13 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             selectionRafRef.current = requestAnimationFrame(() => setSelectedIds(ids));
           }}
           nodeTypes={nodeComponents}
+          defaultEdgeOptions={defaultEdgeOptions}
           fitView
           proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"
         >
           <Controls />
-          <Background variant={BackgroundVariant.Dots} gap={28} size={0.75} color="#e5e7eb" />
+          <Background variant={BackgroundVariant.Dots} gap={40} size={1} color="#e5e7eb" />
         </ReactFlow>
       </FlowContainer>
     </EditorContainer>
