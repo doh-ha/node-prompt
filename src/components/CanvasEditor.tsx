@@ -171,22 +171,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     <EditorContainer>
       <LibraryPanel onDragStart={onDragStart} />
 
-      <Toolbar>
-        {selectedNodeId && (
-          <Button onClick={deleteSelectedNode} variant="danger" size="small">
-            선택된 노드 삭제
-          </Button>
-        )}
-        {selectedIds.length > 0 && (
-          <Button onClick={deleteSelectedNodes} variant="danger" size="small">
-            영역 선택 삭제 ({selectedIds.length})
-          </Button>
-        )}
-        <Button onClick={clearAll} variant="secondary" size="small">
-          전체 지우기
-        </Button>
-      </Toolbar>
-
       <FlowContainer>
         <ReactFlow
           nodes={useMemo(() => {
