@@ -7,13 +7,15 @@ import { nodesRegistry } from "./nodes/registry";
 interface PreviewPanelProps {
   nodes: any[];
   edges: any[];
+  onClose?: () => void;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClose }) => {
   const [selectedFlow, setSelectedFlow] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"prompt" | "test">("prompt");
   const [testInput, setTestInput] = useState("");
   const [testResponse, setTestResponse] = useState("");
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   const { generatedPrompt, validation } = usePromptGenerator(nodes, edges);
 
@@ -64,6 +66,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
     });
 
     return groups;
+  }, [nodes, forceUpdate]);
+
+  // 노드의 flowName이 변경될 때마다 강제로 재계산
+  React.useEffect(() => {
+    setForceUpdate((prev) => prev + 1);
   }, [nodes]);
 
   // 선택된 플로우가 없으면 첫 번째 플로우를 자동 선택
@@ -71,6 +78,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
     const flowNames = Object.keys(flowGroups);
     if (flowNames.length > 0 && !selectedFlow) {
       setSelectedFlow(flowNames[0]);
+    }
+
+    // 현재 선택된 플로우가 더 이상 존재하지 않으면 첫 번째 플로우로 변경
+    if (selectedFlow && !flowNames.includes(selectedFlow)) {
+      setSelectedFlow(flowNames[0] || "");
     }
   }, [flowGroups, selectedFlow]);
 
@@ -88,7 +100,38 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges }) => {
   return (
     <PreviewContainer>
       <PreviewHeader>
-        <PreviewTitle>AI 에이전트 미리보기</PreviewTitle>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <PreviewTitle>AI 에이전트 미리보기</PreviewTitle>
+          {onClose && (
+            <button
+              onClick={onClose}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s ease",
+                color: "#6b7280",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f3f4f6";
+                e.currentTarget.style.color = "#374151";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "none";
+                e.currentTarget.style.color = "#6b7280";
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </PreviewHeader>
 
       {/* 플로우 선택 */}

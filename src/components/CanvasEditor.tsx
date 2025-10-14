@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Controls, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
-import { EditorContainer, Toolbar, FlowContainer } from "../styles/nodeStyles";
+import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
-import { LibraryPanel } from "./LibraryPanel";
 import { nodeComponents, nodesRegistry } from "./nodes/registry";
 
 interface CanvasEditorProps {
@@ -122,7 +121,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
 
   const handleFlowNameChange = (nodeId: string, flowName: string) => {
-    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node)));
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node));
+
+      // 부모 컴포넌트에 변경사항 전달
+      onNodesChange(updatedNodes);
+
+      return updatedNodes;
+    });
   };
 
   const handleDeleteNode = (nodeId: string) => {
@@ -169,24 +175,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   return (
     <EditorContainer>
-      <LibraryPanel onDragStart={onDragStart} />
-
-      <Toolbar>
-        {selectedNodeId && (
-          <Button onClick={deleteSelectedNode} variant="danger" size="small">
-            선택된 노드 삭제
-          </Button>
-        )}
-        {selectedIds.length > 0 && (
-          <Button onClick={deleteSelectedNodes} variant="danger" size="small">
-            영역 선택 삭제 ({selectedIds.length})
-          </Button>
-        )}
-        <Button onClick={clearAll} variant="secondary" size="small">
-          전체 지우기
-        </Button>
-      </Toolbar>
-
       <FlowContainer>
         <ReactFlow
           nodes={useMemo(() => {
@@ -233,7 +221,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"
         >
-          <Controls />
           <Background variant={BackgroundVariant.Dots} gap={40} size={1} color="#e5e7eb" />
         </ReactFlow>
       </FlowContainer>

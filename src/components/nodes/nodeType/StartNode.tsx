@@ -43,6 +43,7 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
   };
 
   const handleFlowNameBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    // 포커스 이탈 시 변경사항 적용
     if (data.onFlowNameChange) {
       data.onFlowNameChange(e.target.value);
     }

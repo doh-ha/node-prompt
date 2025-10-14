@@ -4,12 +4,44 @@ import { groupedTemplates } from "./nodes/registry";
 
 interface LibraryPanelProps {
   onDragStart: (event: React.DragEvent, nodeType: string, data: any) => void;
+  onClose?: () => void;
 }
 
-export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart }) => {
+export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart, onClose }) => {
   return (
     <PaletteContainer>
-      <PaletteTitle>라이브러리</PaletteTitle>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <PaletteTitle style={{ margin: 0 }}>라이브러리</PaletteTitle>
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease",
+              color: "#6b7280",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.color = "#374151";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "none";
+              e.currentTarget.style.color = "#6b7280";
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
       {groupedTemplates.map((group, gi) => (
         <div key={gi}>
           <GroupTitle>{group.title}</GroupTitle>

@@ -103,16 +103,12 @@ export const DeleteButton = styled.button`
 
 // 라이브러리 패널 스타일
 export const PaletteContainer = styled.div`
-  position: fixed;
-  left: 0;
-  top: 60px;
-  width: 260px;
-  height: calc(100vh - 60px);
+  width: 100%;
+  height: 100%;
   background: white;
-  border-right: 1px solid #e5e7eb;
   overflow-y: auto;
-  z-index: 1000;
   padding: 20px 16px;
+  box-sizing: border-box;
 `;
 
 export const PaletteTitle = styled.h2`
