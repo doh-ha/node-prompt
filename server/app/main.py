@@ -28,7 +28,7 @@ class ChatRequest(BaseModel):
 
 
 class FlowRequest(BaseModel):
-    prompt: Optional[str] = "너는 영어 교사야. 영어로 한 문장 작성해줘"
+    prompt: str
     model: Optional[str] = "gpt-4"
     temperature: Optional[float] = 0.7
     system: Optional[str] = None
