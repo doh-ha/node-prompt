@@ -87,14 +87,36 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
   }, [flowGroups, selectedFlow]);
 
   const handleTestPrompt = async () => {
-    if (!testInput.trim()) return;
-
     setTestResponse("테스트 중...");
 
-    // 실제 AI API 호출 대신 시뮬레이션
-    setTimeout(() => {
-      setTestResponse(`입력: ${testInput}\n\n응답: 이는 테스트 응답입니다. 실제 구현에서는 AI API를 호출하여 응답을 받아옵니다.`);
-    }, 1000);
+    try {
+      // generatedPrompt.finalPrompt를 직접 사용
+      const currentPrompt = generatedPrompt.finalPrompt;
+
+      console.log("🔍 DEBUG: 사용할 프롬프트:", currentPrompt);
+
+      const response = await fetch("/api/flow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: currentPrompt,
+          model: "gpt-4",
+          temperature: 0.7,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestResponse(data.content || "응답을 받을 수 없습니다.");
+      } else {
+        const errorData = await response.json();
+        setTestResponse(`에러: ${errorData.detail || "알 수 없는 오류가 발생했습니다."}`);
+      }
+    } catch (error) {
+      setTestResponse(`네트워크 에러: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
+    }
   };
 
   return (
@@ -225,7 +247,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
           {activeTab === "test" && (
             <div>
               <TestInput placeholder="테스트할 입력을 입력하세요..." value={testInput} onChange={(e) => setTestInput(e.target.value)} />
-              <Button onClick={handleTestPrompt} disabled={!testInput.trim()} variant="primary">
+              <Button onClick={handleTestPrompt} disabled={false} variant="primary">
                 프롬프트 테스트
               </Button>
               <ResponseArea>{testResponse}</ResponseArea>
