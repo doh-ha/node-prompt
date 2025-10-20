@@ -1,6 +1,9 @@
 // 노드 컴포넌트 인덱스 파일
 import { RoleNode } from "./nodeType/RoleNode";
 import { OutputFormatNode } from "./nodeType/OutputFormatNode";
+import { TextOutputNode } from "./nodeType/TextOutputNode";
+import { SpreadsheetOutputNode } from "./nodeType/SpreadsheetOutputNode";
+import { PdfOutputNode } from "./nodeType/PdfOutputNode";
 
 import { TaskNode } from "./nodeType/TaskNode";
 import { ModelNode } from "./nodeType/ModelNode";
@@ -15,6 +18,9 @@ import { LengthNode } from "./nodeType/LengthNode";
 
 export { RoleNode } from "./nodeType/RoleNode";
 export { OutputFormatNode } from "./nodeType/OutputFormatNode";
+export { TextOutputNode } from "./nodeType/TextOutputNode";
+export { SpreadsheetOutputNode } from "./nodeType/SpreadsheetOutputNode";
+export { PdfOutputNode } from "./nodeType/PdfOutputNode";
 
 export { TaskNode } from "./nodeType/TaskNode";
 export { ModelNode } from "./nodeType/ModelNode";
@@ -31,6 +37,9 @@ export { LengthNode } from "./nodeType/LengthNode";
 export const nodeComponents = {
   role: RoleNode,
   outputFormat: OutputFormatNode,
+  textOutput: TextOutputNode,
+  spreadsheetOutput: SpreadsheetOutputNode,
+  pdfOutput: PdfOutputNode,
 
   promptTemplate: TaskNode,
   model: ModelNode,

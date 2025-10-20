@@ -51,16 +51,7 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
 
   return (
     <div style={{ width: "180px", minHeight: "120px" }}>
-      <NodeShell
-        id={id}
-        selected={selected}
-        title={data.label}
-        icon={data.icon}
-        iconColor={data.iconColor}
-        bg={(data as any).nodeBg}
-        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-        nodeType="start"
-      >
+      <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
         <NodeInput
           ref={textAreaRef}
           placeholder="flow 이름을 입력하세요..."

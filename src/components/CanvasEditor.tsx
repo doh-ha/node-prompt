@@ -4,20 +4,75 @@ import "reactflow/dist/style.css";
 import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { nodeComponents, nodesRegistry } from "./nodes/registry";
+import { colors } from "../constants";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
 }
 
-const initialNodes: Node[] = [];
-const initialEdges: Edge[] = [];
+const initialNodes: Node[] = [
+  {
+    id: "start_node",
+    type: "start",
+    position: { x: 250, y: 50 },
+    data: {
+      label: "Start",
+      icon: "▶️",
+      iconColor: colors.nodeIcon.green,
+      nodeBg: colors.nodeBg.blue,
+      flowName: "Flow 1",
+    },
+  },
+  {
+    id: "model_node",
+    type: "model",
+    position: { x: 250, y: 250 },
+    data: {
+      label: "Model",
+      icon: "🤖",
+      iconColor: colors.nodeIcon.purple,
+      nodeBg: colors.nodeBg.purple,
+      model: "gpt-4o",
+      temperature: 0.7,
+      maxTokens: 1000,
+    },
+  },
+  {
+    id: "result_node",
+    type: "result",
+    position: { x: 250, y: 400 },
+    data: {
+      label: "Result",
+      icon: "🏁",
+      iconColor: colors.nodeIcon.red,
+      nodeBg: colors.nodeBg.lightGreen,
+    },
+  },
+];
+
+const initialEdges: Edge[] = [
+  {
+    id: "start-to-model",
+    source: "start_node",
+    target: "model_node",
+    sourceHandle: "bottom",
+    targetHandle: "top",
+  },
+  {
+    id: "model-to-result",
+    source: "model_node",
+    target: "result_node",
+    sourceHandle: "bottom",
+    targetHandle: "top",
+  },
+];
 
 // 기본 엣지 스타일 (실선)
 const defaultEdgeOptions = {
   style: {
     strokeWidth: 2,
-    stroke: "#94a3b8",
+    stroke: colors.edge.default,
   },
 };
 
@@ -221,7 +276,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           proOptions={{ hideAttribution: true }}
           attributionPosition="bottom-left"
         >
-          <Background variant={BackgroundVariant.Dots} gap={40} size={1} color="#e5e7eb" />
+          <Background variant={BackgroundVariant.Dots} gap={40} size={1} color={colors.edge.background} />
         </ReactFlow>
       </FlowContainer>
     </EditorContainer>

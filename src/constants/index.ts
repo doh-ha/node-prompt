@@ -1,5 +1,8 @@
 // 애플리케이션 상수 정의
 
+// 색상 상수 export
+export { colors } from "./colors";
+
 // 노드 타입 상수
 export const NODE_TYPES = {
   ROLE: "role",
@@ -50,7 +53,7 @@ export const UI_CONSTANTS = {
   SNAP_DISTANCE: 20,
 } as const;
 
-// 색상 테마
+// 색상 테마 (기존 호환성을 위해 유지)
 export const COLORS = {
   PRIMARY: "#4f46e5",
   SECONDARY: "#7c3aed",

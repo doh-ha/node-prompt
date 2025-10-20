@@ -1,5 +1,8 @@
 import { RoleNode } from "./nodeType/RoleNode";
 import { OutputFormatNode } from "./nodeType/OutputFormatNode";
+import { TextOutputNode } from "./nodeType/TextOutputNode";
+import { SpreadsheetOutputNode } from "./nodeType/SpreadsheetOutputNode";
+import { PdfOutputNode } from "./nodeType/PdfOutputNode";
 import { TaskNode } from "./nodeType/TaskNode";
 import { ModelNode } from "./nodeType/ModelNode";
 import { StartNode } from "./nodeType/StartNode";
@@ -10,8 +13,25 @@ import { StyleNode } from "./nodeType/StyleNode";
 import { TextNode } from "./nodeType/TextNode";
 import { ExampleNode } from "./nodeType/ExampleNode";
 import { LengthNode } from "./nodeType/LengthNode";
+import { colors } from "../../constants";
 
-type NodeTypeKey = "role" | "format" | "context" | "promptTemplate" | "model" | "reference" | "audience" | "style" | "text" | "example" | "length" | "start" | "result";
+type NodeTypeKey =
+  | "role"
+  | "format"
+  | "context"
+  | "promptTemplate"
+  | "model"
+  | "reference"
+  | "audience"
+  | "style"
+  | "text"
+  | "example"
+  | "length"
+  | "start"
+  | "result"
+  | "textOutput"
+  | "spreadsheetOutput"
+  | "pdfOutput";
 
 interface NodeMeta {
   name: string;
@@ -38,7 +58,7 @@ export const nodesRegistry = {
       name: "Role",
       description: "AI의 역할을 정의",
       icon: "🎭",
-      iconColor: "#7c3aed",
+      iconColor: colors.nodeIcon.purple,
 
       group: "context",
     },
@@ -52,24 +72,11 @@ export const nodesRegistry = {
       name: "Reference",
       description: "참고 자료/문헌",
       icon: "📑",
-      iconColor: "#475569",
+      iconColor: colors.nodeIcon.gray,
       group: "input",
     },
     component: ReferenceNode,
     toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요.` : null),
-  },
-  format: {
-    type: "format",
-    meta: {
-      name: "Format",
-      description: "출력 형식 및 구조 정의",
-      icon: "💬",
-      iconColor: "#059669",
-      group: "output",
-      defaultSuggestions: ["자유 형식", "목록 형식", "표 형식", "단계별 형식"],
-    },
-    component: OutputFormatNode,
-    toPrompt: (d) => (d.format ? `[${d.name}]\n최종 답변은 다음 형식으로 출력하세요:\n${d.format}${d.structure ? ` (${d.structure})` : ""}` : null),
   },
 
   // 추가 컨텍스트: Audience
@@ -79,7 +86,7 @@ export const nodesRegistry = {
       name: "Audience",
       description: "대상 사용자(학습자)",
       icon: "🧑‍🎓",
-      iconColor: "#7c3aed",
+      iconColor: colors.nodeIcon.purple,
       group: "context",
     },
     component: AudienceNode,
@@ -92,7 +99,7 @@ export const nodesRegistry = {
       name: "Style",
       description: "문체/톤/말투",
       icon: "🎨",
-      iconColor: "#7c3aed",
+      iconColor: colors.nodeIcon.purple,
       group: "context",
       defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
@@ -107,8 +114,8 @@ export const nodesRegistry = {
       name: "Length",
       description: "길이",
       icon: "📏",
-      iconColor: "#7c3aed",
-      group: "output",
+      iconColor: colors.nodeIcon.purple,
+      group: "context",
       defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
@@ -122,7 +129,7 @@ export const nodesRegistry = {
       name: "Example",
       description: "예시",
       icon: "💡",
-      iconColor: "#0ea5e9",
+      iconColor: colors.nodeIcon.blue,
       group: "input",
     },
     component: ExampleNode,
@@ -135,7 +142,7 @@ export const nodesRegistry = {
       name: "Text Input",
       description: "텍스트 입력",
       icon: "✍️",
-      iconColor: "#111827",
+      iconColor: colors.nodeIcon.black,
       group: "input",
     },
     component: TextNode,
@@ -147,7 +154,7 @@ export const nodesRegistry = {
       name: "Task",
       description: "프롬프트 템플릿",
       icon: "📝",
-      iconColor: "#7c3aed",
+      iconColor: colors.nodeIcon.purple,
 
       group: "context",
     },
@@ -160,7 +167,7 @@ export const nodesRegistry = {
       name: "Model",
       description: "AI 모델 설정",
       icon: "🤖",
-      iconColor: "#7c3aed",
+      iconColor: colors.nodeIcon.purple,
 
       group: "flow",
     },
@@ -173,7 +180,7 @@ export const nodesRegistry = {
       name: "Start",
       description: "플로우 시작",
       icon: "▶️",
-      iconColor: "#16a34a",
+      iconColor: colors.nodeIcon.green,
       group: "flow",
     },
     component: StartNode,
@@ -185,25 +192,79 @@ export const nodesRegistry = {
       name: "Result",
       description: "최종 결과",
       icon: "🏁",
-      iconColor: "#059669",
+      iconColor: colors.nodeIcon.red,
       group: "flow",
     },
     component: ResultNode,
+  },
+  textOutput: {
+    type: "textOutput",
+    meta: {
+      name: "Text Output",
+      description: "텍스트 결과 출력",
+      icon: "📝",
+      iconColor: colors.nodeIcon.darkGreen,
+      group: "output",
+    },
+    component: TextOutputNode,
+  },
+  spreadsheetOutput: {
+    type: "spreadsheetOutput",
+    meta: {
+      name: "Spreadsheet",
+      description: "스프레드시트로 내보내기",
+      icon: "📊",
+      iconColor: colors.nodeIcon.darkGreen,
+      group: "output",
+    },
+    component: SpreadsheetOutputNode,
+  },
+  pdfOutput: {
+    type: "pdfOutput",
+    meta: {
+      name: "PDF",
+      description: "PDF로 내보내기",
+      icon: "📄",
+      iconColor: colors.nodeIcon.darkGreen,
+      group: "output",
+    },
+    component: PdfOutputNode,
   },
 } as Record<string, NodeEntry>;
 
 export const nodeComponents = Object.fromEntries(
   Object.entries(nodesRegistry)
-    .filter(([k]) => (["role", "outputFormat", "context", "promptTemplate", "model", "reference", "audience", "style", "text", "example", "length", "start", "result"] as const).includes(k as any))
+    .filter(([k]) =>
+      (
+        [
+          "role",
+          "outputFormat",
+          "context",
+          "promptTemplate",
+          "model",
+          "reference",
+          "audience",
+          "style",
+          "text",
+          "example",
+          "length",
+          "start",
+          "result",
+          "textOutput",
+          "spreadsheetOutput",
+          "pdfOutput",
+        ] as const
+      ).includes(k as any)
+    )
     .map(([k, v]) => [v.type, v.component])
 ) as Record<NodeTypeKey, any>;
 
 // 그룹별로 명시적으로 정의
 const GROUP_CONFIG = {
-  FLOW: { title: "FLOW", bg: "#fef3c7", order: 0 },
-  INPUT: { title: "INPUT", bg: "#e0f2fe", order: 1 },
-  CONTEXT: { title: "CONTEXT", bg: "#f5f3ff", order: 2 },
-  OUTPUT: { title: "OUTPUT", bg: "#ecfdf5", order: 3 },
+  FLOW: { title: "FLOW", bg: colors.nodeBg.yellow, order: 0 },
+  INPUT: { title: "INPUT", bg: colors.nodeBg.blue, order: 1 },
+  CONTEXT: { title: "CONTEXT", bg: colors.nodeBg.lightPurple, order: 2 },
+  OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
 };
 
 // 각 그룹별 노드 순서 정의
@@ -211,7 +272,7 @@ const NODE_ORDERS = {
   FLOW: { start: 0, model: 1, result: 2 },
   INPUT: { text: 0, reference: 1, example: 2 },
   CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
-  OUTPUT: { outputFormat: 0, length: 1 },
+  OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
@@ -230,7 +291,15 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
         icon: entry.meta.icon,
         iconColor: entry.meta.iconColor,
         iconBg: undefined as any,
-        nodeBg: config.bg,
+        // 기본은 그룹 배경색이나, 요청에 따라 특정 노드는 다른 그룹 색상을 사용
+        nodeBg:
+          entry.type === "start"
+            ? GROUP_CONFIG.INPUT.bg // start는 INPUT 색상
+            : entry.type === "model"
+            ? GROUP_CONFIG.CONTEXT.bg // model은 CONTEXT 색상
+            : entry.type === "result"
+            ? GROUP_CONFIG.OUTPUT.bg // result는 OUTPUT 색상
+            : config.bg,
       }))
       .sort((a, b) => {
         // 각 그룹별로 정의된 순서 사용
