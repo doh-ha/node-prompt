@@ -13,6 +13,8 @@ import { StyleNode } from "./nodeType/StyleNode";
 import { TextNode } from "./nodeType/TextNode";
 import { ExampleNode } from "./nodeType/ExampleNode";
 import { LengthNode } from "./nodeType/LengthNode";
+import { InputNode } from "./nodeType/InputNode";
+import { OutputNode } from "./nodeType/OutputNode";
 import { colors } from "../../constants";
 
 type NodeTypeKey =
@@ -31,7 +33,9 @@ type NodeTypeKey =
   | "result"
   | "textOutput"
   | "spreadsheetOutput"
-  | "pdfOutput";
+  | "pdfOutput"
+  | "input"
+  | "output";
 
 interface NodeMeta {
   name: string;
@@ -183,7 +187,31 @@ export const nodesRegistry = {
       iconColor: colors.nodeIcon.green,
       group: "flow",
     },
-    component: StartNode,
+    component: OutputNode,
+  },
+  // 흐름용
+  input: {
+    type: "input",
+    meta: {
+      name: "Input",
+      description: "input 관련 노드들을 연결",
+      icon: "📥",
+      iconColor: colors.nodeIcon.blue,
+      group: "flow",
+    },
+    component: InputNode,
+  },
+  // 흐름용
+  output: {
+    type: "output",
+    meta: {
+      name: "Output",
+      description: "output 관련 노드들을 연결",
+      icon: "📤",
+      iconColor: colors.nodeIcon.green,
+      group: "flow",
+    },
+    component: OutputNode,
   },
   // 연결 흐름용 결과 노드
   result: {
@@ -253,6 +281,8 @@ export const nodeComponents = Object.fromEntries(
           "textOutput",
           "spreadsheetOutput",
           "pdfOutput",
+          "input",
+          "output",
         ] as const
       ).includes(k as any)
     )
