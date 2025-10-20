@@ -11,57 +11,105 @@ interface CanvasEditorProps {
   onEdgesChange: (edges: Edge[]) => void;
 }
 
+// 레지스트리 규칙과 동일한 배경색 계산 (개별 타입 예외 포함)
+const getNodeBgByTypeLocal = (type: string): string => {
+  const entry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
+  const original = entry?.meta?.group as string | undefined;
+  const base = original === "flow" ? colors.nodeBg.grey : original === "input" ? colors.nodeBg.blue : original === "output" ? colors.nodeBg.lightGreen : colors.nodeBg.lightPurple;
+
+  if (type === "input") return colors.nodeBg.blue;
+  if (type === "model") return colors.nodeBg.purple;
+  if (type === "output") return colors.nodeBg.lightGreen;
+  return base;
+};
+
 const initialNodes: Node[] = [
   {
     id: "start_node",
     type: "start",
-    position: { x: 250, y: 50 },
+    position: { x: 250, y: 0 },
     data: {
       label: "Start",
       icon: "▶️",
       iconColor: colors.nodeIcon.green,
-      nodeBg: colors.nodeBg.blue,
+      nodeBg: getNodeBgByTypeLocal("start"),
       flowName: "Flow 1",
+    },
+  },
+  {
+    id: "input_node",
+    type: "input",
+    position: { x: 250, y: 180 },
+    data: {
+      label: "Input",
+      icon: "📥",
+      iconColor: colors.nodeIcon.blue,
+      nodeBg: getNodeBgByTypeLocal("input"),
     },
   },
   {
     id: "model_node",
     type: "model",
-    position: { x: 250, y: 250 },
+    position: { x: 250, y: 300 },
     data: {
       label: "Model",
       icon: "🤖",
       iconColor: colors.nodeIcon.purple,
-      nodeBg: colors.nodeBg.purple,
+      nodeBg: getNodeBgByTypeLocal("model"),
       model: "gpt-4o",
       temperature: 0.7,
       maxTokens: 1000,
     },
   },
   {
+    id: "output_node",
+    type: "output",
+    position: { x: 250, y: 450 },
+    data: {
+      label: "Output",
+      icon: "📤",
+      iconColor: colors.nodeIcon.green,
+      nodeBg: getNodeBgByTypeLocal("output"),
+    },
+  },
+  {
     id: "result_node",
     type: "result",
-    position: { x: 250, y: 400 },
+    position: { x: 250, y: 550 },
     data: {
       label: "Result",
       icon: "🏁",
       iconColor: colors.nodeIcon.red,
-      nodeBg: colors.nodeBg.lightGreen,
+      nodeBg: getNodeBgByTypeLocal("result"),
     },
   },
 ];
 
 const initialEdges: Edge[] = [
   {
-    id: "start-to-model",
+    id: "start-to-input",
     source: "start_node",
+    target: "input_node",
+    sourceHandle: "bottom",
+    targetHandle: "top",
+  },
+  {
+    id: "input-to-model",
+    source: "input_node",
     target: "model_node",
     sourceHandle: "bottom",
     targetHandle: "top",
   },
   {
-    id: "model-to-result",
+    id: "model-to-output",
     source: "model_node",
+    target: "output_node",
+    sourceHandle: "bottom",
+    targetHandle: "top",
+  },
+  {
+    id: "output-to-result",
+    source: "output_node",
     target: "result_node",
     sourceHandle: "bottom",
     targetHandle: "top",

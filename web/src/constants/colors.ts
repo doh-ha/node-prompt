@@ -30,6 +30,7 @@ export const colors = {
     blue: "#e0f2fe", // 파란색 (input)
     lightPurple: "#f5f3ff", // 연보라색 (context)
     lightGreen: "#ecfdf5", // 연녹색 (output)
+    grey: "#f3f4f6", // 회색 (flow 등 공용 배경)
   },
 
   // 노드 아이콘 색상
