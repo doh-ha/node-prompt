@@ -187,7 +187,7 @@ export const nodesRegistry = {
       iconColor: colors.nodeIcon.green,
       group: "flow",
     },
-    component: OutputNode,
+    component: StartNode,
   },
   // 흐름용
   input: {
@@ -291,7 +291,7 @@ export const nodeComponents = Object.fromEntries(
 
 // 그룹별로 명시적으로 정의
 const GROUP_CONFIG = {
-  FLOW: { title: "FLOW", bg: colors.nodeBg.yellow, order: 0 },
+  FLOW: { title: "FLOW", bg: colors.nodeBg.grey, order: 0 },
   INPUT: { title: "INPUT", bg: colors.nodeBg.blue, order: 1 },
   CONTEXT: { title: "CONTEXT", bg: colors.nodeBg.lightPurple, order: 2 },
   OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
@@ -299,7 +299,7 @@ const GROUP_CONFIG = {
 
 // 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
-  FLOW: { start: 0, model: 1, result: 2 },
+  FLOW: { start: 0, input: 1, model: 2, output: 3, result: 4 },
   INPUT: { text: 0, reference: 1, example: 2 },
   CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
   OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
@@ -323,11 +323,11 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
         iconBg: undefined as any,
         // 기본은 그룹 배경색이나, 요청에 따라 특정 노드는 다른 그룹 색상을 사용
         nodeBg:
-          entry.type === "start"
+          entry.type === "input"
             ? GROUP_CONFIG.INPUT.bg // start는 INPUT 색상
             : entry.type === "model"
             ? GROUP_CONFIG.CONTEXT.bg // model은 CONTEXT 색상
-            : entry.type === "result"
+            : entry.type === "output"
             ? GROUP_CONFIG.OUTPUT.bg // result는 OUTPUT 색상
             : config.bg,
       }))

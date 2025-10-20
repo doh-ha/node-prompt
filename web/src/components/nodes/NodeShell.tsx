@@ -18,11 +18,16 @@ interface NodeShellProps {
 export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = colors.primary, bg, onDelete, children, nodeType }) => {
   const iconStyle = { background: "transparent", color: iconColor } as React.CSSProperties;
 
-  // Start 노드는 상단 연결점 없음, Result 노드는 하단 연결점 없음
-  const showTopHandle = nodeType !== "start";
-  const showBottomHandle = nodeType !== "result";
-  const showLeftHandle = nodeType !== "start"; // start는 입력 불가
-  const showRightHandle = nodeType !== "result"; // result는 출력 불가
+  // 연결점 표시 규칙
+  // - start: 하단만
+  // - result: 상단만
+  // - 그 외(input/model/output 포함): 상하좌우 모두
+  const isStart = nodeType === "start";
+  const isResult = nodeType === "result";
+  const showTopHandle = isResult ? true : isStart ? false : true;
+  const showBottomHandle = isStart ? true : isResult ? false : true;
+  const showLeftHandle = isStart || isResult ? false : true;
+  const showRightHandle = isStart || isResult ? false : true;
 
   // 잠금 UI 제거
 

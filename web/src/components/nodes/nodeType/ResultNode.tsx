@@ -1,5 +1,6 @@
 import React from "react";
 import { NodeShell } from "../NodeShell";
+import { NodeInput } from "../../../styles/nodeStyles";
 
 interface ResultNodeProps {
   data: {
@@ -17,15 +18,19 @@ interface ResultNodeProps {
 
 export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) => {
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label}
-      icon={data.icon}
-      iconColor={data.iconColor}
-      bg={(data as any).nodeBg}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-      nodeType="output"
-    />
+    <div style={{ width: "220px", minHeight: "120px" }}>
+      <NodeShell
+        id={id}
+        selected={selected}
+        title={data.label}
+        icon={data.icon}
+        iconColor={data.iconColor}
+        bg={(data as any).nodeBg}
+        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="result"
+      >
+        <NodeInput as="textarea" readOnly placeholder="결과가 여기에 표시됩니다" style={{ minHeight: "80px" }} />
+      </NodeShell>
+    </div>
   );
 };
