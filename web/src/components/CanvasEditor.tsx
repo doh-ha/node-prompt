@@ -191,6 +191,119 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           nodeData.flowName = newFlowName;
         }
 
+        // Flow 노드인 경우 5개의 연결된 노드 생성
+        if (type === "flow") {
+          const existingStartNodes = nodes.filter((n) => n.type === "start");
+
+          // 최대 3개 제한
+          if (existingStartNodes.length >= 5) {
+            alert("플로우는 최대 5개까지만 추가할 수 있습니다.");
+            return;
+          }
+
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+
+          let flowNumber = 1;
+          let newFlowName = `Flow ${flowNumber}`;
+
+          while (existingFlowNames.includes(newFlowName)) {
+            flowNumber++;
+            newFlowName = `Flow ${flowNumber}`;
+          }
+
+          // 5개 노드 생성 (Start -> Input -> Model -> Output -> Result) - 세로 배치
+          const flowNodes: Node[] = [
+            {
+              id: getId(),
+              type: "start",
+              position: { x: position.x, y: position.y },
+              data: {
+                label: "Start",
+                icon: "▶️",
+                iconColor: colors.nodeIcon.green,
+                nodeBg: colors.nodeBg.grey,
+                flowName: newFlowName,
+                onFlowNameChange: handleFlowNameChange,
+                onExecutePrompt: handleExecutePrompt,
+                onDeleteNode: handleDeleteNode,
+              },
+            },
+            {
+              id: getId(),
+              type: "input",
+              position: { x: position.x, y: position.y + 150 },
+              data: {
+                label: "Input",
+                icon: "📥",
+                iconColor: colors.nodeIcon.blue,
+                nodeBg: colors.nodeBg.blue,
+                onDeleteNode: handleDeleteNode,
+              },
+            },
+            {
+              id: getId(),
+              type: "model",
+              position: { x: position.x, y: position.y + 300 },
+              data: {
+                label: "Model",
+                icon: "🤖",
+                iconColor: colors.nodeIcon.purple,
+                nodeBg: colors.nodeBg.lightPurple,
+                model: "gpt-4",
+                onModelChange: handleModelChange,
+                onDeleteNode: handleDeleteNode,
+              },
+            },
+            {
+              id: getId(),
+              type: "output",
+              position: { x: position.x, y: position.y + 450 },
+              data: {
+                label: "Output",
+                icon: "📤",
+                iconColor: colors.nodeIcon.green,
+                nodeBg: colors.nodeBg.lightGreen,
+                onDeleteNode: handleDeleteNode,
+              },
+            },
+            {
+              id: getId(),
+              type: "result",
+              position: { x: position.x, y: position.y + 600 },
+              data: {
+                label: "Result",
+                icon: "🏁",
+                iconColor: colors.nodeIcon.red,
+                nodeBg: colors.nodeBg.grey,
+                result: "결과가 여기에 표시됩니다",
+                onDeleteNode: handleDeleteNode,
+              },
+            },
+          ];
+
+          // 연결 엣지 생성
+          const flowEdges: Edge[] = [
+            { id: `e-${flowNodes[0].id}-${flowNodes[1].id}`, source: flowNodes[0].id, target: flowNodes[1].id },
+            { id: `e-${flowNodes[1].id}-${flowNodes[2].id}`, source: flowNodes[1].id, target: flowNodes[2].id },
+            { id: `e-${flowNodes[2].id}-${flowNodes[3].id}`, source: flowNodes[2].id, target: flowNodes[3].id },
+            { id: `e-${flowNodes[3].id}-${flowNodes[4].id}`, source: flowNodes[3].id, target: flowNodes[4].id },
+          ];
+
+          setNodes((prev) => {
+            const updatedNodes = prev.concat(flowNodes);
+            onNodesChange(updatedNodes);
+            return updatedNodes;
+          });
+
+          setEdges((prev) => {
+            const updatedEdges = prev.concat(flowEdges);
+            onEdgesChange(updatedEdges);
+            return updatedEdges;
+          });
+
+          return; // Flow 노드는 별도 처리하므로 여기서 종료
+        }
+
         const newNode: Node = {
           id: getId(),
           type,

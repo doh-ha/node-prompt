@@ -15,6 +15,7 @@ import { ExampleNode } from "./nodeType/ExampleNode";
 import { LengthNode } from "./nodeType/LengthNode";
 import { InputNode } from "./nodeType/InputNode";
 import { OutputNode } from "./nodeType/OutputNode";
+import { FlowNode } from "./nodeType/FlowNode";
 import { colors } from "../../constants";
 
 type NodeTypeKey =
@@ -35,7 +36,8 @@ type NodeTypeKey =
   | "spreadsheetOutput"
   | "pdfOutput"
   | "input"
-  | "output";
+  | "output"
+  | "flow";
 
 interface NodeMeta {
   name: string;
@@ -258,6 +260,17 @@ export const nodesRegistry = {
     },
     component: PdfOutputNode,
   },
+  flow: {
+    type: "flow",
+    meta: {
+      name: "Flow",
+      description: "완전한 워크플로우 (5개 노드)",
+      icon: "🔄",
+      iconColor: colors.nodeIcon.purple,
+      group: "flow",
+    },
+    component: FlowNode,
+  },
 } as Record<string, NodeEntry>;
 
 export const nodeComponents = Object.fromEntries(
@@ -283,6 +296,7 @@ export const nodeComponents = Object.fromEntries(
           "pdfOutput",
           "input",
           "output",
+          "flow",
         ] as const
       ).includes(k as any)
     )
@@ -299,7 +313,7 @@ const GROUP_CONFIG = {
 
 // 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
-  FLOW: { start: 0, input: 1, model: 2, output: 3, result: 4 },
+  FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   INPUT: { text: 0, reference: 1, example: 2 },
   CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
   OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
