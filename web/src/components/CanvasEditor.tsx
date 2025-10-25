@@ -195,7 +195,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           data: nodeData,
         };
 
-        setNodes((prev) => prev.concat(newNode));
+        setNodes((prev) => {
+          const updatedNodes = prev.concat(newNode);
+          // 노드 추가 즉시 상위 컴포넌트에 알림
+          onNodesChange(updatedNodes);
+          return updatedNodes;
+        });
       }
     },
     [reactFlowInstance, setNodes, onNodesChange, nodes]
@@ -216,11 +221,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
 
   const handleNodeContentChange = (nodeId: string, content: string) => {
-    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, content } } : node)));
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, content } } : node));
+      // 노드 내용 변경 즉시 상위 컴포넌트에 알림
+      onNodesChange(updatedNodes);
+      return updatedNodes;
+    });
   };
 
   const handleModelChange = (nodeId: string, model: string) => {
-    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node)));
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node));
+      // 모델 변경 즉시 상위 컴포넌트에 알림
+      onNodesChange(updatedNodes);
+      return updatedNodes;
+    });
   };
 
   const handleFlowNameChange = (nodeId: string, flowName: string) => {

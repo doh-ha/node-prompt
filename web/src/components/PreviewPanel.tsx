@@ -66,7 +66,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
     });
 
     return groups;
-  }, [nodes, forceUpdate]);
+  }, [nodes.map((n) => `${n.id}:${n.type}:${JSON.stringify(n.data)}`).join(","), forceUpdate]);
 
   // 노드의 flowName이 변경될 때마다 강제로 재계산
   React.useEffect(() => {
