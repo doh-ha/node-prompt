@@ -375,3 +375,15 @@ export const ContextNodeContainer = styled.div`
     min-height: 100px; /* 기본 높이보다 높게 설정 */
   }
 `;
+
+// 로딩 스피너 애니메이션
+export const LoadingSpinner = styled.div`
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
