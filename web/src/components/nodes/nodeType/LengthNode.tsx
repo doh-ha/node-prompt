@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeInput, ContextNodeContainer } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
 import { RadioSuggestions } from "../RadioSuggestions";
 import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
@@ -68,7 +68,7 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <ContextNodeContainer>
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
         {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={[...data.suggestions, "직접 입력"]} selectedValue={data.content} onSelectionChange={handleRadioChange} />}
         {showInputField && (
@@ -88,6 +88,6 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
       <RecommendationIcon onClick={() => setShowRecommendations(!showRecommendations)} isVisible={showRecommendations} />
 
       <RecommendationPanel currentPrompt={value} nodeType="length" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
-    </div>
+    </ContextNodeContainer>
   );
 };

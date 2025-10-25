@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NodeInput } from "../../../styles/nodeStyles";
+import { NodeInput, ContextNodeContainer } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
 import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
 import { RecommendationPanel, RecommendationIcon } from "../../ui";
@@ -52,7 +52,7 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <ContextNodeContainer>
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
         <NodeInput
           ref={textAreaRef}
@@ -69,6 +69,6 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
       <RecommendationIcon onClick={() => setShowRecommendations(!showRecommendations)} isVisible={showRecommendations} />
 
       <RecommendationPanel currentPrompt={value} nodeType="audience" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
-    </div>
+    </ContextNodeContainer>
   );
 };
