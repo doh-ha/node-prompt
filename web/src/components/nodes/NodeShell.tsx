@@ -52,15 +52,15 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       case Position.Top:
         return {
           ...baseStyle,
-          background: "#6b7280", // 회색 배경 (filled)
-          border: "2px solid #6b7280",
+          background: "transparent", // 투명 배경
+          border: "2px solid #6b7280", // 회색 테두리만
           transform: "translate(-50%, -50%)",
         };
       case Position.Bottom:
         return {
           ...baseStyle,
-          background: "#6b7280", // 회색 배경 (filled)
-          border: "2px solid #6b7280",
+          background: "transparent", // 투명 배경
+          border: "2px solid #6b7280", // 회색 테두리만
           transform: "translate(-50%, 50%)",
         };
       case Position.Left:

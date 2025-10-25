@@ -16,7 +16,7 @@ interface StartNodeProps {
     onContentChange?: (content: string) => void;
     onFlowNameChange?: (flowName: string) => void;
     onDeleteNode?: (id: string) => void;
-    onExecutePrompt?: (prompt: string) => Promise<void>;
+    onExecutePrompt?: (prompt: string, startNodeId?: string) => Promise<void>;
   };
   selected?: boolean;
   id?: string;
@@ -40,10 +40,10 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
     }
 
     // 프롬프트 실행 기능이 있으면 실행
-    if (data.onExecutePrompt) {
+    if (data.onExecutePrompt && id) {
       setIsExecuting(true);
       try {
-        await data.onExecutePrompt("");
+        await data.onExecutePrompt("", id);
       } catch (error) {
         console.error("프롬프트 실행 중 오류:", error);
       } finally {
