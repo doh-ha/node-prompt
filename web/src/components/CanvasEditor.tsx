@@ -15,10 +15,10 @@ interface CanvasEditorProps {
 const getNodeBgByTypeLocal = (type: string): string => {
   const entry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
   const original = entry?.meta?.group as string | undefined;
-  const base = original === "flow" ? colors.nodeBg.grey : original === "input" ? colors.nodeBg.blue : original === "output" ? colors.nodeBg.lightGreen : colors.nodeBg.lightPurple;
+  const base = original === "flow" ? colors.nodeBg.grey : original === "input" ? colors.nodeBg.blue : original === "output" ? colors.nodeBg.lightGreen : colors.nodeBg.purple;
 
   if (type === "input") return colors.nodeBg.blue;
-  if (type === "model") return colors.nodeBg.purple;
+  if (type === "model") return colors.nodeBg.lightPurple;
   if (type === "output") return colors.nodeBg.lightGreen;
   return base;
 };
