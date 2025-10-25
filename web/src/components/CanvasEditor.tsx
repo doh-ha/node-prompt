@@ -5,6 +5,7 @@ import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { nodeComponents, nodesRegistry } from "./nodes/registry";
 import { colors } from "../constants";
+import { usePromptGenerator } from "../hooks/usePromptGenerator";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
@@ -133,6 +134,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const selectionRafRef = useRef<number | null>(null);
   const nodeIdCounter = useRef(0);
 
+  const { generatedPrompt } = usePromptGenerator(nodes, edges);
+
   const getId = useCallback(() => {
     return `node_${Date.now()}_${nodeIdCounter.current++}`;
   }, []);
@@ -255,6 +258,56 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setSelectedNodeId(null);
   };
 
+  const handleExecutePrompt = async (prompt: string) => {
+    try {
+      // 실제 프롬프트 사용 (generatedPrompt.finalPrompt)
+      const actualPrompt = generatedPrompt.finalPrompt || prompt;
+
+      const response = await fetch("/api/flow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: actualPrompt,
+          model: "gpt-4",
+          temperature: 0.7,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const result = data.content || "응답을 받을 수 없습니다.";
+
+        // Result 노드에 결과 표시
+        setNodes((nds) => {
+          const updatedNodes = nds.map((node) => (node.type === "result" ? { ...node, data: { ...node.data, result } } : node));
+          onNodesChange(updatedNodes);
+          return updatedNodes;
+        });
+      } else {
+        const errorData = await response.json();
+        const errorMessage = `에러: ${errorData.detail || "알 수 없는 오류가 발생했습니다."}`;
+
+        // Result 노드에 에러 표시
+        setNodes((nds) => {
+          const updatedNodes = nds.map((node) => (node.type === "result" ? { ...node, data: { ...node.data, result: errorMessage } } : node));
+          onNodesChange(updatedNodes);
+          return updatedNodes;
+        });
+      }
+    } catch (error) {
+      const errorMessage = `네트워크 에러: ${error instanceof Error ? error.message : "알 수 없는 오류"}`;
+
+      // Result 노드에 에러 표시
+      setNodes((nds) => {
+        const updatedNodes = nds.map((node) => (node.type === "result" ? { ...node, data: { ...node.data, result: errorMessage } } : node));
+        onNodesChange(updatedNodes);
+        return updatedNodes;
+      });
+    }
+  };
+
   // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
   useEffect(() => {
     onNodesChange(nodes);
@@ -311,6 +364,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
                   onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                  onExecutePrompt: handleExecutePrompt,
                 },
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,

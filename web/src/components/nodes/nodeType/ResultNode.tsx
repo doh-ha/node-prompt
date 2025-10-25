@@ -9,6 +9,7 @@ interface ResultNodeProps {
     iconBg?: string;
     iconColor?: string;
     content?: string;
+    result?: string;
     onContentChange?: (content: string) => void;
     onDeleteNode?: (id: string) => void;
   };
@@ -29,7 +30,7 @@ export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) =>
         onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
         nodeType="result"
       >
-        <NodeInput as="textarea" readOnly placeholder="결과가 여기에 표시됩니다" style={{ minHeight: "80px" }} />
+        <NodeInput as="textarea" readOnly placeholder="결과가 여기에 표시됩니다" value={data.result || ""} style={{ minHeight: "80px" }} />
       </NodeShell>
     </div>
   );

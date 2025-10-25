@@ -16,6 +16,7 @@ interface StartNodeProps {
     onContentChange?: (content: string) => void;
     onFlowNameChange?: (flowName: string) => void;
     onDeleteNode?: (id: string) => void;
+    onExecutePrompt?: (prompt: string) => Promise<void>;
   };
   selected?: boolean;
   id?: string;
@@ -23,6 +24,7 @@ interface StartNodeProps {
 
 export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
   const [flowName, setFlowName] = useState(data.flowName || "Flow 1");
+  const [isExecuting, setIsExecuting] = useState(false);
   const textAreaRef = useAutosizeTextArea(flowName);
 
   // data.flowName이 변경되면 로컬 상태도 업데이트
@@ -32,9 +34,21 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
     }
   }, [data.flowName]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (data.onContentChange) {
       data.onContentChange("START");
+    }
+
+    // 프롬프트 실행 기능이 있으면 실행
+    if (data.onExecutePrompt) {
+      setIsExecuting(true);
+      try {
+        await data.onExecutePrompt("");
+      } catch (error) {
+        console.error("프롬프트 실행 중 오류:", error);
+      } finally {
+        setIsExecuting(false);
+      }
     }
   };
 
@@ -71,8 +85,8 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
           onClick={(e) => e.stopPropagation()}
           style={{ marginBottom: "6px", fontSize: "11px", minHeight: "24px", maxHeight: "32px" }}
         />
-        <Button onClick={handleStart} variant="primary" size="small" style={{ width: "100%", fontSize: "12px", padding: "4px 8px", height: "28px" }}>
-          START
+        <Button onClick={handleStart} variant="primary" size="small" disabled={isExecuting} style={{ width: "100%", fontSize: "12px", padding: "4px 8px", height: "28px" }}>
+          {isExecuting ? "실행 중..." : "START"}
         </Button>
       </NodeShell>
     </div>
