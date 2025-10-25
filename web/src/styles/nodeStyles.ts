@@ -365,3 +365,13 @@ export const ResponseArea = styled.div`
   color: #374151;
   white-space: pre-wrap;
 `;
+
+// Context 노드용 컨테이너 (recommendation 버튼을 위한 추가 공간)
+export const ContextNodeContainer = styled.div`
+  position: relative;
+
+  /* NodeContainer를 확장하여 전체 높이 증가 */
+  ${NodeContainer} {
+    min-height: 100px; /* 기본 높이보다 높게 설정 */
+  }
+`;
