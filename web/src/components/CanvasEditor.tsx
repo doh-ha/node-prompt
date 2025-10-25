@@ -142,9 +142,23 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdges = addEdge(params, edges);
-      setEdges(newEdges);
-      onEdgesChange(newEdges);
+      // 연결점의 색상 타입 확인
+      const sourceHandle = document.querySelector(`[data-id="${params.source}"] [data-handle-id="${params.sourceHandle}"]`);
+      const targetHandle = document.querySelector(`[data-id="${params.target}"] [data-handle-id="${params.targetHandle}"]`);
+
+      const sourceHandleType = sourceHandle?.getAttribute("data-handle-type");
+      const targetHandleType = targetHandle?.getAttribute("data-handle-type");
+
+      // 같은 색상 타입의 연결점끼리만 연결 허용
+      if (sourceHandleType === targetHandleType) {
+        const newEdges = addEdge(params, edges);
+        setEdges(newEdges);
+        onEdgesChange(newEdges);
+      } else {
+        // 다른 색상 타입의 연결점은 연결 차단
+        console.log("다른 색상의 연결점끼리는 연결할 수 없습니다.");
+        return;
+      }
     },
     [setEdges, edges, onEdgesChange]
   );
