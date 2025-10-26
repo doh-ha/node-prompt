@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Literal, Optional
 from dotenv import load_dotenv
+from . import prompts
 
 # .env 탐색: 루트와 server 디렉토리 모두 시도
 load_dotenv()
@@ -125,54 +126,11 @@ def recommend_nodes(req: NodeRecommendationRequest):
     try:
         import httpx
         
-        # 노드 타입별 추천 프롬프트 생성
-        recommendation_prompts = {
-            "role": f"""
-현재 작업: "{req.currentPrompt}"
-
-이 작업에 가장 적합한 AI 역할을 3-5개 추천해주세요. 각 역할은 구체적이고 전문적이어야 합니다.
-
-응답 형식:
-- 역할1: 설명
-- 역할2: 설명
-- 역할3: 설명
-""",
-            "style": f"""
-현재 작업: "{req.currentPrompt}"
-
-이 작업에 가장 적합한 작성 스타일을 3-5개 추천해주세요.
-
-응답 형식:
-- 스타일1: 설명
-- 스타일2: 설명
-- 스타일3: 설명
-""",
-            "audience": f"""
-현재 작업: "{req.currentPrompt}"
-
-이 작업의 대상 독자를 3-5개 추천해주세요.
-
-응답 형식:
-- 대상1: 설명
-- 대상2: 설명
-- 대상3: 설명
-""",
-            "length": f"""
-현재 작업: "{req.currentPrompt}"
-
-이 작업에 적합한 길이를 3-5개 추천해주세요.
-
-응답 형식:
-- 길이1: 설명
-- 길이2: 설명
-- 길이3: 설명
-"""
-        }
-        
-        prompt = recommendation_prompts.get(req.nodeType, f"'{req.currentPrompt}' 작업에 적합한 {req.nodeType}을 추천해주세요.")
+        # 프롬프트 모듈에서 추천 프롬프트 가져오기
+        prompt = prompts.get_recommendation_prompt(req.currentPrompt, req.nodeType)
         
         messages = [
-            {"role": "system", "content": "당신은 프롬프트 엔지니어링 전문가입니다. 주어진 작업에 가장 적합한 요소들을 추천해주세요."},
+            {"role": "system", "content": prompts.get_system_prompt()},
             {"role": "user", "content": prompt}
         ]
 

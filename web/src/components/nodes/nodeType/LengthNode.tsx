@@ -37,11 +37,7 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
     }
   };
 
-  const handleFocus = () => {
-    if (value.trim()) {
-      setShowRecommendations(true);
-    }
-  };
+  // handleFocus 제거 - 자동 추천 비활성화
 
   const handleRadioChange = (radioValue: string) => {
     if (data.onContentChange) {
@@ -78,7 +74,6 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
             value={value}
             onChange={handleChange}
             onBlur={handleBlur}
-            onFocus={handleFocus}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           />

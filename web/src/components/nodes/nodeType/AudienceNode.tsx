@@ -33,11 +33,7 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
     }
   };
 
-  const handleFocus = () => {
-    if (value.trim()) {
-      setShowRecommendations(true);
-    }
-  };
+  // handleFocus 제거 - 자동 추천 비활성화
 
   const handleSelectRecommendation = (recommendation: string) => {
     setValue(recommendation);
@@ -60,7 +56,6 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
-          onFocus={handleFocus}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         />
