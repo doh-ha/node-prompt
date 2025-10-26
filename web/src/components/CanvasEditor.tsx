@@ -155,6 +155,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectionRafRef = useRef<number | null>(null);
   const nodeIdCounter = useRef(0);
+  const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
+  const [copyOffset, setCopyOffset] = useState({ x: 50, y: 50 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const [pastePosition, setPastePosition] = useState<{ x: number; y: number } | null>(null);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
 
@@ -480,8 +484,32 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setSelectedNodeId(node.id);
   };
 
+  const onNodeContextMenu = (event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+    setSelectedIds([node.id]);
+  };
+
+  const onPaneContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+
+    // 선택된 노드가 있으면 복사 표시
+    if (selectedIds.length > 0) {
+      const position = reactFlowInstance?.screenToFlowPosition({ x: event.clientX, y: event.clientY }) || { x: 0, y: 0 };
+      setPastePosition(position);
+      setContextMenu({ x: event.clientX, y: event.clientY, nodeId: "" });
+    } else {
+      // 선택된 노드가 없으면 붙여넣기 위치만 저장
+      const position = reactFlowInstance?.screenToFlowPosition({ x: event.clientX, y: event.clientY }) || { x: 0, y: 0 };
+      setPastePosition(position);
+      setContextMenu({ x: event.clientX, y: event.clientY, nodeId: "" });
+      setSelectedIds([]);
+    }
+  };
+
   const onPaneClick = () => {
     setSelectedNodeId(null);
+    setContextMenu(null);
   };
 
   const handleNodeContentChange = (nodeId: string, content: string) => {
@@ -740,6 +768,89 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   // 키보드 삭제는 비활성화 (툴바 버튼으로만 삭제 지원)
 
+  // 복사/붙여넣기 기능
+  const copyNodes = () => {
+    if (selectedIds.length === 0) return;
+
+    const selectedNodes = nodes.filter((n) => selectedIds.includes(n.id));
+    const selectedEdges = edges.filter((e) => selectedIds.includes(e.source) && selectedIds.includes(e.target));
+
+    // 연결된 노드들만 복사
+    setCopiedNodes(selectedNodes);
+    console.log("📋 복사됨:", selectedNodes.length, "개 노드");
+  };
+
+  const pasteNodes = () => {
+    if (copiedNodes.length === 0) return;
+
+    // 새로운 ID 생성
+    const idMap = new Map<string, string>();
+    let isContextMenuPaste = !!pastePosition;
+
+    const timestamp = Date.now();
+    const newNodes = copiedNodes.map((node, index) => {
+      const newId = `node_${timestamp}_${nodeIdCounter.current++}`;
+      idMap.set(node.id, newId);
+
+      let newPosition;
+      if (pastePosition) {
+        // 컨텍스트 메뉴에서 붙여넣기한 경우 지정된 위치에서 오프셋 적용
+        newPosition = {
+          x: pastePosition.x + (index % 3) * 200, // 3개씩 행으로 배치
+          y: pastePosition.y + Math.floor(index / 3) * 150,
+        };
+      } else {
+        // Ctrl+V로 붙여넣기한 경우 오프셋 적용
+        newPosition = {
+          x: node.position.x + copyOffset.x,
+          y: node.position.y + copyOffset.y,
+        };
+      }
+
+      return {
+        ...node,
+        id: newId,
+        position: newPosition,
+        data: {
+          ...node.data, // 모든 데이터 유지 (content, model 등)
+        },
+      };
+    });
+
+    if (isContextMenuPaste) {
+      setPastePosition(null); // 위치 초기화
+    }
+
+    // 새 노드를 추가
+    setNodes([...nodes, ...newNodes]);
+    setCopyOffset({ x: copyOffset.x + 10, y: copyOffset.y + 10 }); // 붙여넣기마다 오프셋 증가
+    console.log("📄 붙여넣기됨:", newNodes.length, "개 노드");
+  };
+
+  // 키보드 이벤트 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        e.preventDefault();
+        copyNodes();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        e.preventDefault();
+        pasteNodes();
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      setContextMenu(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, [selectedIds, copiedNodes, nodes, edges, copyOffset]);
+
   return (
     <EditorContainer>
       <FlowContainer>
@@ -777,7 +888,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           onDrop={onDrop}
           onDragOver={onDragOver}
           onNodeClick={onNodeClick}
+          onNodeContextMenu={onNodeContextMenu}
           onPaneClick={onPaneClick}
+          onPaneContextMenu={onPaneContextMenu}
           selectionOnDrag={canvasMode === "select"}
           selectionMode={SelectionMode.Partial}
           panOnDrag={canvasMode === "pan"}
@@ -795,6 +908,69 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           <Background variant={BackgroundVariant.Dots} gap={40} size={1} color={colors.edge.background} />
         </ReactFlow>
       </FlowContainer>
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 10000,
+            backgroundColor: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            minWidth: "120px",
+            padding: "4px",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              copyNodes();
+              setContextMenu(null);
+            }}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              border: "none",
+              background: "white",
+              textAlign: "left",
+              cursor: "pointer",
+              fontSize: "13px",
+              borderRadius: "4px",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+          >
+            📋 복사 (Ctrl+C)
+          </button>
+          {copiedNodes.length > 0 && (
+            <button
+              onClick={() => {
+                pasteNodes();
+                setContextMenu(null);
+              }}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "none",
+                background: "white",
+                textAlign: "left",
+                cursor: copiedNodes.length > 0 ? "pointer" : "not-allowed",
+                fontSize: "13px",
+                borderRadius: "4px",
+                opacity: copiedNodes.length > 0 ? 1 : 0.5,
+              }}
+              onMouseEnter={(e) => copiedNodes.length > 0 && (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+            >
+              📄 붙여넣기 (Ctrl+V)
+            </button>
+          )}
+        </div>
+      )}
     </EditorContainer>
   );
 };
