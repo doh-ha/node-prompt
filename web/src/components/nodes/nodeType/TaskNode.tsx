@@ -21,6 +21,9 @@ export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const textAreaRef = useAutosizeTextArea(value);
 
+  // 전체 프롬프트를 사용 (없으면 현재 노드의 내용만 사용)
+  const currentPrompt = (data as any).currentFullPrompt || (value.trim() ? value.trim() : "");
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
   };
@@ -69,7 +72,7 @@ export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
 
       <RecommendationIcon onClick={() => setShowRecommendations(!showRecommendations)} isVisible={showRecommendations} />
 
-      <RecommendationPanel currentPrompt={value} nodeType="role" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
+      <RecommendationPanel currentPrompt={currentPrompt} nodeType="task" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
     </ContextNodeContainer>
   );
 };

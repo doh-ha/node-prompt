@@ -21,10 +21,12 @@ interface LengthNodeProps {
 }
 
 export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) => {
-  const [value, setValue] = useState(data.content === "직접 입력" ? "" : data.content ?? "");
+  const [value, setValue] = useState(data.content ?? "");
   const [showRecommendations, setShowRecommendations] = useState(false);
   const textAreaRef = useAutosizeTextArea(value);
-  const showInputField = data.content === "직접 입력" || (data.content && !data.suggestions?.includes(data.content));
+
+  // 전체 프롬프트를 사용 (없으면 현재 노드의 내용만 사용)
+  const currentPrompt = (data as any).currentFullPrompt || (value.trim() ? value.trim() : "");
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
@@ -32,29 +34,16 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
 
   const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (data.onContentChange) {
-      // 직접 입력 모드에서는 "직접 입력" 상태를 유지하면서 실제 내용도 저장
-      data.onContentChange("직접 입력");
+      data.onContentChange(e.target.value);
     }
   };
 
   // handleFocus 제거 - 자동 추천 비활성화
 
-  const handleRadioChange = (radioValue: string) => {
-    if (data.onContentChange) {
-      data.onContentChange(radioValue);
-    }
-    if (radioValue === "직접 입력") {
-      setValue("");
-    } else {
-      // 라디오 버튼 선택 시 input field 값 초기화
-      setValue("");
-    }
-  };
-
   const handleSelectRecommendation = (recommendation: string) => {
     setValue(recommendation);
     if (data.onContentChange) {
-      data.onContentChange("직접 입력");
+      data.onContentChange(recommendation);
     }
     setShowRecommendations(false);
   };
@@ -66,23 +55,20 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
   return (
     <ContextNodeContainer>
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
-        {data.suggestions && data.suggestions.length > 0 && <RadioSuggestions suggestions={[...data.suggestions, "직접 입력"]} selectedValue={data.content} onSelectionChange={handleRadioChange} />}
-        {showInputField && (
-          <NodeInput
-            ref={textAreaRef}
-            placeholder="권장 길이를 입력하세요..."
-            value={value}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          />
-        )}
+        <NodeInput
+          ref={textAreaRef}
+          placeholder="권장 길이를 입력하세요..."
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
       </NodeShell>
 
       <RecommendationIcon onClick={() => setShowRecommendations(!showRecommendations)} isVisible={showRecommendations} />
 
-      <RecommendationPanel currentPrompt={value} nodeType="length" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
+      <RecommendationPanel currentPrompt={currentPrompt} nodeType="length" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
     </ContextNodeContainer>
   );
 };

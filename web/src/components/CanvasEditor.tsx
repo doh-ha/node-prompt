@@ -707,6 +707,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 data: {
                   ...node.data,
                   suggestions,
+                  currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
                   onContentChange: (content: string) => handleNodeContentChange(node.id, content),
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
