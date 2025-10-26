@@ -7,11 +7,12 @@ import { RadioSuggestions } from "../RadioSuggestions";
 interface ReferenceNodeProps {
   data: {
     content: string;
+    fileName?: string;
     label?: string;
     icon?: string;
     iconColor?: string;
     nodeBg?: string;
-    onContentChange?: (content: string) => void;
+    onContentChange?: (content: string, fileName?: string) => void;
     onDeleteNode?: (id: string) => void;
   };
   selected?: boolean;
@@ -28,7 +29,8 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setFileName(file.name);
+      const fileName = file.name;
+      setFileName(fileName);
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
@@ -36,7 +38,7 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
         // 파일 업로드 시 직접 입력 필드 비우기
         setTextContent("");
         if (data.onContentChange) {
-          data.onContentChange(content);
+          data.onContentChange(content, fileName);
         }
       };
       reader.readAsText(file);

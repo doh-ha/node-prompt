@@ -424,7 +424,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 nodeBg: colors.nodeBg.lightPurple,
                 content: "",
                 name: "Task",
-                onContentChange: (content: string) => handleNodeContentChange(getId(), content),
+                onContentChange: (content: string, fileName?: string) => handleNodeContentChange(getId(), content, fileName),
                 onDeleteNode: handleDeleteNode,
               },
             },
@@ -512,9 +512,18 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setContextMenu(null);
   };
 
-  const handleNodeContentChange = (nodeId: string, content: string) => {
+  const handleNodeContentChange = (nodeId: string, content: string, fileName?: string) => {
     setNodes((nds) => {
-      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, content } } : node));
+      const updatedNodes = nds.map((node) => {
+        if (node.id === nodeId) {
+          const updatedData = { ...node.data, content };
+          if (fileName) {
+            updatedData.fileName = fileName;
+          }
+          return { ...node, data: updatedData };
+        }
+        return node;
+      });
       // 노드 내용 변경 즉시 상위 컴포넌트에 알림
       onNodesChange(updatedNodes);
       return updatedNodes;
@@ -868,7 +877,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   ...node.data,
                   suggestions,
                   currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
-                  onContentChange: (content: string) => handleNodeContentChange(node.id, content),
+                  onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
                   onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),

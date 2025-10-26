@@ -82,7 +82,12 @@ export const nodesRegistry = {
       group: "input",
     },
     component: ReferenceNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n필요하다면 다음 참고 정보를 기반으로 답변하세요.` : null),
+    toPrompt: (d: any) => {
+      if (!d.content || d.content.trim() === "") return null;
+      // 파일명을 프롬프트에 표시
+      const fileReference = d.fileName ? `${d.fileName}을 참고하여` : "참고 자료를 참고하여";
+      return `[Reference]\n${fileReference}...`;
+    },
   },
 
   // 추가 컨텍스트: Audience

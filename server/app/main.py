@@ -73,6 +73,8 @@ def run_flow(req: FlowRequest):
             messages.append({"role": "system", "content": req.system})
         messages.append({"role": "user", "content": req.prompt})
 
+        print(f"🔍 DEBUG: Prompt length: {len(req.prompt)} characters")
+        print(f"🔍 DEBUG: Prompt preview: {req.prompt[:200]}...")
         print(f"🔍 DEBUG: Messages: {messages}")
         print(f"🔍 DEBUG: Model: {req.model}")
 
