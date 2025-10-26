@@ -29,6 +29,7 @@ export const NodeHeader = styled.div`
   gap: 8px;
   margin-bottom: 12px;
   font-weight: 600;
+  font-size: 14px;
   color: #374151;
   position: relative;
 `;
