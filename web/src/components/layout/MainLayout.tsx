@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { Header } from "./Header";
+import { Toolbar } from "./Toolbar";
 
 const AppContainer = styled.div`
   width: 100vw;
@@ -12,20 +13,24 @@ const AppContainer = styled.div`
 `;
 
 const MainContent = styled.main`
-  margin-top: 60px;
-  height: calc(100vh - 60px);
+  margin-top: 108px;
+  height: calc(100vh - 108px);
   position: relative;
 `;
 
 interface MainLayoutProps {
   children: React.ReactNode;
   title?: string;
+  showToolbar?: boolean;
+  toolbarMode?: "pan" | "select";
+  onToolbarModeChange?: (mode: "pan" | "select") => void;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, showToolbar = false, toolbarMode = "pan", onToolbarModeChange }) => {
   return (
     <AppContainer>
       <Header title={title} />
+      {showToolbar && onToolbarModeChange && <Toolbar mode={toolbarMode} onModeChange={onToolbarModeChange} />}
       <MainContent>{children}</MainContent>
     </AppContainer>
   );

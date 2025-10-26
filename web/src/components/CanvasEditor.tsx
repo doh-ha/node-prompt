@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance } from "reactflow";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance, SelectionMode } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
@@ -11,6 +11,7 @@ import { generatePromptFromWorkflow } from "../utils/promptGenerator";
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
+  canvasMode: "pan" | "select";
 }
 
 // 레지스트리 규칙과 동일한 배경색 계산 (개별 타입 예외 포함)
@@ -146,7 +147,7 @@ const defaultEdgeOptions = {
   },
 };
 
-const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange }) => {
+const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode }) => {
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -739,14 +740,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   // 키보드 삭제는 비활성화 (툴바 버튼으로만 삭제 지원)
 
-  const clearAll = () => {
-    setNodes([]);
-    setEdges([]);
-    onNodesChange([]);
-    onEdgesChange([]);
-    setSelectedNodeId(null);
-  };
-
   return (
     <EditorContainer>
       <FlowContainer>
@@ -785,7 +778,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           onDragOver={onDragOver}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
-          selectionOnDrag
+          selectionOnDrag={canvasMode === "select"}
+          selectionMode={SelectionMode.Partial}
+          panOnDrag={canvasMode === "pan"}
           onSelectionChange={(sel) => {
             const ids = (sel?.nodes || []).map((n) => n.id);
             if (selectionRafRef.current) cancelAnimationFrame(selectionRafRef.current);

@@ -41,6 +41,7 @@ function App() {
   const { nodes, edges, setNodes, setEdges } = useNodeEditor();
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [canvasMode, setCanvasMode] = useState<"pan" | "select">("pan");
 
   // ResizeObserver 에러 무시
   React.useEffect(() => {
@@ -57,7 +58,7 @@ function App() {
   }, []);
 
   return (
-    <MainLayout title="PromptFlow">
+    <MainLayout title="PromptFlow" showToolbar={true} toolbarMode={canvasMode} onToolbarModeChange={setCanvasMode}>
       <AppContainer>
         {leftPanelOpen && (
           <PanelContainer $isOpen={leftPanelOpen} $position="left">
@@ -73,7 +74,7 @@ function App() {
         )}
 
         <CanvasContainer $leftPanelOpen={leftPanelOpen} $rightPanelOpen={rightPanelOpen}>
-          <CanvasEditor onNodesChange={setNodes} onEdgesChange={setEdges} />
+          <CanvasEditor onNodesChange={setNodes} onEdgesChange={setEdges} canvasMode={canvasMode} />
         </CanvasContainer>
 
         {rightPanelOpen && (
