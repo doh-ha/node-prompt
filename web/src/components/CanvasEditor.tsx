@@ -539,19 +539,75 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       console.log("🌐 API 호출 시작...");
 
+      const requestBody = {
+        prompt: actualPrompt,
+        model: "gpt-4",
+        temperature: 0.7,
+      };
+
+      console.log("📤 요청 body:", JSON.stringify(requestBody, null, 2));
+
       const response = await fetch("/api/flow", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prompt: actualPrompt,
-          model: "gpt-4",
-          temperature: 0.7,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log("📡 API 응답 상태:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ API 에러 응답:", errorText);
+        console.error("📋 에러 상세:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        });
+
+        // Error 객체에서 detail 파싱
+        let errorMessage = "서버 오류가 발생했습니다.";
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+
+            // OpenAI quota 에러 감지
+            if (errorData.detail.includes("insufficient_quota") || errorData.detail.includes("429")) {
+              errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+            }
+          }
+        } catch (e) {
+          console.log("에러 파싱 실패:", e);
+        }
+
+        // Result 노드에 에러 메시지 표시
+        const resultMessage = errorMessage;
+        setNodes((nds) => {
+          const updatedNodes = nds.map((node) => {
+            if (node.type === "result" && startNodeId) {
+              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+                if (visited.has(currentNodeId)) return false;
+                visited.add(currentNodeId);
+                if (currentNodeId === node.id) return true;
+                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
+              };
+
+              if (findResultNode(startNodeId)) {
+                console.log("🎯 Result 노드에 에러 메시지 표시:", node.id, resultMessage);
+                return { ...node, data: { ...node.data, result: resultMessage } };
+              }
+            }
+            return node;
+          });
+          console.log("📊 업데이트된 노드 수:", updatedNodes.length);
+          return updatedNodes;
+        });
+
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();

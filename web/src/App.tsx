@@ -42,6 +42,20 @@ function App() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
+  // ResizeObserver 에러 무시
+  React.useEffect(() => {
+    const originalError = window.console.error;
+    window.console.error = (...args) => {
+      if (args[0]?.includes?.("ResizeObserver loop completed with undelivered notifications")) {
+        return;
+      }
+      originalError.apply(window.console, args);
+    };
+    return () => {
+      window.console.error = originalError;
+    };
+  }, []);
+
   return (
     <MainLayout title="PromptFlow">
       <AppContainer>
