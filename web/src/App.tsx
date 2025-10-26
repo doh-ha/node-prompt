@@ -33,6 +33,8 @@ const PanelContainer = styled.div<{ $isOpen: boolean; $position: "left" | "right
 const CanvasContainer = styled.div<{ $leftPanelOpen: boolean; $rightPanelOpen: boolean }>`
   flex: 1;
   transition: all 0.3s ease;
+  margin-left: ${(props) => (props.$leftPanelOpen ? "300px" : "0")};
+  margin-right: ${(props) => (props.$rightPanelOpen ? "400px" : "0")};
 `;
 
 function App() {

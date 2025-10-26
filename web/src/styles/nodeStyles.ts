@@ -225,7 +225,6 @@ export const ToolbarButton = styled.button`
 `;
 
 export const FlowContainer = styled.div`
-  margin-left: 260px;
   height: calc(100vh - 60px);
   position: relative;
 `;
