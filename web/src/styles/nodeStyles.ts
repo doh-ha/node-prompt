@@ -181,6 +181,7 @@ export const NodeDescription = styled.div`
   font-size: 12px;
   color: #6b7280;
   line-height: 1.3;
+  white-space: pre-line;
 `;
 
 // 캔버스 에디터 스타일

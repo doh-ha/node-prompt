@@ -269,10 +269,10 @@ export const nodesRegistry = {
     type: "flow",
     meta: {
       name: "Flow",
-      description: "완전한 워크플로우 (5개 노드)",
-      icon: "🔄",
+      description: "완전한 워크플로우\n(Start, Input, Model, Output, Result)",
+      icon: "⛓️",
       iconColor: colors.nodeIcon.purple,
-      group: "flow",
+      group: "structure",
     },
     component: FlowNode,
   },
@@ -310,7 +310,7 @@ export const nodeComponents = Object.fromEntries(
 
 // 그룹별로 명시적으로 정의
 const GROUP_CONFIG = {
-  FLOW: { title: "FLOW", bg: colors.nodeBg.grey, order: 0 },
+  STRUCTURE: { title: "STRUCTURE", bg: colors.nodeBg.grey, order: 0 },
   INPUT: { title: "INPUT", bg: colors.nodeBg.blue, order: 1 },
   CONTEXT: { title: "CONTEXT", bg: colors.nodeBg.lightPurple, order: 2 },
   OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
@@ -318,7 +318,8 @@ const GROUP_CONFIG = {
 
 // 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
-  FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
+  // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
+  STRUCTURE: { flow: 0 },
   INPUT: { text: 0, reference: 1, example: 2 },
   CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
   OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
@@ -330,7 +331,7 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
     const items = Object.values(nodesRegistry)
       .filter((entry) => {
         const original = entry.meta.group;
-        const mappedTitle = original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
+        const mappedTitle = original === "structure" ? "STRUCTURE" : original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
         return mappedTitle === groupKey;
       })
       .map((entry) => ({

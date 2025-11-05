@@ -102,7 +102,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
         },
         body: JSON.stringify({
           prompt: currentPrompt,
-          model: "gpt-4",
+          model: "gpt-4o-mini",
           temperature: 0.7,
         }),
       });
