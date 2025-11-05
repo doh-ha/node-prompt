@@ -59,7 +59,7 @@ const initialNodes: Node[] = [
       icon: "🤖",
       iconColor: colors.nodeIcon.purple,
       nodeBg: getNodeBgByTypeLocal("model"),
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature: 0.7,
       maxTokens: 1000,
     },
@@ -382,7 +382,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 icon: "🤖",
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: colors.nodeBg.lightPurple,
-                model: "gpt-4",
+                model: "gpt-4o-mini",
                 onModelChange: handleModelChange,
                 onDeleteNode: handleDeleteNode,
               },
@@ -577,9 +577,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       console.log("🌐 API 호출 시작...");
 
-      const requestBody = {
+      const requestBody: any = {
         prompt: actualPrompt,
-        model: "gpt-4",
         temperature: 0.7,
       };
 

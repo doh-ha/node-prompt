@@ -12,9 +12,11 @@ server_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 if os.path.exists(os.path.abspath(server_env_path)):
     load_dotenv(os.path.abspath(server_env_path))
 
-# OpenAI API 키만 저장하고 직접 HTTP 요청 사용
+# OpenAI API 키와 기본 모델 설정 (환경변수로 오버라이드 가능)
 _api_key = os.getenv("OPENAI_API_KEY")
+_default_model = os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4o-mini")
 print(f"🔍 DEBUG: API Key loaded: {_api_key is not None}")
+print(f"🔍 DEBUG: Default model: {_default_model}")
 
 
 class ChatMessage(BaseModel):
@@ -24,13 +26,13 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
-    model: Optional[str] = "gpt-4"
+    model: Optional[str] = _default_model
     temperature: Optional[float] = 0.7
 
 
 class FlowRequest(BaseModel):
     prompt: str
-    model: Optional[str] = "gpt-4"
+    model: Optional[str] = _default_model
     temperature: Optional[float] = 0.7
     system: Optional[str] = None
 
@@ -38,7 +40,7 @@ class FlowRequest(BaseModel):
 class NodeRecommendationRequest(BaseModel):
     currentPrompt: str
     nodeType: str  # "role", "style", "audience", "length" 등
-    model: Optional[str] = "gpt-4"
+    model: Optional[str] = _default_model
     temperature: Optional[float] = 0.7
 
 
@@ -165,22 +167,46 @@ def recommend_nodes(req: NodeRecommendationRequest):
                 
                 # 추천 항목들을 파싱하여 배열로 반환
                 recommendations = []
-                lines = content.strip().split('\n')
-                for line in lines:
-                    line = line.strip()
-                    if line.startswith('-') or line.startswith('•'):
-                        # "- 항목: 설명" 형식을 파싱
-                        parts = line[1:].strip().split(':', 1)
-                        if len(parts) == 2:
-                            recommendations.append({
-                                "value": parts[0].strip(),
-                                "description": parts[1].strip()
-                            })
-                        else:
-                            recommendations.append({
-                                "value": parts[0].strip(),
-                                "description": ""
-                            })
+                
+                # JSON 형식 응답 파싱 시도
+                try:
+                    import json
+                    # content가 JSON 문자열인 경우 파싱
+                    content_cleaned = content.strip()
+                    if content_cleaned.startswith('{') or content_cleaned.startswith('['):
+                        parsed_json = json.loads(content_cleaned)
+                        if isinstance(parsed_json, dict) and "recommendations" in parsed_json:
+                            for item in parsed_json["recommendations"]:
+                                if isinstance(item, dict):
+                                    recommendations.append({
+                                        "value": item.get("element", "").strip(),
+                                        "description": item.get("description", "").strip()
+                                    })
+                        elif isinstance(parsed_json, list):
+                            for item in parsed_json:
+                                if isinstance(item, dict):
+                                    recommendations.append({
+                                        "value": item.get("element", "").strip(),
+                                        "description": item.get("description", "").strip()
+                                    })
+                except json.JSONDecodeError:
+                    # JSON 파싱 실패 시 기존 줄 단위 파싱 시도
+                    lines = content.strip().split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if line.startswith('-') or line.startswith('•'):
+                            # "- 항목: 설명" 형식을 파싱
+                            parts = line[1:].strip().split(':', 1)
+                            if len(parts) == 2:
+                                recommendations.append({
+                                    "value": parts[0].strip(),
+                                    "description": parts[1].strip()
+                                })
+                            else:
+                                recommendations.append({
+                                    "value": parts[0].strip(),
+                                    "description": ""
+                                })
                 
                 return {
                     "nodeType": req.nodeType,
