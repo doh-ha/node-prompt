@@ -202,9 +202,24 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return result;
     };
 
+    // 1) 하류(나가는 엣지) 방향으로 탐색해 기본 플로우 수집
     const flowNodeIds = findFlowNodes(startNodeId);
-    const flowNodes = nodes.filter((node) => flowNodeIds.includes(node.id));
-    const flowEdges = edges.filter((edge) => flowNodeIds.includes(edge.source) && flowNodeIds.includes(edge.target));
+
+    // 2) 상류(들어오는 엣지) 방향으로 역추적하여 입력 노드 포함
+    const allIds = new Set<string>(flowNodeIds);
+    const collectUpstream = (targetId: string) => {
+      const incoming = edges.filter((e) => e.target === targetId);
+      incoming.forEach((e) => {
+        if (!allIds.has(e.source)) {
+          allIds.add(e.source);
+          collectUpstream(e.source);
+        }
+      });
+    };
+    flowNodeIds.forEach((id) => collectUpstream(id));
+
+    const flowNodes = nodes.filter((node) => allIds.has(node.id));
+    const flowEdges = edges.filter((edge) => allIds.has(edge.source) && allIds.has(edge.target));
 
     console.log("🔄 Flow 노드들:", flowNodeIds);
     console.log(

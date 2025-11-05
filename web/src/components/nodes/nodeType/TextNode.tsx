@@ -23,12 +23,13 @@ export const TextNode: React.FC<TextNodeProps> = ({ data, selected, id }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (data.onContentChange) {
       data.onContentChange(e.target.value);
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    // onChange에서 이미 반영
   };
 
   return (

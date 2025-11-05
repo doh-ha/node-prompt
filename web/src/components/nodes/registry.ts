@@ -157,7 +157,7 @@ export const nodesRegistry = {
       group: "input",
     },
     component: TextNode,
-    toPrompt: (d: any) => (d.content ? d.content : null),
+    toPrompt: (d: any) => (d.content ? `[Input]\ninput value: ${d.content}` : null),
   },
   promptTemplate: {
     type: "promptTemplate",
