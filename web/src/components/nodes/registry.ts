@@ -1,5 +1,4 @@
 import { RoleNode } from "./nodeType/RoleNode";
-import { OutputFormatNode } from "./nodeType/OutputFormatNode";
 import { TextOutputNode } from "./nodeType/TextOutputNode";
 import { SpreadsheetOutputNode } from "./nodeType/SpreadsheetOutputNode";
 import { PdfOutputNode } from "./nodeType/PdfOutputNode";
@@ -20,11 +19,8 @@ import { colors } from "../../constants";
 
 type NodeTypeKey =
   | "role"
-  | "format"
-  | "context"
   | "promptTemplate"
   | "model"
-  | "reference"
   | "file"
   | "audience"
   | "style"
@@ -179,7 +175,7 @@ export const nodesRegistry = {
       name: "Model",
       description: "AI 모델 설정",
       icon: "🤖",
-      iconColor: colors.nodeIcon.purple,
+      iconColor: colors.nodeIcon.red,
 
       group: "flow",
     },
@@ -285,8 +281,6 @@ export const nodeComponents = Object.fromEntries(
       (
         [
           "role",
-          "outputFormat",
-          "context",
           "promptTemplate",
           "model",
           "file",
@@ -323,7 +317,7 @@ const NODE_ORDERS = {
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
   INSTRUCTION: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
-  OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
+  OUTPUT: { textOutput: 0, spreadsheetOutput: 1, pdfOutput: 2, length: 3 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)

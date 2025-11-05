@@ -18,12 +18,33 @@ interface CanvasEditorProps {
 const getNodeBgByTypeLocal = (type: string): string => {
   const entry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
   const original = entry?.meta?.group as string | undefined;
-  const base = original === "flow" ? colors.nodeBg.grey : original === "input" ? colors.nodeBg.blue : original === "output" ? colors.nodeBg.lightGreen : colors.nodeBg.purple;
+  const base =
+    original === "flow"
+      ? colors.nodeBg.grey
+      : original === "input"
+      ? colors.nodeBg.blue
+      : original === "output"
+      ? colors.nodeBg.lightGreen
+      : original === "instruction"
+      ? colors.nodeBg.red
+      : colors.nodeBg.purple;
 
   if (type === "input") return colors.nodeBg.blue;
-  if (type === "model") return colors.nodeBg.lightPurple;
+  if (type === "model") return colors.nodeBg.red;
   if (type === "output") return colors.nodeBg.lightGreen;
+  if (type === "promptTemplate") return colors.nodeBg.red;
   return base;
+};
+
+// 레지스트리에서 메타를 가져와 기본 데이터 생성
+const getMetaFromRegistry = (type: string) => {
+  const entry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
+  const meta = entry?.meta || {};
+  return {
+    label: meta.name as string | undefined,
+    icon: meta.icon as string | undefined,
+    iconColor: meta.iconColor as string | undefined,
+  };
 };
 
 const initialNodes: Node[] = [
@@ -32,9 +53,7 @@ const initialNodes: Node[] = [
     type: "start",
     position: { x: 250, y: 0 },
     data: {
-      label: "Start",
-      icon: "▶️",
-      iconColor: colors.nodeIcon.green,
+      ...getMetaFromRegistry("start"),
       nodeBg: getNodeBgByTypeLocal("start"),
       flowName: "Flow 1",
     },
@@ -44,9 +63,7 @@ const initialNodes: Node[] = [
     type: "input",
     position: { x: 250, y: 180 },
     data: {
-      label: "Input",
-      icon: "📥",
-      iconColor: colors.nodeIcon.blue,
+      ...getMetaFromRegistry("input"),
       nodeBg: getNodeBgByTypeLocal("input"),
     },
   },
@@ -55,9 +72,7 @@ const initialNodes: Node[] = [
     type: "model",
     position: { x: 250, y: 300 },
     data: {
-      label: "Model",
-      icon: "🤖",
-      iconColor: colors.nodeIcon.purple,
+      ...getMetaFromRegistry("model"),
       nodeBg: getNodeBgByTypeLocal("model"),
       model: "gpt-4o-mini",
       temperature: 0.7,
@@ -69,9 +84,7 @@ const initialNodes: Node[] = [
     type: "output",
     position: { x: 250, y: 450 },
     data: {
-      label: "Output",
-      icon: "📤",
-      iconColor: colors.nodeIcon.green,
+      ...getMetaFromRegistry("output"),
       nodeBg: getNodeBgByTypeLocal("output"),
     },
   },
@@ -80,9 +93,7 @@ const initialNodes: Node[] = [
     type: "result",
     position: { x: 250, y: 550 },
     data: {
-      label: "Result",
-      icon: "🏁",
-      iconColor: colors.nodeIcon.red,
+      ...getMetaFromRegistry("result"),
       nodeBg: getNodeBgByTypeLocal("result"),
     },
   },
@@ -91,10 +102,8 @@ const initialNodes: Node[] = [
     type: "promptTemplate",
     position: { x: 600, y: 300 },
     data: {
-      label: "Task",
-      icon: "📝",
-      iconColor: colors.nodeIcon.purple,
-      nodeBg: colors.nodeBg.lightPurple,
+      ...getMetaFromRegistry("promptTemplate"),
+      nodeBg: getNodeBgByTypeLocal("promptTemplate"),
       content: "",
       name: "Task",
     },
@@ -396,7 +405,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 label: "Model",
                 icon: "🤖",
                 iconColor: colors.nodeIcon.purple,
-                nodeBg: colors.nodeBg.lightPurple,
+                nodeBg: getNodeBgByTypeLocal("model"),
                 model: "gpt-4o-mini",
                 onModelChange: handleModelChange,
                 onDeleteNode: handleDeleteNode,
@@ -436,7 +445,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 label: "Task",
                 icon: "📝",
                 iconColor: colors.nodeIcon.purple,
-                nodeBg: colors.nodeBg.lightPurple,
+                nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
                 name: "Task",
                 onContentChange: (content: string, fileName?: string) => handleNodeContentChange(getId(), content, fileName),
