@@ -25,6 +25,7 @@ type NodeTypeKey =
   | "promptTemplate"
   | "model"
   | "reference"
+  | "file"
   | "audience"
   | "style"
   | "text"
@@ -66,17 +67,17 @@ export const nodesRegistry = {
       icon: "🎭",
       iconColor: colors.nodeIcon.purple,
 
-      group: "context",
+      group: "instruction",
     },
     component: RoleNode,
     toPrompt: (d) => (d.content || d.role ? `[${d.name}]\n당신은 ${d.content || d.role} 입니다.` : null),
   },
   // 추가 컨텍스트: Reference
-  reference: {
-    type: "reference",
+  file: {
+    type: "file",
     meta: {
-      name: "Reference",
-      description: "참고 자료/문헌",
+      name: "File",
+      description: "참고 자료",
       icon: "📑",
       iconColor: colors.nodeIcon.gray,
       group: "input",
@@ -111,7 +112,7 @@ export const nodesRegistry = {
       description: "문체/톤/말투",
       icon: "🎨",
       iconColor: colors.nodeIcon.purple,
-      group: "context",
+      group: "instruction",
       defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
     component: StyleNode,
@@ -126,7 +127,7 @@ export const nodesRegistry = {
       description: "길이",
       icon: "📏",
       iconColor: colors.nodeIcon.purple,
-      group: "context",
+      group: "instruction",
       defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
@@ -167,7 +168,7 @@ export const nodesRegistry = {
       icon: "📝",
       iconColor: colors.nodeIcon.purple,
 
-      group: "context",
+      group: "instruction",
     },
     component: TaskNode,
     toPrompt: (d) => (d.content || d.template ? `[${d.name}]\n다음 작업을 수행하세요: ${d.content || d.template}.` : null),
@@ -288,7 +289,7 @@ export const nodeComponents = Object.fromEntries(
           "context",
           "promptTemplate",
           "model",
-          "reference",
+          "file",
           "audience",
           "style",
           "text",
@@ -312,7 +313,7 @@ export const nodeComponents = Object.fromEntries(
 const GROUP_CONFIG = {
   STRUCTURE: { title: "STRUCTURE", bg: colors.nodeBg.grey, order: 0 },
   INPUT: { title: "INPUT", bg: colors.nodeBg.blue, order: 1 },
-  CONTEXT: { title: "CONTEXT", bg: colors.nodeBg.lightPurple, order: 2 },
+  INSTRUCTION: { title: "INSTRUCTION", bg: colors.nodeBg.red, order: 2 },
   OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
 };
 
@@ -320,8 +321,8 @@ const GROUP_CONFIG = {
 const NODE_ORDERS = {
   // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   STRUCTURE: { flow: 0 },
-  INPUT: { text: 0, reference: 1, example: 2 },
-  CONTEXT: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
+  INPUT: { text: 0, file: 1, example: 2 },
+  INSTRUCTION: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
   OUTPUT: { outputFormat: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3, length: 4 },
 };
 
@@ -331,7 +332,7 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
     const items = Object.values(nodesRegistry)
       .filter((entry) => {
         const original = entry.meta.group;
-        const mappedTitle = original === "structure" ? "STRUCTURE" : original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "CONTEXT";
+        const mappedTitle = original === "structure" ? "STRUCTURE" : original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "INSTRUCTION";
         return mappedTitle === groupKey;
       })
       .map((entry) => ({
@@ -346,7 +347,7 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
           entry.type === "input"
             ? GROUP_CONFIG.INPUT.bg // start는 INPUT 색상
             : entry.type === "model"
-            ? GROUP_CONFIG.CONTEXT.bg // model은 CONTEXT 색상
+            ? GROUP_CONFIG.INSTRUCTION.bg // model은 CONTEXT 색상
             : entry.type === "output"
             ? GROUP_CONFIG.OUTPUT.bg // result는 OUTPUT 색상
             : config.bg,
