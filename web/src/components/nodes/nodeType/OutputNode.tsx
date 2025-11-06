@@ -14,6 +14,9 @@ interface OutputNodeProps {
     format?: string;
     onFormatChange?: (format: string) => void;
     result?: string;
+    showNameInput?: boolean;
+    customName?: string;
+    onNameChange?: (name: string) => void;
   };
   selected?: boolean;
   id?: string;
@@ -160,6 +163,9 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
       nodeType="output"
+      showNameInput={data.showNameInput}
+      customName={data.customName}
+      onNameChange={data.onNameChange}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <select

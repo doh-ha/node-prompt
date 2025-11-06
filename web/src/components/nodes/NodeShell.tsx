@@ -13,9 +13,12 @@ interface NodeShellProps {
   onDelete?: () => void;
   children?: React.ReactNode;
   nodeType?: string;
+  showNameInput?: boolean;
+  customName?: string;
+  onNameChange?: (name: string) => void;
 }
 
-export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = colors.primary, bg, onDelete, children, nodeType }) => {
+export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = colors.primary, bg, onDelete, children, nodeType, showNameInput, customName, onNameChange }) => {
   const iconStyle = { background: "transparent", color: iconColor } as React.CSSProperties;
 
   // 연결점 표시 규칙
@@ -105,7 +108,29 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       {showTopHandle && <Handle id="top" isConnectable={true} type="target" position={Position.Top} style={getHandleStyle(Position.Top)} data-handle-type={getHandleColorType(Position.Top)} />}
       <NodeHeader>
         <NodeIcon style={iconStyle}>{icon}</NodeIcon>
-        {title || "Node"}
+        {showNameInput && customName !== undefined ? (
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => onNameChange?.(e.target.value)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              flex: 1,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#374151",
+              padding: "2px 4px",
+              marginLeft: "4px",
+            }}
+            placeholder={title || "Node"}
+          />
+        ) : (
+          title || "Node"
+        )}
         {selected && onDelete && (
           <DeleteButton onClick={onDelete} title="삭제" style={{ marginLeft: "auto" }}>
             X

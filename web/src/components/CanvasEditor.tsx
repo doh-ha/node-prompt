@@ -349,6 +349,35 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           nodeData.flowName = newFlowName;
         }
 
+        // 동일한 타입의 노드가 2개 이상이면 이름 생성
+        const sameTypeNodes = nodes.filter((n) => n.type === type);
+        const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
+        const defaultBaseName = registryEntry?.meta?.name || type;
+
+        if (sameTypeNodes.length >= 1) {
+          // 이미 같은 타입의 노드가 있으면 이름 생성
+          const existingNames = sameTypeNodes.map((n) => n.data?.customName || n.data?.label || defaultBaseName).filter((name) => (name && name !== defaultBaseName) || name?.match(/\(\d+\)$/));
+
+          let nameNumber = 1;
+          let newName = `${defaultBaseName} (${nameNumber})`;
+
+          // 기존 이름에서 숫자 추출하여 다음 번호 결정
+          const existingNumbers = existingNames
+            .map((name) => {
+              const match = name?.match(/\((\d+)\)$/);
+              return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter((num) => num > 0);
+
+          if (existingNumbers.length > 0) {
+            nameNumber = Math.max(...existingNumbers) + 1;
+            newName = `${defaultBaseName} (${nameNumber})`;
+          }
+
+          nodeData.customName = newName;
+          nodeData.label = newName;
+        }
+
         // Flow 노드인 경우 5개의 연결된 노드 생성
         if (type === "flow") {
           const existingStartNodes = nodes.filter((n) => n.type === "start");
@@ -569,6 +598,28 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const handleFormatChange = (nodeId: string, format: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, format } } : node));
+      onNodesChange(updatedNodes);
+      return updatedNodes;
+    });
+  };
+
+  const handleNameChange = (nodeId: string, name: string) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => {
+        if (node.id === nodeId) {
+          const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === node.type) as any;
+          const defaultName = registryEntry?.meta?.name || node.type;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              customName: name,
+              label: name || defaultName,
+            },
+          };
+        }
+        return node;
+      });
       onNodesChange(updatedNodes);
       return updatedNodes;
     });
@@ -953,11 +1004,24 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       <FlowContainer>
         <ReactFlow
           nodes={useMemo(() => {
+            // 동일한 타입의 노드 개수 계산
+            const typeCounts = new Map<string, number>();
+            nodes.forEach((node) => {
+              if (node.type) {
+                const count = typeCounts.get(node.type) || 0;
+                typeCounts.set(node.type, count + 1);
+              }
+            });
+
             return nodes.map((node) => {
               // 레지스트리에서 suggestions 가져오기
-              const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
+              const registryKey = node.type ? Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type) : null;
               const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
               const suggestions = registryEntry?.meta?.defaultSuggestions;
+
+              // 동일한 타입의 노드가 2개 이상이면 이름 입력 필드 표시
+              const sameTypeCount = node.type ? typeCounts.get(node.type) || 0 : 0;
+              const showNameInput = sameTypeCount >= 2;
 
               return {
                 ...node,
@@ -970,7 +1034,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onModelChange: (model: string) => handleModelChange(node.id, model),
                   onFormatChange: (format: string) => handleFormatChange(node.id, format),
                   onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                  onNameChange: (name: string) => handleNameChange(node.id, name),
                   onExecutePrompt: handleExecutePrompt,
+                  showNameInput,
+                  customName: node.data?.customName,
                 },
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
