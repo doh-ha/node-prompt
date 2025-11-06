@@ -168,6 +168,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [copyOffset, setCopyOffset] = useState({ x: 50, y: 50 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [pastePosition, setPastePosition] = useState<{ x: number; y: number } | null>(null);
+  const executingPromptRef = useRef<boolean>(false);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
 
@@ -581,9 +582,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
 
   const handleExecutePrompt = async (prompt: string, startNodeId?: string) => {
+    // 중복 실행 방지
+    if (executingPromptRef.current) {
+      console.log("⚠️ 이미 실행 중인 프롬프트가 있습니다. 중복 실행 방지.");
+      return;
+    }
+
     console.log("🚀 handleExecutePrompt 호출됨:", { prompt, startNodeId });
     console.log("📊 전체 노드 수:", nodes.length);
     console.log("📊 전체 엣지 수:", edges.length);
+
+    executingPromptRef.current = true;
 
     try {
       console.log("🔄 Flow별 프롬프트 생성 시작...");
@@ -631,16 +640,41 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         let errorMessage = "서버 오류가 발생했습니다.";
         try {
           const errorData = JSON.parse(errorText);
+          console.log("📋 파싱된 에러 데이터:", errorData);
+
+          // detail이 문자열인 경우
           if (errorData.detail) {
             errorMessage = errorData.detail;
 
-            // OpenAI quota 에러 감지
-            if (errorData.detail.includes("insufficient_quota") || errorData.detail.includes("429")) {
+            // OpenAI API 에러 메시지에서 quota 관련 키워드 확인
+            const detailStr = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+            if (
+              detailStr.includes("insufficient_quota") ||
+              detailStr.includes("429") ||
+              detailStr.includes("quota") ||
+              detailStr.includes("billing") ||
+              detailStr.includes("You exceeded your current quota")
+            ) {
+              errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+            }
+          } else if (errorData.error) {
+            // OpenAI API 직접 에러 형식
+            const errorObj = errorData.error;
+            if (errorObj?.message) {
+              errorMessage = errorObj.message;
+              if (errorObj.message.includes("quota") || errorObj.message.includes("billing") || errorObj.type === "insufficient_quota") {
+                errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+              }
+            } else if (errorObj?.type === "insufficient_quota") {
               errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
             }
           }
         } catch (e) {
           console.log("에러 파싱 실패:", e);
+          // 파싱 실패 시 원본 텍스트에서 키워드 확인
+          if (errorText.includes("insufficient_quota") || errorText.includes("quota") || errorText.includes("billing")) {
+            errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+          }
         }
 
         // Result 노드에 에러 메시지 표시
@@ -768,6 +802,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return updatedNodes;
       });
     } finally {
+      executingPromptRef.current = false;
       console.log("🏁 handleExecutePrompt 완료");
     }
   };
