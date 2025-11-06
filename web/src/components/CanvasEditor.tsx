@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance, SelectionMode } from "reactflow";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance, SelectionMode, MarkerType } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
@@ -117,6 +117,10 @@ const initialEdges: Edge[] = [
     target: "input_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "input-to-model",
@@ -124,6 +128,10 @@ const initialEdges: Edge[] = [
     target: "model_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "model-to-output",
@@ -131,6 +139,10 @@ const initialEdges: Edge[] = [
     target: "output_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "output-to-result",
@@ -295,7 +307,30 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       // 같은 색상 타입의 연결점끼리만 연결 허용
       if (sourceHandleType === targetHandleType) {
-        const newEdges = addEdge(params, edges);
+        // start > input > model > output 사이의 연결만 화살표 추가
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        const targetNode = nodes.find((n) => n.id === params.target);
+
+        const shouldAddArrow =
+          params.sourceHandle === "bottom" &&
+          params.targetHandle === "top" &&
+          sourceNode &&
+          targetNode &&
+          ((sourceNode.type === "start" && targetNode.type === "input") ||
+            (sourceNode.type === "input" && targetNode.type === "model") ||
+            (sourceNode.type === "model" && targetNode.type === "output"));
+
+        const edgeWithMarker = shouldAddArrow
+          ? {
+              ...params,
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            }
+          : params;
+
+        const newEdges = addEdge(edgeWithMarker, edges);
         setEdges(newEdges);
         onEdgesChange(newEdges);
       } else {
@@ -304,7 +339,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return;
       }
     },
-    [setEdges, edges, onEdgesChange]
+    [setEdges, edges, onEdgesChange, nodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -488,11 +523,47 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
           // 연결 엣지 생성
           const flowEdges: Edge[] = [
-            // 메인 플로우 연결 (회색 연결점 사용: top/bottom)
-            { id: `e-${flowNodes[0].id}-${flowNodes[1].id}`, source: flowNodes[0].id, target: flowNodes[1].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[1].id}-${flowNodes[2].id}`, source: flowNodes[1].id, target: flowNodes[2].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[2].id}-${flowNodes[3].id}`, source: flowNodes[2].id, target: flowNodes[3].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[3].id}-${flowNodes[4].id}`, source: flowNodes[3].id, target: flowNodes[4].id, sourceHandle: "bottom", targetHandle: "top" },
+            // 메인 플로우 연결 (회색 연결점 사용: top/bottom) - start > input > model > output만 화살표
+            {
+              id: `e-${flowNodes[0].id}-${flowNodes[1].id}`,
+              source: flowNodes[0].id,
+              target: flowNodes[1].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
+            {
+              id: `e-${flowNodes[1].id}-${flowNodes[2].id}`,
+              source: flowNodes[1].id,
+              target: flowNodes[2].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
+            {
+              id: `e-${flowNodes[2].id}-${flowNodes[3].id}`,
+              source: flowNodes[2].id,
+              target: flowNodes[3].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
+            {
+              id: `e-${flowNodes[3].id}-${flowNodes[4].id}`,
+              source: flowNodes[3].id,
+              target: flowNodes[4].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+            },
             // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
             { id: `e-${flowNodes[2].id}-${flowNodes[5].id}`, source: flowNodes[2].id, target: flowNodes[5].id, sourceHandle: "right", targetHandle: "left" },
           ];
