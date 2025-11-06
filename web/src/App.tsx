@@ -143,6 +143,7 @@ function App() {
             initialNodes={currentCanvas?.nodes}
             initialEdges={currentCanvas?.edges}
             canvasId={currentCanvasId}
+            canvasName={currentCanvas?.name}
           />
         </CanvasContainer>
 

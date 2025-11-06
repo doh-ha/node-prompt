@@ -15,6 +15,7 @@ interface CanvasEditorProps {
   initialNodes?: Node[];
   initialEdges?: Edge[];
   canvasId?: string;
+  canvasName?: string;
 }
 
 // 레지스트리 규칙과 동일한 배경색 계산 (개별 타입 예외 포함)
@@ -171,7 +172,7 @@ const defaultEdgeOptions = {
   },
 };
 
-const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode, initialNodes: propInitialNodes, initialEdges: propInitialEdges, canvasId }) => {
+const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode, initialNodes: propInitialNodes, initialEdges: propInitialEdges, canvasId, canvasName }) => {
   const nodesInit = propInitialNodes !== undefined ? propInitialNodes : initialNodes;
   const edgesInit = propInitialEdges !== undefined ? propInitialEdges : initialEdges;
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(nodesInit);
@@ -231,6 +232,13 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const executingPromptRef = useRef<boolean>(false);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
+
+  // Canvas 이름에서 접두사 추출 (Canvas A -> A, Canvas AA -> AA)
+  const getCanvasPrefix = useCallback(() => {
+    if (!canvasName) return "";
+    const match = canvasName.match(/Canvas\s+([A-Z]+)/i);
+    return match ? match[1].toUpperCase() : "";
+  }, [canvasName]);
 
   // Flow별 프롬프트 생성 함수
   const generateFlowPrompt = (startNodeId: string) => {
@@ -419,14 +427,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             return;
           }
 
-          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName as string);
+          const prefix = getCanvasPrefix();
 
           let flowNumber = 1;
-          let newFlowName = `Flow ${flowNumber}`;
+          let newFlowName = `Flow ${prefix}${flowNumber}`;
 
           while (existingFlowNames.includes(newFlowName)) {
             flowNumber++;
-            newFlowName = `Flow ${flowNumber}`;
+            newFlowName = `Flow ${prefix}${flowNumber}`;
           }
 
           nodeData.flowName = newFlowName;
@@ -471,14 +480,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             return;
           }
 
-          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName as string);
+          const prefix = getCanvasPrefix();
 
           let flowNumber = 1;
-          let newFlowName = `Flow ${flowNumber}`;
+          let newFlowName = `Flow ${prefix}${flowNumber}`;
 
           while (existingFlowNames.includes(newFlowName)) {
             flowNumber++;
-            newFlowName = `Flow ${flowNumber}`;
+            newFlowName = `Flow ${prefix}${flowNumber}`;
           }
 
           // 5개 노드 생성 (Start -> Input -> Model -> Output -> Result) - 세로 배치
