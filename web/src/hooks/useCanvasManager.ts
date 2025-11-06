@@ -67,20 +67,26 @@ export const useCanvasManager = () => {
     }
   }, [canvases]);
 
-  const createCanvas = useCallback((name?: string) => {
-    let createdId = "";
-    setCanvases((prev) => {
-      const autoName = name || getNextCanvasName(prev);
+  const createCanvas = useCallback(
+    (name?: string) => {
+      // 현재 상태 기반으로 이름과 ID를 즉시 생성해 선택 해제 상태를 방지
+      const autoName = name || getNextCanvasName(canvases);
       const newCanvas = createDefaultCanvas(autoName);
-      createdId = newCanvas.id;
-      return [...prev, newCanvas];
-    });
-    setCurrentCanvasId((_) => createdId);
-    return createdId;
-  }, []);
+      setCanvases((prev) => [...prev, newCanvas]);
+      setCurrentCanvasId(newCanvas.id);
+      return newCanvas.id;
+    },
+    [canvases]
+  );
 
   const deleteCanvas = useCallback(
     (canvasId: string) => {
+      // 최소 1개는 유지
+      if (canvases.length <= 1) {
+        alert("최소 하나의 캔버스는 필요합니다.");
+        return;
+      }
+
       setCanvases((prev) => prev.filter((c) => c.id !== canvasId));
       if (currentCanvasId === canvasId) {
         const remaining = canvases.filter((c) => c.id !== canvasId);

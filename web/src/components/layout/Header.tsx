@@ -39,10 +39,10 @@ const CanvasTabs = styled.div`
 
 const CanvasTab = styled.button<{ $active: boolean }>`
   padding: 6px 12px;
-  background: #f3f4f6; /* 활성 탭도 배경 고정 */
-  color: #374151;
+  background: ${(p) => (p.$active ? "#4f46e5" : "#f3f4f6")};
+  color: ${(p) => (p.$active ? "#ffffff" : "#374151")};
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${(p) => (p.$active ? "#4f46e5" : "#e5e7eb")};
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -54,27 +54,21 @@ const CanvasTab = styled.button<{ $active: boolean }>`
 
 const AddCanvasButton = styled.button`
   padding: 6px 10px;
-  background: #4f46e5; /* 보라색 */
-  color: white;
+  background: #ffffff; /* 구분을 위해 흰 배경 + 보라 테두리 */
+  color: #4f46e5;
   border-radius: 6px;
-  border: none;
+  border: 1px solid #4f46e5;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
 `;
 
-const ActiveDot = styled.span`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4f46e5; /* 보라색 점 */
-  display: inline-block;
-`;
+// ActiveDot는 더 이상 사용하지 않음 (보라색 fill로 대체)
 
-const CanvasTabDelete = styled.button`
+const CanvasTabDelete = styled.button<{ $active: boolean }>`
   background: transparent;
   border: none;
-  color: #6b7280;
+  color: ${(p) => (p.$active ? "#ffffff" : "#000000")};
   cursor: pointer;
   padding: 0 4px;
   border-radius: 4px;
@@ -84,11 +78,10 @@ const CanvasTabDelete = styled.button`
   height: 18px;
   line-height: 18px;
   font-size: 12px;
-  &:hover {
-    background: #e5e7eb;
-    color: #374151;
-  }
+  /* hover 시 배경색 변화 없음 */
 `;
+
+// DeletePlaceholder 제거: 비활성 탭은 X 버튼을 표시하지 않으며 폭은 텍스트에 맞춤
 
 interface HeaderProps {
   title?: string;
@@ -107,10 +100,10 @@ export const Header: React.FC<HeaderProps> = ({ title = "PromptFlow", canvases =
       <CanvasTabs>
         {canvases.map((c) => (
           <CanvasTab key={c.id} $active={c.id === currentCanvasId} onClick={() => onCanvasSwitch?.(c.id)}>
-            {c.id === currentCanvasId && <ActiveDot />}
             {c.name}
-            {canvases.length > 1 && c.id === currentCanvasId && (
+            {canvases.length > 1 && c.id === currentCanvasId ? (
               <CanvasTabDelete
+                $active={c.id === currentCanvasId}
                 onClick={(e) => {
                   e.stopPropagation();
                   onCanvasDelete?.(c.id);
@@ -120,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({ title = "PromptFlow", canvases =
               >
                 ×
               </CanvasTabDelete>
-            )}
+            ) : null}
           </CanvasTab>
         ))}
         <AddCanvasButton onClick={() => onCanvasCreate?.()}>+ 새 캔버스</AddCanvasButton>
