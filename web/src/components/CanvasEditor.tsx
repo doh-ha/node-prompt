@@ -12,6 +12,9 @@ interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
   canvasMode: "pan" | "select";
+  initialNodes?: Node[];
+  initialEdges?: Edge[];
+  canvasId?: string;
 }
 
 // 레지스트리 규칙과 동일한 배경색 계산 (개별 타입 예외 포함)
@@ -168,9 +171,54 @@ const defaultEdgeOptions = {
   },
 };
 
-const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode }) => {
-  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
+const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode, initialNodes: propInitialNodes, initialEdges: propInitialEdges, canvasId }) => {
+  const nodesInit = propInitialNodes !== undefined ? propInitialNodes : initialNodes;
+  const edgesInit = propInitialEdges !== undefined ? propInitialEdges : initialEdges;
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(nodesInit);
+  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(edgesInit);
+
+  // 초기 마운트 감지를 위한 ref
+  const isInitialMountRef = useRef<boolean>(true);
+  const prevCanvasIdRef = useRef<string | undefined>(canvasId);
+
+  // onNodesChange와 onEdgesChange를 ref로 저장하여 항상 최신 버전 참조
+  const onNodesChangeRef = useRef(onNodesChange);
+  const onEdgesChangeRef = useRef(onEdgesChange);
+
+  useEffect(() => {
+    onNodesChangeRef.current = onNodesChange;
+    onEdgesChangeRef.current = onEdgesChange;
+  }, [onNodesChange, onEdgesChange]);
+
+  // 캔버스 전환 시 초기 마운트 플래그 재설정
+  useEffect(() => {
+    if (canvasId !== prevCanvasIdRef.current) {
+      prevCanvasIdRef.current = canvasId;
+      isInitialMountRef.current = true;
+    }
+  }, [canvasId]);
+
+  // 첫 렌더링 후 초기 마운트 플래그 해제
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+    }
+  }, []);
+
+  // onNodesChange와 onEdgesChange를 래핑하여 초기 마운트 시 호출 방지
+  // useCallback의 의존성을 제거하여 재생성 방지
+  const wrappedOnNodesChange = useCallback((nodes: Node[]) => {
+    if (!isInitialMountRef.current) {
+      onNodesChangeRef.current(nodes);
+    }
+  }, []);
+
+  const wrappedOnEdgesChange = useCallback((edges: Edge[]) => {
+    if (!isInitialMountRef.current) {
+      onEdgesChangeRef.current(edges);
+    }
+  }, []);
+
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -332,7 +380,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
         const newEdges = addEdge(edgeWithMarker, edges);
         setEdges(newEdges);
-        onEdgesChange(newEdges);
+        wrappedOnEdgesChange(newEdges);
       } else {
         // 다른 색상 타입의 연결점은 연결 차단
         console.log("다른 색상의 연결점끼리는 연결할 수 없습니다.");
@@ -570,13 +618,13 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
           setNodes((prev) => {
             const updatedNodes = prev.concat(flowNodes);
-            onNodesChange(updatedNodes);
+            wrappedOnNodesChange(updatedNodes);
             return updatedNodes;
           });
 
           setEdges((prev) => {
             const updatedEdges = prev.concat(flowEdges);
-            onEdgesChange(updatedEdges);
+            wrappedOnEdgesChange(updatedEdges);
             return updatedEdges;
           });
 
@@ -593,7 +641,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         setNodes((prev) => {
           const updatedNodes = prev.concat(newNode);
           // 노드 추가 즉시 상위 컴포넌트에 알림
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       }
@@ -652,7 +700,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return node;
       });
       // 노드 내용 변경 즉시 상위 컴포넌트에 알림
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -661,7 +709,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node));
       // 모델 변경 즉시 상위 컴포넌트에 알림
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -669,7 +717,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const handleFormatChange = (nodeId: string, format: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, format } } : node));
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -691,7 +739,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         }
         return node;
       });
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -883,7 +931,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             return node;
           });
           console.log("🔄 노드 업데이트 완료");
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       } else {
@@ -914,7 +962,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             }
             return node;
           });
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       }
@@ -950,7 +998,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           }
           return node;
         });
-        onNodesChange(updatedNodes);
+        wrappedOnNodesChange(updatedNodes);
         return updatedNodes;
       });
     } finally {
@@ -959,14 +1007,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     }
   };
 
-  // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
-  useEffect(() => {
-    onNodesChange(nodes);
-  }, [nodes.length, onNodesChange]); // nodes.length만 의존성으로 변경
-
-  useEffect(() => {
-    onEdgesChange(edges);
-  }, [edges.length, onEdgesChange]); // edges.length만 의존성으로 변경
+  // useEffect는 제거 - setNodes/setEdges 호출 시점에 이미 wrappedOnNodesChange/wrappedOnEdgesChange를 호출하고 있음
 
   const deleteSelectedNode = () => {
     if (selectedNodeId) {
@@ -981,6 +1022,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     const newEdges = edges.filter((e) => !idSet.has(e.source) && !idSet.has(e.target));
     setNodes(newNodes);
     setEdges(newEdges);
+    wrappedOnNodesChange(newNodes);
+    wrappedOnEdgesChange(newEdges);
     setSelectedIds([]);
     setSelectedNodeId(null);
   };

@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { Header } from "./Header";
+import type { Canvas } from "../../hooks/useCanvasManager";
 import { Toolbar } from "./Toolbar";
 
 const AppContainer = styled.div`
@@ -24,12 +25,38 @@ interface MainLayoutProps {
   showToolbar?: boolean;
   toolbarMode?: "pan" | "select";
   onToolbarModeChange?: (mode: "pan" | "select") => void;
+  canvases?: Canvas[];
+  currentCanvasId?: string;
+  onCanvasSwitch?: (canvasId: string) => void;
+  onCanvasCreate?: () => void;
+  onCanvasDelete?: (canvasId: string) => void;
+  onCanvasRename?: (canvasId: string, newName: string) => void;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, showToolbar = false, toolbarMode = "pan", onToolbarModeChange }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({
+  children,
+  title,
+  showToolbar = false,
+  toolbarMode = "pan",
+  onToolbarModeChange,
+  canvases = [],
+  currentCanvasId,
+  onCanvasSwitch,
+  onCanvasCreate,
+  onCanvasDelete,
+  onCanvasRename,
+}) => {
   return (
     <AppContainer>
-      <Header title={title} />
+      <Header
+        title={title}
+        canvases={canvases}
+        currentCanvasId={currentCanvasId}
+        onCanvasSwitch={onCanvasSwitch}
+        onCanvasCreate={onCanvasCreate}
+        onCanvasDelete={onCanvasDelete}
+        onCanvasRename={onCanvasRename}
+      />
       {showToolbar && onToolbarModeChange && <Toolbar mode={toolbarMode} onModeChange={onToolbarModeChange} />}
       <MainContent>{children}</MainContent>
     </AppContainer>
