@@ -25,8 +25,8 @@ interface OutputNodeProps {
 export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) => {
   const [nodeHeight, setNodeHeight] = useState(120);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  const isTextFormat = data.format === "text" || data.format === "markdown" || !data.format;
-  const isFileFormat = data.format === "csv" || data.format === "spreadsheet" || data.format === "pdf";
+  const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || !data.format;
+  const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
 
   // 텍스트 길이에 따라 노드 높이 자동 조정
   useEffect(() => {
@@ -45,8 +45,8 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
 
-    if (data.format === "csv" || data.format === "spreadsheet") {
-      // CSV/Spreadsheet 다운로드
+    if (data.format === "csv") {
+      // CSV 다운로드
       const csvContent = convertToCSV(data.result);
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -57,6 +57,29 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+    } else if (data.format === "JSON") {
+      // JSON 다운로드
+      try {
+        // JSON 형식인지 확인하고 파싱 시도
+        let jsonContent = data.result;
+        try {
+          const parsed = JSON.parse(data.result);
+          jsonContent = JSON.stringify(parsed, null, 2);
+        } catch {
+          // JSON이 아니면 그대로 사용
+        }
+        const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `output_${timestamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("JSON 다운로드 실패:", error);
+      }
     } else if (data.format === "pdf") {
       // PDF 다운로드
       handleDownloadPDF();
@@ -176,9 +199,10 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
           style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e5e7eb", width: "100%" }}
         >
           <option value="text">text</option>
+          <option value="table">table</option>
           <option value="markdown">markdown</option>
+          <option value="JSON">JSON</option>
           <option value="csv">csv</option>
-          <option value="spreadsheet">spreadsheet</option>
           <option value="pdf">pdf</option>
         </select>
 
@@ -222,7 +246,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                   width: "100%",
                 }}
               >
-                {data.format === "pdf" ? "PDF 다운로드" : data.format === "csv" ? "CSV 다운로드" : "Spreadsheet 다운로드"}
+                {data.format === "pdf" ? "PDF 다운로드" : data.format === "csv" ? "CSV 다운로드" : data.format === "JSON" ? "JSON 다운로드" : "파일 다운로드"}
               </button>
             ) : (
               <div

@@ -220,9 +220,10 @@ export const nodesRegistry = {
       if (!d.format || d.format === "text") return null;
 
       const formatMap: Record<string, string> = {
+        table: "표 형식",
         markdown: "마크다운 형식",
+        JSON: "JSON 형식",
         csv: "CSV 형식",
-        spreadsheet: "스프레드시트 형식",
         pdf: "PDF 형식",
       };
 
