@@ -421,7 +421,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 icon: "📤",
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.lightGreen,
+                format: "text",
                 onDeleteNode: handleDeleteNode,
+                onFormatChange: handleFormatChange,
               },
             },
             {
@@ -564,6 +566,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     });
   };
 
+  const handleFormatChange = (nodeId: string, format: string) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, format } } : node));
+      onNodesChange(updatedNodes);
+      return updatedNodes;
+    });
+  };
+
   const handleFlowNameChange = (nodeId: string, flowName: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, flowName } } : node));
@@ -677,21 +687,30 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           }
         }
 
-        // Result 노드에 에러 메시지 표시
+        // Result 노드와 Output 노드에 에러 메시지 표시
         const resultMessage = errorMessage;
         setNodes((nds) => {
-          const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-                if (currentNodeId === node.id) return true;
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+              if (currentNodeId === targetNodeId) return true;
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
 
-              if (findResultNode(startNodeId)) {
+          const updatedNodes = nds.map((node) => {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              // Result 노드에 에러 표시
+              if (node.type === "result") {
                 console.log("🎯 Result 노드에 에러 메시지 표시:", node.id, resultMessage);
+                return { ...node, data: { ...node.data, result: resultMessage } };
+              }
+              // Output 노드에 에러 표시 (모든 형식에 대해 저장)
+              if (node.type === "output") {
+                console.log("🎯 Output 노드에 에러 메시지 표시:", node.id, resultMessage);
                 return { ...node, data: { ...node.data, result: resultMessage } };
               }
             }
@@ -711,27 +730,31 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         console.log("📏 응답 길이:", result.length);
 
         console.log("🎯 Result 노드 찾기 시작...");
-        // 특정 Flow의 Result 노드에만 결과 표시
+        // 특정 Flow의 Result 노드와 Output 노드에 결과 표시
         setNodes((nds) => {
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+
+              if (currentNodeId === targetNodeId) return true;
+
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
+
           const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              // 해당 Flow의 Result 노드인지 확인 (간단한 방법)
-              // Start -> Input -> Model -> Output -> Result 순서로 연결되어 있으므로
-              // Start 노드에서 시작해서 Result 노드까지의 경로를 찾기
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-
-                if (currentNodeId === node.id) return true;
-
-                // 현재 노드에서 연결된 다음 노드들을 찾기
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
-
-              if (findResultNode(startNodeId)) {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              // Result 노드에 결과 표시
+              if (node.type === "result") {
                 console.log("🎯 Result 노드 업데이트:", node.id, result);
+                return { ...node, data: { ...node.data, result } };
+              }
+              // Output 노드에 결과 표시 (모든 형식에 대해 저장)
+              if (node.type === "output") {
+                console.log("🎯 Output 노드 업데이트:", node.id, result);
                 return { ...node, data: { ...node.data, result } };
               }
             }
@@ -745,22 +768,25 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         const errorData = await response.json();
         const errorMessage = `에러: ${errorData.detail || "알 수 없는 오류가 발생했습니다."}`;
 
-        // 특정 Flow의 Result 노드에만 에러 표시
+        // 특정 Flow의 Result 노드와 Output 노드에 에러 표시
         setNodes((nds) => {
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+              if (currentNodeId === targetNodeId) return true;
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
+
           const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-
-                if (currentNodeId === node.id) return true;
-
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
-
-              if (findResultNode(startNodeId)) {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              if (node.type === "result") {
+                return { ...node, data: { ...node.data, result: errorMessage } };
+              }
+              if (node.type === "output") {
                 return { ...node, data: { ...node.data, result: errorMessage } };
               }
             }
@@ -776,23 +802,27 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       console.log("🚨 에러 메시지:", errorMessage);
 
-      // 특정 Flow의 Result 노드에만 에러 표시
+      // 특정 Flow의 Result 노드와 Output 노드에 에러 표시
       setNodes((nds) => {
+        const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+          const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+            if (visited.has(currentNodeId)) return false;
+            visited.add(currentNodeId);
+            if (currentNodeId === targetNodeId) return true;
+            const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+            return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+          };
+          return findNode(startNodeId);
+        };
+
         const updatedNodes = nds.map((node) => {
-          if (node.type === "result" && startNodeId) {
-            const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-              if (visited.has(currentNodeId)) return false;
-              visited.add(currentNodeId);
-
-              if (currentNodeId === node.id) return true;
-
-              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-              return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-            };
-
-            if (findResultNode(startNodeId)) {
+          if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+            if (node.type === "result") {
               console.log("🚨 에러를 Result 노드에 표시:", node.id, errorMessage);
+              return { ...node, data: { ...node.data, result: errorMessage } };
+            }
+            if (node.type === "output") {
+              console.log("🚨 에러를 Output 노드에 표시:", node.id, errorMessage);
               return { ...node, data: { ...node.data, result: errorMessage } };
             }
           }
@@ -938,6 +968,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
+                  onFormatChange: (format: string) => handleFormatChange(node.id, format),
                   onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
                   onExecutePrompt: handleExecutePrompt,
                 },

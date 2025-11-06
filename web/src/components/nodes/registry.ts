@@ -210,12 +210,25 @@ export const nodesRegistry = {
     type: "output",
     meta: {
       name: "Output",
-      description: "output 관련 노드들을 연결",
+      description: "출력형식",
       icon: "📤",
       iconColor: colors.nodeIcon.green,
-      group: "flow",
+      group: "output",
     },
     component: OutputNode,
+    toPrompt: (d: any) => {
+      if (!d.format || d.format === "text") return null;
+
+      const formatMap: Record<string, string> = {
+        markdown: "마크다운 형식",
+        csv: "CSV 형식",
+        spreadsheet: "스프레드시트 형식",
+        pdf: "PDF 형식",
+      };
+
+      const formatDescription = formatMap[d.format] || `${d.format} 형식`;
+      return `[Output Format]\n${formatDescription}으로 출력해주세요.`;
+    },
   },
   // 연결 흐름용 결과 노드
   result: {
@@ -317,7 +330,7 @@ const NODE_ORDERS = {
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
   INSTRUCTION: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
-  OUTPUT: { textOutput: 0, spreadsheetOutput: 1, pdfOutput: 2, length: 3 },
+  OUTPUT: { output: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
