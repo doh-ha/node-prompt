@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { MainLayout } from "./components/layout";
 import CanvasEditor from "./components/CanvasEditor";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { LibraryPanel } from "./components/LibraryPanel";
-import { useNodeEditor } from "./hooks/useNodeEditor";
+import { useCanvasManager } from "./hooks/useCanvasManager";
+import type { Node, Edge } from "./types/nodeTypes";
 
 const AppContainer = styled.div`
   display: flex;
@@ -38,10 +39,59 @@ const CanvasContainer = styled.div<{ $leftPanelOpen: boolean; $rightPanelOpen: b
 `;
 
 function App() {
-  const { nodes, edges, setNodes, setEdges } = useNodeEditor();
+  const { canvases, currentCanvas, currentCanvasId, createCanvas, deleteCanvas, renameCanvas, switchCanvas, updateCurrentCanvas } = useCanvasManager();
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [canvasMode, setCanvasMode] = useState<"pan" | "select">("pan");
+
+  // 이전 노드/엣지 값을 추적하여 실제 변경 시에만 업데이트
+  const prevNodesRef = useRef<Node[]>(currentCanvas?.nodes || []);
+  const prevEdgesRef = useRef<Edge[]>(currentCanvas?.edges || []);
+  const updateCurrentCanvasRef = useRef(updateCurrentCanvas);
+  const currentCanvasRef = useRef(currentCanvas);
+  const prevCanvasIdRef = useRef<string>(currentCanvasId);
+
+  // ref 업데이트 - currentCanvasId가 변경될 때만
+  React.useEffect(() => {
+    updateCurrentCanvasRef.current = updateCurrentCanvas;
+  }, [updateCurrentCanvas]);
+
+  // 캔버스가 변경되었을 때만 ref 업데이트
+  React.useEffect(() => {
+    if (currentCanvasId !== prevCanvasIdRef.current) {
+      prevCanvasIdRef.current = currentCanvasId;
+      currentCanvasRef.current = currentCanvas;
+      prevNodesRef.current = currentCanvas?.nodes || [];
+      prevEdgesRef.current = currentCanvas?.edges || [];
+    } else {
+      // 같은 캔버스이지만 currentCanvas 객체가 변경된 경우 (노드/엣지 업데이트)
+      currentCanvasRef.current = currentCanvas;
+    }
+  }, [currentCanvasId, currentCanvas]);
+
+  // 노드 변경 핸들러 - 실제 변경 시에만 업데이트
+  const handleNodesChange = useCallback((nodes: Node[]) => {
+    const nodesString = JSON.stringify(nodes);
+    const prevNodesString = JSON.stringify(prevNodesRef.current);
+    if (nodesString !== prevNodesString) {
+      prevNodesRef.current = nodes;
+      // 현재 캔버스의 엣지는 그대로 유지
+      const currentEdges = currentCanvasRef.current?.edges || prevEdgesRef.current;
+      updateCurrentCanvasRef.current(nodes, currentEdges);
+    }
+  }, []);
+
+  // 엣지 변경 핸들러 - 실제 변경 시에만 업데이트
+  const handleEdgesChange = useCallback((edges: Edge[]) => {
+    const edgesString = JSON.stringify(edges);
+    const prevEdgesString = JSON.stringify(prevEdgesRef.current);
+    if (edgesString !== prevEdgesString) {
+      prevEdgesRef.current = edges;
+      // 현재 캔버스의 노드는 그대로 유지
+      const currentNodes = currentCanvasRef.current?.nodes || prevNodesRef.current;
+      updateCurrentCanvasRef.current(currentNodes, edges);
+    }
+  }, []);
 
   // ResizeObserver 에러 무시
   React.useEffect(() => {
@@ -58,7 +108,18 @@ function App() {
   }, []);
 
   return (
-    <MainLayout title="PromptFlow" showToolbar={true} toolbarMode={canvasMode} onToolbarModeChange={setCanvasMode}>
+    <MainLayout
+      title="PromptFlow"
+      showToolbar={true}
+      toolbarMode={canvasMode}
+      onToolbarModeChange={setCanvasMode}
+      canvases={canvases}
+      currentCanvasId={currentCanvasId}
+      onCanvasSwitch={switchCanvas}
+      onCanvasCreate={createCanvas}
+      onCanvasDelete={deleteCanvas}
+      onCanvasRename={renameCanvas}
+    >
       <AppContainer>
         {leftPanelOpen && (
           <PanelContainer $isOpen={leftPanelOpen} $position="left">
@@ -74,12 +135,21 @@ function App() {
         )}
 
         <CanvasContainer $leftPanelOpen={leftPanelOpen} $rightPanelOpen={rightPanelOpen}>
-          <CanvasEditor onNodesChange={setNodes} onEdgesChange={setEdges} canvasMode={canvasMode} />
+          <CanvasEditor
+            key={currentCanvasId}
+            onNodesChange={handleNodesChange}
+            onEdgesChange={handleEdgesChange}
+            canvasMode={canvasMode}
+            initialNodes={currentCanvas?.nodes}
+            initialEdges={currentCanvas?.edges}
+            canvasId={currentCanvasId}
+            canvasName={currentCanvas?.name}
+          />
         </CanvasContainer>
 
-        {rightPanelOpen && (
+        {rightPanelOpen && currentCanvas && (
           <PanelContainer $isOpen={rightPanelOpen} $position="right">
-            <PreviewPanel nodes={nodes} edges={edges} onClose={() => setRightPanelOpen(false)} />
+            <PreviewPanel nodes={currentCanvas.nodes} edges={currentCanvas.edges} onClose={() => setRightPanelOpen(false)} />
           </PanelContainer>
         )}
 

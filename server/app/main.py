@@ -108,7 +108,27 @@ def run_flow(req: FlowRequest):
                 content = result["choices"][0]["message"]["content"]
                 return {"content": content, "raw": result}
             else:
-                raise HTTPException(status_code=500, detail=f"OpenAI API error: {response.status_code} - {response.text}")
+                # OpenAI API 에러 응답 파싱
+                error_detail = f"OpenAI API error: {response.status_code}"
+                try:
+                    error_json = response.json()
+                    if "error" in error_json:
+                        error_obj = error_json["error"]
+                        error_message = error_obj.get("message", "")
+                        error_type = error_obj.get("type", "")
+                        error_code = error_obj.get("code", "")
+                        
+                        # quota 관련 에러 감지
+                        if error_type == "insufficient_quota" or error_code == "insufficient_quota" or "quota" in error_message.lower():
+                            error_detail = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요."
+                        elif error_type == "rate_limit_exceeded" or error_code == "rate_limit_exceeded":
+                            error_detail = "OpenAI API 요청 한도가 초과되었습니다. 잠시 후 다시 시도해주세요."
+                        else:
+                            error_detail = error_message or str(error_json)
+                except:
+                    error_detail = f"OpenAI API error: {response.status_code} - {response.text[:200]}"
+                
+                raise HTTPException(status_code=500, detail=error_detail)
         
     except Exception as e:  # pragma: no cover
         print(f"🔍 DEBUG: Exception caught: {type(e).__name__}: {e}")

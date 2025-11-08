@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance, SelectionMode } from "reactflow";
+import ReactFlow, { Node, Edge, addEdge, Connection, useNodesState, useEdgesState, Background, BackgroundVariant, ReactFlowProvider, ReactFlowInstance, SelectionMode, MarkerType } from "reactflow";
 import "reactflow/dist/style.css";
 import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
@@ -12,6 +12,10 @@ interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
   canvasMode: "pan" | "select";
+  initialNodes?: Node[];
+  initialEdges?: Edge[];
+  canvasId?: string;
+  canvasName?: string;
 }
 
 // 레지스트리 규칙과 동일한 배경색 계산 (개별 타입 예외 포함)
@@ -117,6 +121,10 @@ const initialEdges: Edge[] = [
     target: "input_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "input-to-model",
@@ -124,6 +132,10 @@ const initialEdges: Edge[] = [
     target: "model_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "model-to-output",
@@ -131,6 +143,10 @@ const initialEdges: Edge[] = [
     target: "output_node",
     sourceHandle: "bottom",
     targetHandle: "top",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
   {
     id: "output-to-result",
@@ -156,9 +172,54 @@ const defaultEdgeOptions = {
   },
 };
 
-const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode }) => {
-  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
+const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChange, canvasMode, initialNodes: propInitialNodes, initialEdges: propInitialEdges, canvasId, canvasName }) => {
+  const nodesInit = propInitialNodes !== undefined ? propInitialNodes : initialNodes;
+  const edgesInit = propInitialEdges !== undefined ? propInitialEdges : initialEdges;
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(nodesInit);
+  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(edgesInit);
+
+  // 초기 마운트 감지를 위한 ref
+  const isInitialMountRef = useRef<boolean>(true);
+  const prevCanvasIdRef = useRef<string | undefined>(canvasId);
+
+  // onNodesChange와 onEdgesChange를 ref로 저장하여 항상 최신 버전 참조
+  const onNodesChangeRef = useRef(onNodesChange);
+  const onEdgesChangeRef = useRef(onEdgesChange);
+
+  useEffect(() => {
+    onNodesChangeRef.current = onNodesChange;
+    onEdgesChangeRef.current = onEdgesChange;
+  }, [onNodesChange, onEdgesChange]);
+
+  // 캔버스 전환 시 초기 마운트 플래그 재설정
+  useEffect(() => {
+    if (canvasId !== prevCanvasIdRef.current) {
+      prevCanvasIdRef.current = canvasId;
+      isInitialMountRef.current = true;
+    }
+  }, [canvasId]);
+
+  // 첫 렌더링 후 초기 마운트 플래그 해제
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+    }
+  }, []);
+
+  // onNodesChange와 onEdgesChange를 래핑하여 초기 마운트 시 호출 방지
+  // useCallback의 의존성을 제거하여 재생성 방지
+  const wrappedOnNodesChange = useCallback((nodes: Node[]) => {
+    if (!isInitialMountRef.current) {
+      onNodesChangeRef.current(nodes);
+    }
+  }, []);
+
+  const wrappedOnEdgesChange = useCallback((edges: Edge[]) => {
+    if (!isInitialMountRef.current) {
+      onEdgesChangeRef.current(edges);
+    }
+  }, []);
+
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -168,8 +229,16 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [copyOffset, setCopyOffset] = useState({ x: 50, y: 50 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [pastePosition, setPastePosition] = useState<{ x: number; y: number } | null>(null);
+  const executingPromptRef = useRef<boolean>(false);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
+
+  // Canvas 이름에서 접두사 추출 (Canvas A -> A, Canvas AA -> AA)
+  const getCanvasPrefix = useCallback(() => {
+    if (!canvasName) return "";
+    const match = canvasName.match(/Canvas\s+([A-Z]+)/i);
+    return match ? match[1].toUpperCase() : "";
+  }, [canvasName]);
 
   // Flow별 프롬프트 생성 함수
   const generateFlowPrompt = (startNodeId: string) => {
@@ -294,16 +363,39 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       // 같은 색상 타입의 연결점끼리만 연결 허용
       if (sourceHandleType === targetHandleType) {
-        const newEdges = addEdge(params, edges);
+        // start > input > model > output 사이의 연결만 화살표 추가
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        const targetNode = nodes.find((n) => n.id === params.target);
+
+        const shouldAddArrow =
+          params.sourceHandle === "bottom" &&
+          params.targetHandle === "top" &&
+          sourceNode &&
+          targetNode &&
+          ((sourceNode.type === "start" && targetNode.type === "input") ||
+            (sourceNode.type === "input" && targetNode.type === "model") ||
+            (sourceNode.type === "model" && targetNode.type === "output"));
+
+        const edgeWithMarker = shouldAddArrow
+          ? {
+              ...params,
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            }
+          : params;
+
+        const newEdges = addEdge(edgeWithMarker, edges);
         setEdges(newEdges);
-        onEdgesChange(newEdges);
+        wrappedOnEdgesChange(newEdges);
       } else {
         // 다른 색상 타입의 연결점은 연결 차단
         console.log("다른 색상의 연결점끼리는 연결할 수 없습니다.");
         return;
       }
     },
-    [setEdges, edges, onEdgesChange]
+    [setEdges, edges, onEdgesChange, nodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -335,17 +427,47 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             return;
           }
 
-          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName as string);
+          const prefix = getCanvasPrefix();
 
           let flowNumber = 1;
-          let newFlowName = `Flow ${flowNumber}`;
+          let newFlowName = `Flow ${prefix}${flowNumber}`;
 
           while (existingFlowNames.includes(newFlowName)) {
             flowNumber++;
-            newFlowName = `Flow ${flowNumber}`;
+            newFlowName = `Flow ${prefix}${flowNumber}`;
           }
 
           nodeData.flowName = newFlowName;
+        }
+
+        // 동일한 타입의 노드가 2개 이상이면 이름 생성
+        const sameTypeNodes = nodes.filter((n) => n.type === type);
+        const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
+        const defaultBaseName = registryEntry?.meta?.name || type;
+
+        if (sameTypeNodes.length >= 1) {
+          // 이미 같은 타입의 노드가 있으면 이름 생성
+          const existingNames = sameTypeNodes.map((n) => n.data?.customName || n.data?.label || defaultBaseName).filter((name) => (name && name !== defaultBaseName) || name?.match(/\(\d+\)$/));
+
+          let nameNumber = 1;
+          let newName = `${defaultBaseName} (${nameNumber})`;
+
+          // 기존 이름에서 숫자 추출하여 다음 번호 결정
+          const existingNumbers = existingNames
+            .map((name) => {
+              const match = name?.match(/\((\d+)\)$/);
+              return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter((num) => num > 0);
+
+          if (existingNumbers.length > 0) {
+            nameNumber = Math.max(...existingNumbers) + 1;
+            newName = `${defaultBaseName} (${nameNumber})`;
+          }
+
+          nodeData.customName = newName;
+          nodeData.label = newName;
         }
 
         // Flow 노드인 경우 5개의 연결된 노드 생성
@@ -358,17 +480,18 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             return;
           }
 
-          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName);
+          const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName as string);
+          const prefix = getCanvasPrefix();
 
           let flowNumber = 1;
-          let newFlowName = `Flow ${flowNumber}`;
+          let newFlowName = `Flow ${prefix}${flowNumber}`;
 
           while (existingFlowNames.includes(newFlowName)) {
             flowNumber++;
-            newFlowName = `Flow ${flowNumber}`;
+            newFlowName = `Flow ${prefix}${flowNumber}`;
           }
 
-          // 5개 노드 생성 (Start -> Input -> Model -> Output -> Result) - 세로 배치
+          // 4개 노드 생성 (Start -> Input -> Model -> Output) - 세로 배치
           const flowNodes: Node[] = [
             {
               id: getId(),
@@ -388,7 +511,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "input",
-              position: { x: position.x, y: position.y + 150 },
+              position: { x: position.x, y: position.y + 200 },
               data: {
                 label: "Input",
                 icon: "📥",
@@ -400,7 +523,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "model",
-              position: { x: position.x, y: position.y + 300 },
+              position: { x: position.x, y: position.y + 350 },
               data: {
                 label: "Model",
                 icon: "🤖",
@@ -414,33 +537,22 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "output",
-              position: { x: position.x, y: position.y + 450 },
+              position: { x: position.x, y: position.y + 520 },
               data: {
                 label: "Output",
                 icon: "📤",
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.lightGreen,
+                format: "text",
                 onDeleteNode: handleDeleteNode,
-              },
-            },
-            {
-              id: getId(),
-              type: "result",
-              position: { x: position.x, y: position.y + 600 },
-              data: {
-                label: "Result",
-                icon: "🏁",
-                iconColor: colors.nodeIcon.red,
-                nodeBg: colors.nodeBg.grey,
-                result: "결과가 여기에 표시됩니다",
-                onDeleteNode: handleDeleteNode,
+                onFormatChange: handleFormatChange,
               },
             },
             // 프롬프트 생성 노드 추가
             {
               id: getId(),
               type: "promptTemplate",
-              position: { x: position.x + 250, y: position.y + 150 },
+              position: { x: position.x + 300, y: position.y + 380 },
               data: {
                 label: "Task",
                 icon: "📝",
@@ -456,24 +568,53 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
           // 연결 엣지 생성
           const flowEdges: Edge[] = [
-            // 메인 플로우 연결 (회색 연결점 사용: top/bottom)
-            { id: `e-${flowNodes[0].id}-${flowNodes[1].id}`, source: flowNodes[0].id, target: flowNodes[1].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[1].id}-${flowNodes[2].id}`, source: flowNodes[1].id, target: flowNodes[2].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[2].id}-${flowNodes[3].id}`, source: flowNodes[2].id, target: flowNodes[3].id, sourceHandle: "bottom", targetHandle: "top" },
-            { id: `e-${flowNodes[3].id}-${flowNodes[4].id}`, source: flowNodes[3].id, target: flowNodes[4].id, sourceHandle: "bottom", targetHandle: "top" },
+            // 메인 플로우 연결 (회색 연결점 사용: top/bottom) - start > input > model > output만 화살표
+            {
+              id: `e-${flowNodes[0].id}-${flowNodes[1].id}`,
+              source: flowNodes[0].id,
+              target: flowNodes[1].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
+            {
+              id: `e-${flowNodes[1].id}-${flowNodes[2].id}`,
+              source: flowNodes[1].id,
+              target: flowNodes[2].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
+            {
+              id: `e-${flowNodes[2].id}-${flowNodes[3].id}`,
+              source: flowNodes[2].id,
+              target: flowNodes[3].id,
+              sourceHandle: "bottom",
+              targetHandle: "top",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
             // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
-            { id: `e-${flowNodes[2].id}-${flowNodes[5].id}`, source: flowNodes[2].id, target: flowNodes[5].id, sourceHandle: "right", targetHandle: "left" },
+            { id: `e-${flowNodes[2].id}-${flowNodes[4].id}`, source: flowNodes[2].id, target: flowNodes[4].id, sourceHandle: "right", targetHandle: "left" },
           ];
 
           setNodes((prev) => {
             const updatedNodes = prev.concat(flowNodes);
-            onNodesChange(updatedNodes);
+            wrappedOnNodesChange(updatedNodes);
             return updatedNodes;
           });
 
           setEdges((prev) => {
             const updatedEdges = prev.concat(flowEdges);
-            onEdgesChange(updatedEdges);
+            wrappedOnEdgesChange(updatedEdges);
             return updatedEdges;
           });
 
@@ -490,7 +631,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         setNodes((prev) => {
           const updatedNodes = prev.concat(newNode);
           // 노드 추가 즉시 상위 컴포넌트에 알림
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       }
@@ -549,7 +690,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return node;
       });
       // 노드 내용 변경 즉시 상위 컴포넌트에 알림
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -558,7 +699,37 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node));
       // 모델 변경 즉시 상위 컴포넌트에 알림
-      onNodesChange(updatedNodes);
+      wrappedOnNodesChange(updatedNodes);
+      return updatedNodes;
+    });
+  };
+
+  const handleFormatChange = (nodeId: string, format: string) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, format } } : node));
+      wrappedOnNodesChange(updatedNodes);
+      return updatedNodes;
+    });
+  };
+
+  const handleNameChange = (nodeId: string, name: string) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => {
+        if (node.id === nodeId) {
+          const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === node.type) as any;
+          const defaultName = registryEntry?.meta?.name || node.type;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              customName: name,
+              label: name || defaultName,
+            },
+          };
+        }
+        return node;
+      });
+      wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });
   };
@@ -581,9 +752,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
 
   const handleExecutePrompt = async (prompt: string, startNodeId?: string) => {
+    // 중복 실행 방지
+    if (executingPromptRef.current) {
+      console.log("⚠️ 이미 실행 중인 프롬프트가 있습니다. 중복 실행 방지.");
+      return;
+    }
+
     console.log("🚀 handleExecutePrompt 호출됨:", { prompt, startNodeId });
     console.log("📊 전체 노드 수:", nodes.length);
     console.log("📊 전체 엣지 수:", edges.length);
+
+    executingPromptRef.current = true;
 
     try {
       console.log("🔄 Flow별 프롬프트 생성 시작...");
@@ -631,33 +810,67 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         let errorMessage = "서버 오류가 발생했습니다.";
         try {
           const errorData = JSON.parse(errorText);
+          console.log("📋 파싱된 에러 데이터:", errorData);
+
+          // detail이 문자열인 경우
           if (errorData.detail) {
             errorMessage = errorData.detail;
 
-            // OpenAI quota 에러 감지
-            if (errorData.detail.includes("insufficient_quota") || errorData.detail.includes("429")) {
+            // OpenAI API 에러 메시지에서 quota 관련 키워드 확인
+            const detailStr = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+            if (
+              detailStr.includes("insufficient_quota") ||
+              detailStr.includes("429") ||
+              detailStr.includes("quota") ||
+              detailStr.includes("billing") ||
+              detailStr.includes("You exceeded your current quota")
+            ) {
+              errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+            }
+          } else if (errorData.error) {
+            // OpenAI API 직접 에러 형식
+            const errorObj = errorData.error;
+            if (errorObj?.message) {
+              errorMessage = errorObj.message;
+              if (errorObj.message.includes("quota") || errorObj.message.includes("billing") || errorObj.type === "insufficient_quota") {
+                errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+              }
+            } else if (errorObj?.type === "insufficient_quota") {
               errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
             }
           }
         } catch (e) {
           console.log("에러 파싱 실패:", e);
+          // 파싱 실패 시 원본 텍스트에서 키워드 확인
+          if (errorText.includes("insufficient_quota") || errorText.includes("quota") || errorText.includes("billing")) {
+            errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+          }
         }
 
-        // Result 노드에 에러 메시지 표시
+        // Result 노드와 Output 노드에 에러 메시지 표시
         const resultMessage = errorMessage;
         setNodes((nds) => {
-          const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-                if (currentNodeId === node.id) return true;
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+              if (currentNodeId === targetNodeId) return true;
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
 
-              if (findResultNode(startNodeId)) {
+          const updatedNodes = nds.map((node) => {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              // Result 노드에 에러 표시
+              if (node.type === "result") {
                 console.log("🎯 Result 노드에 에러 메시지 표시:", node.id, resultMessage);
+                return { ...node, data: { ...node.data, result: resultMessage } };
+              }
+              // Output 노드에 에러 표시 (모든 형식에 대해 저장)
+              if (node.type === "output") {
+                console.log("🎯 Output 노드에 에러 메시지 표시:", node.id, resultMessage);
                 return { ...node, data: { ...node.data, result: resultMessage } };
               }
             }
@@ -677,62 +890,69 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         console.log("📏 응답 길이:", result.length);
 
         console.log("🎯 Result 노드 찾기 시작...");
-        // 특정 Flow의 Result 노드에만 결과 표시
+        // 특정 Flow의 Result 노드와 Output 노드에 결과 표시
         setNodes((nds) => {
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+
+              if (currentNodeId === targetNodeId) return true;
+
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
+
           const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              // 해당 Flow의 Result 노드인지 확인 (간단한 방법)
-              // Start -> Input -> Model -> Output -> Result 순서로 연결되어 있으므로
-              // Start 노드에서 시작해서 Result 노드까지의 경로를 찾기
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-
-                if (currentNodeId === node.id) return true;
-
-                // 현재 노드에서 연결된 다음 노드들을 찾기
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
-
-              if (findResultNode(startNodeId)) {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              // Result 노드에 결과 표시
+              if (node.type === "result") {
                 console.log("🎯 Result 노드 업데이트:", node.id, result);
+                return { ...node, data: { ...node.data, result } };
+              }
+              // Output 노드에 결과 표시 (모든 형식에 대해 저장)
+              if (node.type === "output") {
+                console.log("🎯 Output 노드 업데이트:", node.id, result);
                 return { ...node, data: { ...node.data, result } };
               }
             }
             return node;
           });
           console.log("🔄 노드 업데이트 완료");
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       } else {
         const errorData = await response.json();
         const errorMessage = `에러: ${errorData.detail || "알 수 없는 오류가 발생했습니다."}`;
 
-        // 특정 Flow의 Result 노드에만 에러 표시
+        // 특정 Flow의 Result 노드와 Output 노드에 에러 표시
         setNodes((nds) => {
+          const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+            const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+              if (visited.has(currentNodeId)) return false;
+              visited.add(currentNodeId);
+              if (currentNodeId === targetNodeId) return true;
+              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+              return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+            };
+            return findNode(startNodeId);
+          };
+
           const updatedNodes = nds.map((node) => {
-            if (node.type === "result" && startNodeId) {
-              const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-                if (visited.has(currentNodeId)) return false;
-                visited.add(currentNodeId);
-
-                if (currentNodeId === node.id) return true;
-
-                const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-                return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-              };
-
-              if (findResultNode(startNodeId)) {
+            if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+              if (node.type === "result") {
+                return { ...node, data: { ...node.data, result: errorMessage } };
+              }
+              if (node.type === "output") {
                 return { ...node, data: { ...node.data, result: errorMessage } };
               }
             }
             return node;
           });
-          onNodesChange(updatedNodes);
+          wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
       }
@@ -742,44 +962,42 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       console.log("🚨 에러 메시지:", errorMessage);
 
-      // 특정 Flow의 Result 노드에만 에러 표시
+      // 특정 Flow의 Result 노드와 Output 노드에 에러 표시
       setNodes((nds) => {
+        const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
+          const findNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
+            if (visited.has(currentNodeId)) return false;
+            visited.add(currentNodeId);
+            if (currentNodeId === targetNodeId) return true;
+            const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
+            return nextNodes.some((nextNodeId) => findNode(nextNodeId, visited));
+          };
+          return findNode(startNodeId);
+        };
+
         const updatedNodes = nds.map((node) => {
-          if (node.type === "result" && startNodeId) {
-            const findResultNode = (currentNodeId: string, visited: Set<string> = new Set()): boolean => {
-              if (visited.has(currentNodeId)) return false;
-              visited.add(currentNodeId);
-
-              if (currentNodeId === node.id) return true;
-
-              const nextNodes = edges.filter((edge) => edge.source === currentNodeId).map((edge) => edge.target);
-
-              return nextNodes.some((nextNodeId) => findResultNode(nextNodeId, visited));
-            };
-
-            if (findResultNode(startNodeId)) {
+          if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
+            if (node.type === "result") {
               console.log("🚨 에러를 Result 노드에 표시:", node.id, errorMessage);
+              return { ...node, data: { ...node.data, result: errorMessage } };
+            }
+            if (node.type === "output") {
+              console.log("🚨 에러를 Output 노드에 표시:", node.id, errorMessage);
               return { ...node, data: { ...node.data, result: errorMessage } };
             }
           }
           return node;
         });
-        onNodesChange(updatedNodes);
+        wrappedOnNodesChange(updatedNodes);
         return updatedNodes;
       });
     } finally {
+      executingPromptRef.current = false;
       console.log("🏁 handleExecutePrompt 완료");
     }
   };
 
-  // 상위(App) 상태와 동기화하여 프리뷰가 최신 입력을 반영하도록 함
-  useEffect(() => {
-    onNodesChange(nodes);
-  }, [nodes.length, onNodesChange]); // nodes.length만 의존성으로 변경
-
-  useEffect(() => {
-    onEdgesChange(edges);
-  }, [edges.length, onEdgesChange]); // edges.length만 의존성으로 변경
+  // useEffect는 제거 - setNodes/setEdges 호출 시점에 이미 wrappedOnNodesChange/wrappedOnEdgesChange를 호출하고 있음
 
   const deleteSelectedNode = () => {
     if (selectedNodeId) {
@@ -794,6 +1012,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     const newEdges = edges.filter((e) => !idSet.has(e.source) && !idSet.has(e.target));
     setNodes(newNodes);
     setEdges(newEdges);
+    wrappedOnNodesChange(newNodes);
+    wrappedOnEdgesChange(newEdges);
     setSelectedIds([]);
     setSelectedNodeId(null);
   };
@@ -862,10 +1082,23 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   // 키보드 이벤트 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // textarea나 input이 포커스되어 있으면 노드 복사/붙여넣기 동작을 하지 않음
+      const activeElement = document.activeElement;
+      const isTextInputFocused =
+        activeElement && (activeElement.tagName === "TEXTAREA" || activeElement.tagName === "INPUT" || (activeElement instanceof HTMLElement && activeElement.isContentEditable));
+
       if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        // textarea/input이 포커스되어 있으면 기본 복사 동작 허용
+        if (isTextInputFocused) {
+          return;
+        }
         e.preventDefault();
         copyNodes();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        // textarea/input이 포커스되어 있으면 기본 붙여넣기 동작 허용
+        if (isTextInputFocused) {
+          return;
+        }
         e.preventDefault();
         pasteNodes();
       }
@@ -888,11 +1121,24 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       <FlowContainer>
         <ReactFlow
           nodes={useMemo(() => {
+            // 동일한 타입의 노드 개수 계산
+            const typeCounts = new Map<string, number>();
+            nodes.forEach((node) => {
+              if (node.type) {
+                const count = typeCounts.get(node.type) || 0;
+                typeCounts.set(node.type, count + 1);
+              }
+            });
+
             return nodes.map((node) => {
               // 레지스트리에서 suggestions 가져오기
-              const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
+              const registryKey = node.type ? Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type) : null;
               const registryEntry = registryKey ? (nodesRegistry as any)[registryKey] : null;
               const suggestions = registryEntry?.meta?.defaultSuggestions;
+
+              // 동일한 타입의 노드가 2개 이상이면 이름 입력 필드 표시
+              const sameTypeCount = node.type ? typeCounts.get(node.type) || 0 : 0;
+              const showNameInput = sameTypeCount >= 2;
 
               return {
                 ...node,
@@ -903,8 +1149,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
                   onDeleteNode: handleDeleteNode,
                   onModelChange: (model: string) => handleModelChange(node.id, model),
+                  onFormatChange: (format: string) => handleFormatChange(node.id, format),
                   onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                  onNameChange: (name: string) => handleNameChange(node.id, name),
                   onExecutePrompt: handleExecutePrompt,
+                  showNameInput,
+                  customName: node.data?.customName,
                 },
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,

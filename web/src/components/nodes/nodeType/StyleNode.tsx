@@ -52,6 +52,19 @@ export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
     setShowRecommendations(false);
   };
 
+  // 복사/붙여넣기 핸들러
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+  };
+
+  const handleCopy = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+  };
+
+  const handleCut = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+  };
+
   return (
     <ContextNodeContainer>
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
@@ -61,6 +74,9 @@ export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
+          onPaste={handlePaste}
+          onCopy={handleCopy}
+          onCut={handleCut}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         />
