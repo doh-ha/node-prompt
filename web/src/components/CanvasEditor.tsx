@@ -491,7 +491,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             newFlowName = `Flow ${prefix}${flowNumber}`;
           }
 
-          // 5개 노드 생성 (Start -> Input -> Model -> Output -> Result) - 세로 배치
+          // 4개 노드 생성 (Start -> Input -> Model -> Output) - 세로 배치
           const flowNodes: Node[] = [
             {
               id: getId(),
@@ -511,7 +511,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "input",
-              position: { x: position.x, y: position.y + 150 },
+              position: { x: position.x, y: position.y + 200 },
               data: {
                 label: "Input",
                 icon: "📥",
@@ -523,7 +523,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "model",
-              position: { x: position.x, y: position.y + 300 },
+              position: { x: position.x, y: position.y + 350 },
               data: {
                 label: "Model",
                 icon: "🤖",
@@ -537,7 +537,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             {
               id: getId(),
               type: "output",
-              position: { x: position.x, y: position.y + 450 },
+              position: { x: position.x, y: position.y + 520 },
               data: {
                 label: "Output",
                 icon: "📤",
@@ -548,24 +548,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 onFormatChange: handleFormatChange,
               },
             },
-            {
-              id: getId(),
-              type: "result",
-              position: { x: position.x, y: position.y + 600 },
-              data: {
-                label: "Result",
-                icon: "🏁",
-                iconColor: colors.nodeIcon.red,
-                nodeBg: colors.nodeBg.grey,
-                result: "결과가 여기에 표시됩니다",
-                onDeleteNode: handleDeleteNode,
-              },
-            },
             // 프롬프트 생성 노드 추가
             {
               id: getId(),
               type: "promptTemplate",
-              position: { x: position.x + 250, y: position.y + 150 },
+              position: { x: position.x + 300, y: position.y + 380 },
               data: {
                 label: "Task",
                 icon: "📝",
@@ -615,15 +602,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 color: colors.edge.default,
               },
             },
-            {
-              id: `e-${flowNodes[3].id}-${flowNodes[4].id}`,
-              source: flowNodes[3].id,
-              target: flowNodes[4].id,
-              sourceHandle: "bottom",
-              targetHandle: "top",
-            },
             // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
-            { id: `e-${flowNodes[2].id}-${flowNodes[5].id}`, source: flowNodes[2].id, target: flowNodes[5].id, sourceHandle: "right", targetHandle: "left" },
+            { id: `e-${flowNodes[2].id}-${flowNodes[4].id}`, source: flowNodes[2].id, target: flowNodes[4].id, sourceHandle: "right", targetHandle: "left" },
           ];
 
           setNodes((prev) => {

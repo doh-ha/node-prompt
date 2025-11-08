@@ -25,7 +25,7 @@ export const FlowNode: React.FC<FlowNodeProps> = ({ data, id, selected }) => {
       <div style={{ padding: "8px", fontSize: "12px", color: colors.gray[600], textAlign: "center" }}>
         완전한 워크플로우
         <br />
-        (5개 노드)
+        (4개 노드)
       </div>
     </NodeShell>
   );

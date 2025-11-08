@@ -280,7 +280,7 @@ export const nodesRegistry = {
     type: "flow",
     meta: {
       name: "Flow",
-      description: "완전한 워크플로우\n(Start, Input, Model, Output, Result)",
+      description: "완전한 워크플로우\n(Start, Input, Model, Output)",
       icon: "⛓️",
       iconColor: colors.nodeIcon.purple,
       group: "structure",
