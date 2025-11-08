@@ -363,44 +363,110 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const onConnect = useCallback(
     (params: Connection) => {
       if (canvasMode === "lock") return;
-      // 연결점의 색상 타입 확인
+
+      console.log("🔗 연결 시도:", {
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+      });
+
+      // 노드 정보 먼저 가져오기
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+
+      console.log("📦 노드 정보:", {
+        sourceNode: sourceNode ? { id: sourceNode.id, type: sourceNode.type } : null,
+        targetNode: targetNode ? { id: targetNode.id, type: targetNode.type } : null,
+      });
+
+      // 연결점의 색상 타입 확인 (노드 타입과 연결점 위치 기반으로 추정)
+      const getHandleTypeFromPosition = (handle: string | null): string | null => {
+        if (!handle) return null;
+        if (handle === "top" || handle === "bottom") return "gray";
+        if (handle === "left" || handle === "right") return "colored";
+        return null;
+      };
+
+      const sourceHandleType = getHandleTypeFromPosition(params.sourceHandle);
+      const targetHandleType = getHandleTypeFromPosition(params.targetHandle);
+
+      // DOM에서도 확인 시도
       const sourceHandle = document.querySelector(`[data-id="${params.source}"] [data-handle-id="${params.sourceHandle}"]`);
       const targetHandle = document.querySelector(`[data-id="${params.target}"] [data-handle-id="${params.targetHandle}"]`);
 
-      const sourceHandleType = sourceHandle?.getAttribute("data-handle-type");
-      const targetHandleType = targetHandle?.getAttribute("data-handle-type");
+      const sourceHandleTypeFromDOM = sourceHandle?.getAttribute("data-handle-type");
+      const targetHandleTypeFromDOM = targetHandle?.getAttribute("data-handle-type");
+
+      // DOM에서 찾은 값이 있으면 우선 사용
+      const finalSourceHandleType = sourceHandleTypeFromDOM || sourceHandleType;
+      const finalTargetHandleType = targetHandleTypeFromDOM || targetHandleType;
+
+      console.log("🎯 연결점 타입:", {
+        sourceHandleType: finalSourceHandleType,
+        targetHandleType: finalTargetHandleType,
+        sourceHandleFound: !!sourceHandle,
+        targetHandleFound: !!targetHandle,
+        sourceHandleTypeFromDOM,
+        targetHandleTypeFromDOM,
+      });
 
       // 같은 색상 타입의 연결점끼리만 연결 허용
-      if (sourceHandleType === targetHandleType) {
-        // start > input > model > output 사이의 연결만 화살표 추가
-        const sourceNode = nodes.find((n) => n.id === params.source);
-        const targetNode = nodes.find((n) => n.id === params.target);
+      if (finalSourceHandleType === finalTargetHandleType) {
+        // primary node 타입 정의
+        const primaryNodeTypes = ["start", "input", "model", "output", "promptTemplate"];
+        const isTargetPrimaryNode = targetNode && targetNode.type && primaryNodeTypes.includes(targetNode.type);
+        const isSourcePrimaryNode = sourceNode && sourceNode.type && primaryNodeTypes.includes(sourceNode.type);
 
-        const shouldAddArrow =
-          params.sourceHandle === "bottom" &&
-          params.targetHandle === "top" &&
-          sourceNode &&
-          targetNode &&
-          ((sourceNode.type === "start" && targetNode.type === "input") ||
-            (sourceNode.type === "input" && targetNode.type === "model") ||
-            (sourceNode.type === "model" && targetNode.type === "output"));
+        // primary node로의 연결에는 화살표 추가
+        // - target이 primary node인 경우: markerEnd 사용 (target을 향하는 화살표)
+        // - source가 primary node이고 sourceHandle이 'right'인 경우: markerStart 사용 (source를 향하는 화살표)
+        const shouldAddArrowToTarget = isTargetPrimaryNode;
+        const shouldAddArrowToSource = isSourcePrimaryNode && params.sourceHandle === "right";
 
-        const edgeWithMarker = shouldAddArrow
-          ? {
-              ...params,
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                color: colors.edge.default,
-              },
-            }
-          : params;
+        console.log("✅ Primary Node 확인:", {
+          isTargetPrimaryNode,
+          isSourcePrimaryNode,
+          targetNodeType: targetNode?.type,
+          sourceNodeType: sourceNode?.type,
+          targetHandle: params.targetHandle,
+          sourceHandle: params.sourceHandle,
+          shouldAddArrowToTarget,
+          shouldAddArrowToSource,
+          primaryNodeTypes,
+        });
+
+        const edgeWithMarker: any = { ...params };
+
+        if (shouldAddArrowToTarget) {
+          edgeWithMarker.markerEnd = {
+            type: MarkerType.ArrowClosed,
+            color: colors.edge.default,
+          };
+        }
+
+        if (shouldAddArrowToSource) {
+          edgeWithMarker.markerStart = {
+            type: MarkerType.ArrowClosed,
+            color: colors.edge.default,
+          };
+        }
+
+        console.log("➡️ 엣지 생성:", {
+          hasMarkerEnd: !!edgeWithMarker.markerEnd,
+          hasMarkerStart: !!edgeWithMarker.markerStart,
+          edge: edgeWithMarker,
+        });
 
         const newEdges = addEdge(edgeWithMarker, edges);
         setEdges(newEdges);
         wrappedOnEdgesChange(newEdges);
       } else {
         // 다른 색상 타입의 연결점은 연결 차단
-        console.log("다른 색상의 연결점끼리는 연결할 수 없습니다.");
+        console.log("❌ 다른 색상의 연결점끼리는 연결할 수 없습니다.", {
+          sourceHandleType: finalSourceHandleType,
+          targetHandleType: finalTargetHandleType,
+        });
         return;
       }
     },
