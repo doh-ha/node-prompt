@@ -81,6 +81,9 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
           value={flowName}
           onChange={handleFlowNameChange}
           onBlur={handleFlowNameBlur}
+          onPaste={(e) => e.stopPropagation()}
+          onCopy={(e) => e.stopPropagation()}
+          onCut={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           style={{ marginBottom: "6px", fontSize: "11px", minHeight: "24px", maxHeight: "32px" }}

@@ -64,6 +64,9 @@ export const OutputFormatNode: React.FC<OutputFormatNodeProps> = ({ data, select
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
+          onPaste={(e) => e.stopPropagation()}
+          onCopy={(e) => e.stopPropagation()}
+          onCut={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         />

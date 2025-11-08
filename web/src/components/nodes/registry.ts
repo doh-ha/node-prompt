@@ -243,39 +243,39 @@ export const nodesRegistry = {
     },
     component: ResultNode,
   },
-  textOutput: {
-    type: "textOutput",
-    meta: {
-      name: "Text Output",
-      description: "텍스트 결과 출력",
-      icon: "📝",
-      iconColor: colors.nodeIcon.darkGreen,
-      group: "output",
-    },
-    component: TextOutputNode,
-  },
-  spreadsheetOutput: {
-    type: "spreadsheetOutput",
-    meta: {
-      name: "Spreadsheet",
-      description: "스프레드시트로 내보내기",
-      icon: "📊",
-      iconColor: colors.nodeIcon.darkGreen,
-      group: "output",
-    },
-    component: SpreadsheetOutputNode,
-  },
-  pdfOutput: {
-    type: "pdfOutput",
-    meta: {
-      name: "PDF",
-      description: "PDF로 내보내기",
-      icon: "📄",
-      iconColor: colors.nodeIcon.darkGreen,
-      group: "output",
-    },
-    component: PdfOutputNode,
-  },
+  // textOutput: {
+  //   type: "textOutput",
+  //   meta: {
+  //     name: "Text Output",
+  //     description: "텍스트 결과 출력",
+  //     icon: "📝",
+  //     iconColor: colors.nodeIcon.darkGreen,
+  //     group: "output",
+  //   },
+  //   component: TextOutputNode,
+  // },
+  // spreadsheetOutput: {
+  //   type: "spreadsheetOutput",
+  //   meta: {
+  //     name: "Spreadsheet",
+  //     description: "스프레드시트로 내보내기",
+  //     icon: "📊",
+  //     iconColor: colors.nodeIcon.darkGreen,
+  //     group: "output",
+  //   },
+  //   component: SpreadsheetOutputNode,
+  // },
+  // pdfOutput: {
+  //   type: "pdfOutput",
+  //   meta: {
+  //     name: "PDF",
+  //     description: "PDF로 내보내기",
+  //     icon: "📄",
+  //     iconColor: colors.nodeIcon.darkGreen,
+  //     group: "output",
+  //   },
+  //   component: PdfOutputNode,
+  // },
   flow: {
     type: "flow",
     meta: {
@@ -331,7 +331,6 @@ const NODE_ORDERS = {
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
   INSTRUCTION: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
-  OUTPUT: { output: 0, textOutput: 1, spreadsheetOutput: 2, pdfOutput: 3 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)

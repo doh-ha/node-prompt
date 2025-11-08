@@ -96,6 +96,9 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
           onBlur={(e) => {
             handleTextChange(e.target.value);
           }}
+          onPaste={(e) => e.stopPropagation()}
+          onCopy={(e) => e.stopPropagation()}
+          onCut={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         />

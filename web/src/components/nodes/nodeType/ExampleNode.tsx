@@ -148,6 +148,9 @@ export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) 
                 placeholder="입력 예시를 적어주세요..."
                 value={p.input}
                 onChange={(e) => updatePair(i, "input", e.target.value)}
+                onPaste={(e) => e.stopPropagation()}
+                onCopy={(e) => e.stopPropagation()}
+                onCut={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               />
@@ -156,6 +159,9 @@ export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) 
                 placeholder="출력 예시를 적어주세요..."
                 value={p.output}
                 onChange={(e) => updatePair(i, "output", e.target.value)}
+                onPaste={(e) => e.stopPropagation()}
+                onCopy={(e) => e.stopPropagation()}
+                onCut={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               />

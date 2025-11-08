@@ -1082,10 +1082,23 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   // 키보드 이벤트 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // textarea나 input이 포커스되어 있으면 노드 복사/붙여넣기 동작을 하지 않음
+      const activeElement = document.activeElement;
+      const isTextInputFocused =
+        activeElement && (activeElement.tagName === "TEXTAREA" || activeElement.tagName === "INPUT" || (activeElement instanceof HTMLElement && activeElement.isContentEditable));
+
       if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        // textarea/input이 포커스되어 있으면 기본 복사 동작 허용
+        if (isTextInputFocused) {
+          return;
+        }
         e.preventDefault();
         copyNodes();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        // textarea/input이 포커스되어 있으면 기본 붙여넣기 동작 허용
+        if (isTextInputFocused) {
+          return;
+        }
         e.preventDefault();
         pasteNodes();
       }
