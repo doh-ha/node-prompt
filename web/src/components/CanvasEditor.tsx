@@ -161,6 +161,10 @@ const initialEdges: Edge[] = [
     target: "task_node",
     sourceHandle: "right",
     targetHandle: "left",
+    markerStart: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
 ];
 
@@ -683,7 +687,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               },
             },
             // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
-            { id: `e-${flowNodes[2].id}-${flowNodes[4].id}`, source: flowNodes[2].id, target: flowNodes[4].id, sourceHandle: "right", targetHandle: "left" },
+            {
+              id: `e-${flowNodes[2].id}-${flowNodes[4].id}`,
+              source: flowNodes[2].id,
+              target: flowNodes[4].id,
+              sourceHandle: "right",
+              targetHandle: "left",
+              markerStart: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
           ];
 
           setNodes((prev) => {

@@ -158,6 +158,10 @@ function createInitialFlowNodes(canvasName: string): { nodes: Node[]; edges: Edg
       target: taskId,
       sourceHandle: "right",
       targetHandle: "left",
+      markerStart: {
+        type: MarkerType.ArrowClosed,
+        color: colors.edge.default,
+      },
     },
   ];
 
