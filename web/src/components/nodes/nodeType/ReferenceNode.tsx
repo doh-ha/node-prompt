@@ -76,7 +76,7 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
   };
 
   return (
-    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined} nodeType="file">
       <RadioSuggestions
         suggestions={["파일 업로드", "직접 입력"]}
         selectedValue={inputMode === "file" ? "파일 업로드" : "직접 입력"}

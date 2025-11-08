@@ -68,7 +68,16 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
 
   return (
     <ContextNodeContainer>
-      <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={(data as any).nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+      <NodeShell
+        id={id}
+        selected={selected}
+        title={data.label}
+        icon={data.icon}
+        iconColor={data.iconColor}
+        bg={(data as any).nodeBg}
+        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="role"
+      >
         <NodeInput
           ref={textAreaRef}
           placeholder="역할 내용을 입력하세요..."

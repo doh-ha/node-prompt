@@ -67,7 +67,16 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
 
   return (
     <ContextNodeContainer>
-      <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+      <NodeShell
+        id={id}
+        selected={selected}
+        title={data.label}
+        icon={data.icon}
+        iconColor={data.iconColor}
+        bg={data.nodeBg}
+        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="length"
+      >
         <NodeInput
           ref={textAreaRef}
           placeholder="권장 길이를 입력하세요..."

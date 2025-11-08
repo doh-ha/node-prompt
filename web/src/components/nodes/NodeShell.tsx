@@ -32,8 +32,25 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
   const showLeftHandle = isStart || isResult ? false : true;
   const showRightHandle = isStart || isResult ? false : true;
 
+  // instruction 그룹 노드 타입들
+  const isInstructionNode = nodeType === "role" || nodeType === "promptTemplate" || nodeType === "style" || nodeType === "length";
+  // input 그룹 노드 타입들
+  const isInputNode = nodeType === "file" || nodeType === "example" || nodeType === "text";
+
   // 연결점 스타일 - 배경색보다 진한 색상으로 설정
-  const getHandleColor = (bgColor: string) => {
+  const getHandleColor = (bgColor: string, position: Position) => {
+    // model 노드의 좌우 연결점은 분홍색
+    if (nodeType === "model" && (position === Position.Left || position === Position.Right)) {
+      return "#ec4899"; // 분홍색
+    }
+    // instruction 노드의 모든 연결점은 분홍색
+    if (isInstructionNode) {
+      return "#ec4899"; // 분홍색
+    }
+    // input 노드의 모든 연결점은 파란색
+    if (isInputNode) {
+      return "#1e40af"; // 진한 파란색
+    }
     // 배경색에 따라 더 진한 색상 반환
     if (bgColor === colors.nodeBg.blue) return "#1e40af"; // 진한 파란색
     if (bgColor === colors.nodeBg.lightPurple) return "#7c3aed"; // 진한 보라색
@@ -50,34 +67,43 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       height: "8px",
     };
 
+    // instruction 노드의 모든 연결점은 분홍색, input 노드의 모든 연결점은 파란색
+    const handleColor = isInstructionNode
+      ? "#ec4899"
+      : isInputNode
+      ? "#1e40af"
+      : position === Position.Top || position === Position.Bottom
+      ? "#6b7280"
+      : getHandleColor(bg || colors.nodeBg.grey, position);
+
     // 위치별로 다른 스타일 적용
     switch (position) {
       case Position.Top:
         return {
           ...baseStyle,
-          background: "transparent", // 투명 배경
-          border: "2px solid #6b7280", // 회색 테두리만
+          background: isInstructionNode || isInputNode ? "#ffffff" : "transparent", // instruction/input 노드는 흰 배경
+          border: `2px solid ${handleColor}`,
           transform: "translate(-50%, -50%)",
         };
       case Position.Bottom:
         return {
           ...baseStyle,
-          background: "transparent", // 투명 배경
-          border: "2px solid #6b7280", // 회색 테두리만
+          background: isInstructionNode || isInputNode ? "#ffffff" : "transparent", // instruction/input 노드는 흰 배경
+          border: `2px solid ${handleColor}`,
           transform: "translate(-50%, 50%)",
         };
       case Position.Left:
         return {
           ...baseStyle,
           background: "#ffffff",
-          border: `2px solid ${getHandleColor(bg || colors.nodeBg.grey)}`,
+          border: `2px solid ${handleColor}`,
           transform: "translate(-50%, -50%)",
         };
       case Position.Right:
         return {
           ...baseStyle,
           background: "#ffffff",
-          border: `2px solid ${getHandleColor(bg || colors.nodeBg.grey)}`,
+          border: `2px solid ${handleColor}`,
           transform: "translate(50%, -50%)",
         };
       default:

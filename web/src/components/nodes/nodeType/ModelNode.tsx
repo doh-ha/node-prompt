@@ -26,6 +26,7 @@ export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
       iconColor={(data as any).iconColor}
       bg={(data as any).nodeBg}
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+      nodeType="model"
     >
       <select
         value={data.model}
