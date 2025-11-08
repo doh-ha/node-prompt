@@ -23,8 +23,8 @@ interface MainLayoutProps {
   children: React.ReactNode;
   title?: string;
   showToolbar?: boolean;
-  toolbarMode?: "pan" | "select";
-  onToolbarModeChange?: (mode: "pan" | "select") => void;
+  toolbarMode?: "pan" | "select" | "lock";
+  onToolbarModeChange?: (mode: "pan" | "select" | "lock") => void;
   canvases?: Canvas[];
   currentCanvasId?: string;
   onCanvasSwitch?: (canvasId: string) => void;

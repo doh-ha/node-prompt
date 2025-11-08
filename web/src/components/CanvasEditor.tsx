@@ -11,7 +11,7 @@ import { generatePromptFromWorkflow } from "../utils/promptGenerator";
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
-  canvasMode: "pan" | "select";
+  canvasMode: "pan" | "select" | "lock";
   initialNodes?: Node[];
   initialEdges?: Edge[];
   canvasId?: string;
@@ -161,6 +161,10 @@ const initialEdges: Edge[] = [
     target: "task_node",
     sourceHandle: "right",
     targetHandle: "left",
+    markerStart: {
+      type: MarkerType.ArrowClosed,
+      color: colors.edge.default,
+    },
   },
 ];
 
@@ -231,6 +235,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [pastePosition, setPastePosition] = useState<{ x: number; y: number } | null>(null);
   const executingPromptRef = useRef<boolean>(false);
 
+  // 함수들을 ref로 저장하여 onDrop에서 접근
+  const handleFlowNameChangeRef = useRef<((nodeId: string, flowName: string) => void) | null>(null);
+  const handleExecutePromptRef = useRef<((prompt: string, startNodeId?: string) => Promise<void>) | null>(null);
+  const handleDeleteNodeRef = useRef<((nodeId: string) => void) | null>(null);
+  const handleModelChangeRef = useRef<((nodeId: string, model: string) => void) | null>(null);
+  const handleFormatChangeRef = useRef<((nodeId: string, format: string) => void) | null>(null);
+  const handleNodeContentChangeRef = useRef<((nodeId: string, content: string, fileName?: string) => void) | null>(null);
+
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
 
   // Canvas 이름에서 접두사 추출 (Canvas A -> A, Canvas AA -> AA)
@@ -242,41 +254,29 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   // Flow별 프롬프트 생성 함수
   const generateFlowPrompt = (startNodeId: string) => {
-    console.log("🔍 Flow별 프롬프트 생성 시작:", startNodeId);
-
     // 해당 Flow의 노드들 찾기
     const findFlowNodes = (currentNodeId: string, visited: Set<string> = new Set()): string[] => {
       if (visited.has(currentNodeId)) {
-        console.log(`🔄 이미 방문한 노드: ${currentNodeId}`);
         return [];
       }
       visited.add(currentNodeId);
 
       const currentNode = nodes.find((n) => n.id === currentNodeId);
       if (!currentNode) {
-        console.log(`❌ 노드를 찾을 수 없음: ${currentNodeId}`);
         return [];
       }
 
-      console.log(`🔍 현재 노드 처리 중: ${currentNodeId} (${currentNode.type})`);
       const result = [currentNodeId];
 
       // 현재 노드에서 연결된 다음 노드들을 찾기
       const outgoingEdges = edges.filter((edge) => edge.source === currentNodeId);
       const nextNodes = outgoingEdges.map((edge) => edge.target);
 
-      console.log(
-        `🔗 ${currentNodeId}에서 나가는 엣지들:`,
-        outgoingEdges.map((e) => `${e.source}->${e.target}`)
-      );
-      console.log(`🔗 다음 노드들:`, nextNodes);
-
       nextNodes.forEach((nextNodeId) => {
         const subResult = findFlowNodes(nextNodeId, visited);
         result.push(...subResult);
       });
 
-      console.log(`✅ ${currentNodeId} 처리 완료, 결과:`, result);
       return result;
     };
 
@@ -299,51 +299,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     const flowNodes = nodes.filter((node) => allIds.has(node.id));
     const flowEdges = edges.filter((edge) => allIds.has(edge.source) && allIds.has(edge.target));
 
-    console.log("🔄 Flow 노드들:", flowNodeIds);
-    console.log(
-      "🔄 Flow 노드 상세:",
-      flowNodes.map((n) => ({ id: n.id, type: n.type, data: n.data }))
-    );
-    console.log(
-      "🔄 Flow 엣지들:",
-      flowEdges.map((e) => `${e.source}->${e.target}`)
-    );
-
-    // 프롬프트 생성 가능한 노드들 확인
-    const promptGeneratingNodes = flowNodes.filter((node) => {
-      const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
-      const entry = registryKey ? (nodesRegistry as any)[registryKey] : null;
-      return entry && typeof entry.toPrompt === "function";
-    });
-
-    console.log(
-      "📝 프롬프트 생성 가능한 노드들:",
-      promptGeneratingNodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        hasToPrompt: true,
-      }))
-    );
-
-    // 각 노드의 toPrompt 결과 확인
-    flowNodes.forEach((node) => {
-      const registryKey = Object.keys(nodesRegistry).find((key) => (nodesRegistry as any)[key].type === node.type);
-      const entry = registryKey ? (nodesRegistry as any)[registryKey] : null;
-      if (entry && typeof entry.toPrompt === "function") {
-        const promptPiece = entry.toPrompt(node.data);
-        console.log(`🔍 ${node.type} 노드 (${node.id}) 프롬프트 조각:`, promptPiece);
-      } else {
-        console.log(`❌ ${node.type} 노드 (${node.id}) - toPrompt 함수 없음`);
-      }
-    });
-
     // 해당 Flow의 프롬프트 생성
     const flowPrompt = generatePromptFromWorkflow(flowNodes, flowEdges);
-
-    console.log("📝 Flow별 생성된 프롬프트:", {
-      finalPrompt: flowPrompt.finalPrompt,
-      components: flowPrompt.components,
-    });
 
     return flowPrompt;
   };
@@ -354,57 +311,86 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const onConnect = useCallback(
     (params: Connection) => {
-      // 연결점의 색상 타입 확인
+      if (canvasMode === "lock") return;
+
+      // 노드 정보 먼저 가져오기
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+
+      // 연결점의 색상 타입 확인 (노드 타입과 연결점 위치 기반으로 추정)
+      const getHandleTypeFromPosition = (handle: string | null): string | null => {
+        if (!handle) return null;
+        if (handle === "top" || handle === "bottom") return "gray";
+        if (handle === "left" || handle === "right") return "colored";
+        return null;
+      };
+
+      const sourceHandleType = getHandleTypeFromPosition(params.sourceHandle);
+      const targetHandleType = getHandleTypeFromPosition(params.targetHandle);
+
+      // DOM에서도 확인 시도
       const sourceHandle = document.querySelector(`[data-id="${params.source}"] [data-handle-id="${params.sourceHandle}"]`);
       const targetHandle = document.querySelector(`[data-id="${params.target}"] [data-handle-id="${params.targetHandle}"]`);
 
-      const sourceHandleType = sourceHandle?.getAttribute("data-handle-type");
-      const targetHandleType = targetHandle?.getAttribute("data-handle-type");
+      const sourceHandleTypeFromDOM = sourceHandle?.getAttribute("data-handle-type");
+      const targetHandleTypeFromDOM = targetHandle?.getAttribute("data-handle-type");
+
+      // DOM에서 찾은 값이 있으면 우선 사용
+      const finalSourceHandleType = sourceHandleTypeFromDOM || sourceHandleType;
+      const finalTargetHandleType = targetHandleTypeFromDOM || targetHandleType;
 
       // 같은 색상 타입의 연결점끼리만 연결 허용
-      if (sourceHandleType === targetHandleType) {
-        // start > input > model > output 사이의 연결만 화살표 추가
-        const sourceNode = nodes.find((n) => n.id === params.source);
-        const targetNode = nodes.find((n) => n.id === params.target);
+      if (finalSourceHandleType === finalTargetHandleType) {
+        // primary node 타입 정의
+        const primaryNodeTypes = ["start", "input", "model", "output", "promptTemplate"];
+        const isTargetPrimaryNode = targetNode && targetNode.type && primaryNodeTypes.includes(targetNode.type);
+        const isSourcePrimaryNode = sourceNode && sourceNode.type && primaryNodeTypes.includes(sourceNode.type);
 
-        const shouldAddArrow =
-          params.sourceHandle === "bottom" &&
-          params.targetHandle === "top" &&
-          sourceNode &&
-          targetNode &&
-          ((sourceNode.type === "start" && targetNode.type === "input") ||
-            (sourceNode.type === "input" && targetNode.type === "model") ||
-            (sourceNode.type === "model" && targetNode.type === "output"));
+        // primary node로의 연결에는 화살표 추가
+        // - target이 primary node인 경우: markerEnd 사용 (target을 향하는 화살표)
+        // - source가 primary node이고 sourceHandle이 'right'인 경우: markerStart 사용 (source를 향하는 화살표)
+        const shouldAddArrowToTarget = isTargetPrimaryNode;
+        const shouldAddArrowToSource = isSourcePrimaryNode && params.sourceHandle === "right";
 
-        const edgeWithMarker = shouldAddArrow
-          ? {
-              ...params,
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                color: colors.edge.default,
-              },
-            }
-          : params;
+        const edgeWithMarker: any = { ...params };
+
+        if (shouldAddArrowToTarget) {
+          edgeWithMarker.markerEnd = {
+            type: MarkerType.ArrowClosed,
+            color: colors.edge.default,
+          };
+        }
+
+        if (shouldAddArrowToSource) {
+          edgeWithMarker.markerStart = {
+            type: MarkerType.ArrowClosed,
+            color: colors.edge.default,
+          };
+        }
 
         const newEdges = addEdge(edgeWithMarker, edges);
         setEdges(newEdges);
         wrappedOnEdgesChange(newEdges);
       } else {
         // 다른 색상 타입의 연결점은 연결 차단
-        console.log("다른 색상의 연결점끼리는 연결할 수 없습니다.");
         return;
       }
     },
-    [setEdges, edges, onEdgesChange, nodes]
+    [setEdges, edges, wrappedOnEdgesChange, nodes, canvasMode]
   );
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
+  const onDragOver = useCallback(
+    (event: React.DragEvent) => {
+      if (canvasMode === "lock") return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    },
+    [canvasMode]
+  );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
+      if (canvasMode === "lock") return;
       event.preventDefault();
 
       const type = event.dataTransfer.getData("application/reactflow");
@@ -441,35 +427,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           nodeData.flowName = newFlowName;
         }
 
-        // 동일한 타입의 노드가 2개 이상이면 이름 생성
-        const sameTypeNodes = nodes.filter((n) => n.type === type);
-        const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
-        const defaultBaseName = registryEntry?.meta?.name || type;
-
-        if (sameTypeNodes.length >= 1) {
-          // 이미 같은 타입의 노드가 있으면 이름 생성
-          const existingNames = sameTypeNodes.map((n) => n.data?.customName || n.data?.label || defaultBaseName).filter((name) => (name && name !== defaultBaseName) || name?.match(/\(\d+\)$/));
-
-          let nameNumber = 1;
-          let newName = `${defaultBaseName} (${nameNumber})`;
-
-          // 기존 이름에서 숫자 추출하여 다음 번호 결정
-          const existingNumbers = existingNames
-            .map((name) => {
-              const match = name?.match(/\((\d+)\)$/);
-              return match ? parseInt(match[1], 10) : 0;
-            })
-            .filter((num) => num > 0);
-
-          if (existingNumbers.length > 0) {
-            nameNumber = Math.max(...existingNumbers) + 1;
-            newName = `${defaultBaseName} (${nameNumber})`;
-          }
-
-          nodeData.customName = newName;
-          nodeData.label = newName;
-        }
-
         // Flow 노드인 경우 5개의 연결된 노드 생성
         if (type === "flow") {
           const existingStartNodes = nodes.filter((n) => n.type === "start");
@@ -503,9 +460,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.grey,
                 flowName: newFlowName,
-                onFlowNameChange: handleFlowNameChange,
-                onExecutePrompt: handleExecutePrompt,
-                onDeleteNode: handleDeleteNode,
+                onFlowNameChange: handleFlowNameChangeRef.current || (() => {}),
+                onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -517,7 +474,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 icon: "📥",
                 iconColor: colors.nodeIcon.blue,
                 nodeBg: colors.nodeBg.blue,
-                onDeleteNode: handleDeleteNode,
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -530,8 +487,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: getNodeBgByTypeLocal("model"),
                 model: "gpt-4o-mini",
-                onModelChange: handleModelChange,
-                onDeleteNode: handleDeleteNode,
+                onModelChange: handleModelChangeRef.current || (() => {}),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -544,8 +501,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.lightGreen,
                 format: "text",
-                onDeleteNode: handleDeleteNode,
-                onFormatChange: handleFormatChange,
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
+                onFormatChange: handleFormatChangeRef.current || (() => {}),
               },
             },
             // 프롬프트 생성 노드 추가
@@ -560,8 +517,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
                 name: "Task",
-                onContentChange: (content: string, fileName?: string) => handleNodeContentChange(getId(), content, fileName),
-                onDeleteNode: handleDeleteNode,
+                onContentChange: (content: string, fileName?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
           ];
@@ -603,7 +560,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               },
             },
             // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
-            { id: `e-${flowNodes[2].id}-${flowNodes[4].id}`, source: flowNodes[2].id, target: flowNodes[4].id, sourceHandle: "right", targetHandle: "left" },
+            {
+              id: `e-${flowNodes[2].id}-${flowNodes[4].id}`,
+              source: flowNodes[2].id,
+              target: flowNodes[4].id,
+              sourceHandle: "right",
+              targetHandle: "left",
+              markerStart: {
+                type: MarkerType.ArrowClosed,
+                color: colors.edge.default,
+              },
+            },
           ];
 
           setNodes((prev) => {
@@ -636,7 +603,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         });
       }
     },
-    [reactFlowInstance, setNodes, onNodesChange, nodes]
+    [reactFlowInstance, setNodes, wrappedOnNodesChange, nodes, wrappedOnEdgesChange, edges, getId, getCanvasPrefix, canvasMode, canvasName]
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
@@ -694,6 +661,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleNodeContentChangeRef.current = handleNodeContentChange;
 
   const handleModelChange = (nodeId: string, model: string) => {
     setNodes((nds) => {
@@ -703,6 +671,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleModelChangeRef.current = handleModelChange;
 
   const handleFormatChange = (nodeId: string, format: string) => {
     setNodes((nds) => {
@@ -711,6 +680,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleFormatChangeRef.current = handleFormatChange;
 
   const handleNameChange = (nodeId: string, name: string) => {
     setNodes((nds) => {
@@ -744,48 +714,44 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleFlowNameChangeRef.current = handleFlowNameChange;
 
   const handleDeleteNode = (nodeId: string) => {
+    if (canvasMode === "lock") return;
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     setSelectedNodeId(null);
   };
+  handleDeleteNodeRef.current = handleDeleteNode;
 
   const handleExecutePrompt = async (prompt: string, startNodeId?: string) => {
     // 중복 실행 방지
     if (executingPromptRef.current) {
-      console.log("⚠️ 이미 실행 중인 프롬프트가 있습니다. 중복 실행 방지.");
       return;
     }
-
-    console.log("🚀 handleExecutePrompt 호출됨:", { prompt, startNodeId });
-    console.log("📊 전체 노드 수:", nodes.length);
-    console.log("📊 전체 엣지 수:", edges.length);
 
     executingPromptRef.current = true;
 
     try {
-      console.log("🔄 Flow별 프롬프트 생성 시작...");
       // Flow별 프롬프트 생성
       const flowPrompt = startNodeId ? generateFlowPrompt(startNodeId) : generatedPrompt;
       const actualPrompt = flowPrompt.finalPrompt || prompt;
 
-      console.log("📝 최종 사용할 프롬프트:", actualPrompt);
-      console.log("📝 프롬프트 길이:", actualPrompt.length);
+      console.log("=".repeat(80));
+      console.log("📝 현재 프롬프트 내용:");
+      console.log("=".repeat(80));
+      console.log(actualPrompt);
+      console.log("=".repeat(80));
 
       if (!actualPrompt || actualPrompt.trim() === "") {
         console.warn("⚠️ 프롬프트가 비어있습니다!");
         return;
       }
 
-      console.log("🌐 API 호출 시작...");
-
       const requestBody: any = {
         prompt: actualPrompt,
         temperature: 0.7,
       };
-
-      console.log("📤 요청 body:", JSON.stringify(requestBody, null, 2));
 
       const response = await fetch("/api/flow", {
         method: "POST",
@@ -795,22 +761,22 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         body: JSON.stringify(requestBody),
       });
 
-      console.log("📡 API 응답 상태:", response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ API 에러 응답:", errorText);
-        console.error("📋 에러 상세:", {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText,
-        });
+
+        console.error("=".repeat(80));
+        console.error("❌ API 에러 발생");
+        console.error("=".repeat(80));
+        console.error("📡 HTTP 상태:", response.status, response.statusText);
+        console.error("📋 에러 응답 원문:");
+        console.error(errorText);
+        console.error("=".repeat(80));
 
         // Error 객체에서 detail 파싱
         let errorMessage = "서버 오류가 발생했습니다.";
         try {
           const errorData = JSON.parse(errorText);
-          console.log("📋 파싱된 에러 데이터:", errorData);
+          console.error("📦 파싱된 에러 데이터:", JSON.stringify(errorData, null, 2));
 
           // detail이 문자열인 경우
           if (errorData.detail) {
@@ -840,7 +806,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             }
           }
         } catch (e) {
-          console.log("에러 파싱 실패:", e);
           // 파싱 실패 시 원본 텍스트에서 키워드 확인
           if (errorText.includes("insufficient_quota") || errorText.includes("quota") || errorText.includes("billing")) {
             errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
@@ -865,18 +830,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
               // Result 노드에 에러 표시
               if (node.type === "result") {
-                console.log("🎯 Result 노드에 에러 메시지 표시:", node.id, resultMessage);
                 return { ...node, data: { ...node.data, result: resultMessage } };
               }
               // Output 노드에 에러 표시 (모든 형식에 대해 저장)
               if (node.type === "output") {
-                console.log("🎯 Output 노드에 에러 메시지 표시:", node.id, resultMessage);
                 return { ...node, data: { ...node.data, result: resultMessage } };
               }
             }
             return node;
           });
-          console.log("📊 업데이트된 노드 수:", updatedNodes.length);
           return updatedNodes;
         });
 
@@ -886,10 +848,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       if (response.ok) {
         const data = await response.json();
         const result = data.content || "응답을 받을 수 없습니다.";
-        console.log("✅ API 응답 성공:", result);
-        console.log("📏 응답 길이:", result.length);
 
-        console.log("🎯 Result 노드 찾기 시작...");
         // 특정 Flow의 Result 노드와 Output 노드에 결과 표시
         setNodes((nds) => {
           const findNodeInFlow = (targetNodeId: string, startNodeId: string): boolean => {
@@ -909,18 +868,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
               // Result 노드에 결과 표시
               if (node.type === "result") {
-                console.log("🎯 Result 노드 업데이트:", node.id, result);
                 return { ...node, data: { ...node.data, result } };
               }
               // Output 노드에 결과 표시 (모든 형식에 대해 저장)
               if (node.type === "output") {
-                console.log("🎯 Output 노드 업데이트:", node.id, result);
                 return { ...node, data: { ...node.data, result } };
               }
             }
             return node;
           });
-          console.log("🔄 노드 업데이트 완료");
           wrappedOnNodesChange(updatedNodes);
           return updatedNodes;
         });
@@ -957,10 +913,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         });
       }
     } catch (error) {
-      console.error("❌ handleExecutePrompt 에러:", error);
-      const errorMessage = `네트워크 에러: ${error instanceof Error ? error.message : "알 수 없는 오류"}`;
+      console.error("=".repeat(80));
+      console.error("❌ 프롬프트 실행 중 오류 발생");
+      console.error("=".repeat(80));
+      console.error("🔴 에러 타입:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("🔴 에러 메시지:", error instanceof Error ? error.message : String(error));
+      if (error instanceof Error && error.stack) {
+        console.error("🔴 스택 트레이스:");
+        console.error(error.stack);
+      }
+      if (error instanceof Error && (error as any).cause) {
+        console.error("🔴 원인:", (error as any).cause);
+      }
+      console.error("=".repeat(80));
 
-      console.log("🚨 에러 메시지:", errorMessage);
+      const errorMessage = `네트워크 에러: ${error instanceof Error ? error.message : "알 수 없는 오류"}`;
 
       // 특정 Flow의 Result 노드와 Output 노드에 에러 표시
       setNodes((nds) => {
@@ -978,11 +945,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         const updatedNodes = nds.map((node) => {
           if (startNodeId && findNodeInFlow(node.id, startNodeId)) {
             if (node.type === "result") {
-              console.log("🚨 에러를 Result 노드에 표시:", node.id, errorMessage);
               return { ...node, data: { ...node.data, result: errorMessage } };
             }
             if (node.type === "output") {
-              console.log("🚨 에러를 Output 노드에 표시:", node.id, errorMessage);
               return { ...node, data: { ...node.data, result: errorMessage } };
             }
           }
@@ -993,19 +958,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       });
     } finally {
       executingPromptRef.current = false;
-      console.log("🏁 handleExecutePrompt 완료");
     }
   };
+  handleExecutePromptRef.current = handleExecutePrompt;
 
   // useEffect는 제거 - setNodes/setEdges 호출 시점에 이미 wrappedOnNodesChange/wrappedOnEdgesChange를 호출하고 있음
 
   const deleteSelectedNode = () => {
+    if (canvasMode === "lock") return;
     if (selectedNodeId) {
       handleDeleteNode(selectedNodeId);
     }
   };
 
   const deleteSelectedNodes = () => {
+    if (canvasMode === "lock") return;
     if (selectedIds.length === 0) return;
     const idSet = new Set(selectedIds);
     const newNodes = nodes.filter((n) => !idSet.has(n.id));
@@ -1147,12 +1114,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   suggestions,
                   currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
                   onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
-                  onDeleteNode: handleDeleteNode,
-                  onModelChange: (model: string) => handleModelChange(node.id, model),
-                  onFormatChange: (format: string) => handleFormatChange(node.id, format),
-                  onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                  onDeleteNode: handleDeleteNodeRef.current || (() => {}),
+                  onModelChange: (model: string) => handleModelChangeRef.current?.(node.id, model),
+                  onFormatChange: (format: string) => handleFormatChangeRef.current?.(node.id, format),
+                  onFlowNameChange: (flowName: string) => handleFlowNameChangeRef.current?.(node.id, flowName),
                   onNameChange: (name: string) => handleNameChange(node.id, name),
-                  onExecutePrompt: handleExecutePrompt,
+                  onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
                   showNameInput,
                   customName: node.data?.customName,
                 },
@@ -1176,6 +1143,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           selectionOnDrag={canvasMode === "select"}
           selectionMode={SelectionMode.Partial}
           panOnDrag={canvasMode === "pan"}
+          nodesDraggable={canvasMode !== "lock"}
+          nodesConnectable={canvasMode !== "lock"}
+          elementsSelectable={canvasMode !== "lock"}
+          zoomOnDoubleClick={false}
           onSelectionChange={(sel) => {
             const ids = (sel?.nodes || []).map((n) => n.id);
             if (selectionRafRef.current) cancelAnimationFrame(selectionRafRef.current);

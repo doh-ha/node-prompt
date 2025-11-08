@@ -71,6 +71,7 @@ export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
         iconColor={(data as any).iconColor}
         bg={(data as any).nodeBg}
         onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="promptTemplate"
       >
         <NodeInput
           ref={textAreaRef}

@@ -83,7 +83,16 @@ export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) 
   };
 
   return (
-    <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+    <NodeShell
+      id={id}
+      selected={selected}
+      title={data.label}
+      icon={data.icon}
+      iconColor={data.iconColor}
+      bg={data.nodeBg}
+      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+      nodeType="example"
+    >
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <select

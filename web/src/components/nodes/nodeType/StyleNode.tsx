@@ -67,7 +67,16 @@ export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
 
   return (
     <ContextNodeContainer>
-      <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
+      <NodeShell
+        id={id}
+        selected={selected}
+        title={data.label}
+        icon={data.icon}
+        iconColor={data.iconColor}
+        bg={data.nodeBg}
+        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="style"
+      >
         <NodeInput
           ref={textAreaRef}
           placeholder="문체/톤/말투를 입력하세요..."

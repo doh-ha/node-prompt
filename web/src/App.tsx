@@ -41,8 +41,8 @@ const CanvasContainer = styled.div<{ $leftPanelOpen: boolean; $rightPanelOpen: b
 function App() {
   const { canvases, currentCanvas, currentCanvasId, createCanvas, deleteCanvas, renameCanvas, switchCanvas, updateCurrentCanvas } = useCanvasManager();
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [canvasMode, setCanvasMode] = useState<"pan" | "select">("pan");
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [canvasMode, setCanvasMode] = useState<"pan" | "select" | "lock">("pan");
 
   // 이전 노드/엣지 값을 추적하여 실제 변경 시에만 업데이트
   const prevNodesRef = useRef<Node[]>(currentCanvas?.nodes || []);
@@ -173,31 +173,7 @@ function App() {
               textOrientation: "mixed",
             }}
           >
-            라이브러리
-          </div>
-        )}
-
-        {!rightPanelOpen && (
-          <div
-            onClick={() => setRightPanelOpen(true)}
-            style={{
-              position: "fixed",
-              right: "0px",
-              top: "100px",
-              background: "#4f46e5",
-              color: "white",
-              padding: "20px 8px",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontWeight: "bold",
-              zIndex: 99999,
-              borderRadius: "8px 0 0 8px",
-              boxShadow: "-2px 0 8px rgba(0,0,0,0.3)",
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-            }}
-          >
-            미리보기
+            노드 목록
           </div>
         )}
       </AppContainer>

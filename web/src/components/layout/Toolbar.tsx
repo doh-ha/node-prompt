@@ -35,8 +35,8 @@ const ToolbarButton = styled.button<{ $active: boolean }>`
 `;
 
 interface ModeToggleProps {
-  mode: "pan" | "select";
-  onModeChange: (mode: "pan" | "select") => void;
+  mode: "pan" | "select" | "lock";
+  onModeChange: (mode: "pan" | "select" | "lock") => void;
 }
 
 export const Toolbar: React.FC<ModeToggleProps> = ({ mode, onModeChange }) => {
@@ -47,6 +47,9 @@ export const Toolbar: React.FC<ModeToggleProps> = ({ mode, onModeChange }) => {
       </ToolbarButton>
       <ToolbarButton $active={mode === "select"} onClick={() => onModeChange("select")}>
         ⬜ 영역 선택
+      </ToolbarButton>
+      <ToolbarButton $active={mode === "lock"} onClick={() => onModeChange("lock")}>
+        🔒 잠금
       </ToolbarButton>
     </ToolbarContainer>
   );

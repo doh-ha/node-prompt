@@ -55,6 +55,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
   const [recommendations, setRecommendations] = React.useState<RecommendationItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isUsingFallback, setIsUsingFallback] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string>("");
 
   React.useEffect(() => {
     if (!isVisible || !currentPrompt.trim()) return;
@@ -65,15 +66,12 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
 
     setIsLoading(true);
     setIsUsingFallback(false); // API 호출 시작 시 fallback 상태 초기화
-    console.log("🔍 RecommendationPanel: API 호출 시작", { currentPrompt, nodeType });
+    setErrorMessage(""); // 에러 메시지 초기화
 
     const requestBody = {
       currentPrompt: currentPrompt,
       nodeType: nodeType,
     };
-
-    console.log("📤 RecommendationPanel: 요청 body:", JSON.stringify(requestBody));
-    console.log("📤 RecommendationPanel: 요청 URL:", "/api/recommend");
 
     // 실제 API 호출
     fetch("/api/recommend", {
@@ -85,26 +83,52 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
       body: JSON.stringify(requestBody),
     })
       .then(async (response) => {
-        console.log("🔍 RecommendationPanel: API 응답 상태", response.status);
-
         // 429 에러 등 실패 시 기본 데이터 사용
         if (!response.ok) {
           const errorText = await response.text();
-          console.log("⚠️ RecommendationPanel: API 실패, 기본 데이터 사용");
-          console.log("📋 RecommendationPanel: 에러 응답 내용:", errorText);
-          throw new Error(`API failed with status ${response.status}: ${errorText}`);
+
+          console.error("=".repeat(80));
+          console.error("❌ RecommendationPanel: API 응답 실패");
+          console.error("=".repeat(80));
+          console.error("📡 HTTP 상태:", response.status, response.statusText);
+          console.error("📋 에러 응답 원문:");
+          console.error(errorText);
+          console.error("=".repeat(80));
+
+          // 에러 메시지 파싱
+          let errorMessage = `API failed with status ${response.status}`;
+          try {
+            const errorData = JSON.parse(errorText);
+            console.error("📦 파싱된 에러 데이터:", JSON.stringify(errorData, null, 2));
+            if (errorData.detail) {
+              const detailStr = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+
+              // OpenAI API 할당량 부족 에러 확인
+              if (detailStr.includes("insufficient_quota") || detailStr.includes("quota") || detailStr.includes("billing")) {
+                errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+              } else if (detailStr.includes("429")) {
+                errorMessage = "API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.";
+              } else {
+                errorMessage = detailStr;
+              }
+            }
+          } catch (e) {
+            // JSON 파싱 실패 시 원본 텍스트 사용
+            if (errorText.includes("insufficient_quota") || errorText.includes("quota") || errorText.includes("billing")) {
+              errorMessage = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요.";
+            }
+          }
+
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("📥 RecommendationPanel: 응답 데이터 전체:", JSON.stringify(data));
 
         if (!isMounted) return;
 
         if (data.recommendations) {
-          console.log("✅ RecommendationPanel: API 추천 데이터 사용", data.recommendations);
           setRecommendations(data.recommendations);
         } else {
-          console.log("⚠️ RecommendationPanel: API 응답에 recommendations 없음, 기본 데이터 사용");
           // API 실패 시 기본 추천 사용
           const mockRecommendations = {
             task: [
@@ -142,7 +166,6 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
           };
 
           const mockData = mockRecommendations[nodeType as keyof typeof mockRecommendations] || [];
-          console.log("📝 RecommendationPanel: 기본 추천 데이터 사용", mockData);
           if (isMounted) {
             setRecommendations(mockData);
           }
@@ -154,13 +177,27 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
       .catch((error) => {
         // AbortError는 무시 (컴포넌트 언마운트 또는 중복 요청)
         if (error.name === "AbortError") {
-          console.log("🔇 RecommendationPanel: 요청 취소됨");
           return;
         }
 
         if (!isMounted) return;
 
-        console.error("❌ RecommendationPanel: API 호출 실패", error);
+        console.error("=".repeat(80));
+        console.error("❌ RecommendationPanel: API 호출 실패");
+        console.error("=".repeat(80));
+        console.error("🔴 에러 타입:", error instanceof Error ? error.constructor.name : typeof error);
+        console.error("🔴 에러 메시지:", error instanceof Error ? error.message : String(error));
+        if (error instanceof Error && error.stack) {
+          console.error("🔴 스택 트레이스:");
+          console.error(error.stack);
+        }
+        if (error instanceof Error && (error as any).cause) {
+          console.error("🔴 원인:", (error as any).cause);
+        }
+        console.error("=".repeat(80));
+
+        // 에러 메시지 저장
+        setErrorMessage(error.message);
 
         // API 실패 시 기본 추천 사용
         const mockRecommendions = {
@@ -278,9 +315,16 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
                 fontSize: "11px",
                 color: "#92400e",
                 textAlign: "center",
+                lineHeight: "1.4",
               }}
             >
               ⚠️ API 연결 실패로 기본 추천을 표시합니다
+              {errorMessage && (
+                <>
+                  <br />
+                  <span style={{ fontSize: "10px", marginTop: "4px", display: "block" }}>{errorMessage}</span>
+                </>
+              )}
             </div>
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -288,7 +332,6 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
               <button
                 key={index}
                 onClick={() => {
-                  console.log("🏷️ RecommendationPanel: 태그 선택됨", { value: item.value, description: item.description });
                   onSelectRecommendation(item.value);
                 }}
                 style={{
