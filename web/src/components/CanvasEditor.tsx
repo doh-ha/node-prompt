@@ -11,7 +11,7 @@ import { generatePromptFromWorkflow } from "../utils/promptGenerator";
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
-  canvasMode: "pan" | "select";
+  canvasMode: "pan" | "select" | "lock";
   initialNodes?: Node[];
   initialEdges?: Edge[];
   canvasId?: string;
@@ -231,6 +231,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const [pastePosition, setPastePosition] = useState<{ x: number; y: number } | null>(null);
   const executingPromptRef = useRef<boolean>(false);
 
+  // 함수들을 ref로 저장하여 onDrop에서 접근
+  const handleFlowNameChangeRef = useRef<((nodeId: string, flowName: string) => void) | null>(null);
+  const handleExecutePromptRef = useRef<((prompt: string, startNodeId?: string) => Promise<void>) | null>(null);
+  const handleDeleteNodeRef = useRef<((nodeId: string) => void) | null>(null);
+  const handleModelChangeRef = useRef<((nodeId: string, model: string) => void) | null>(null);
+  const handleFormatChangeRef = useRef<((nodeId: string, format: string) => void) | null>(null);
+  const handleNodeContentChangeRef = useRef<((nodeId: string, content: string, fileName?: string) => void) | null>(null);
+
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
 
   // Canvas 이름에서 접두사 추출 (Canvas A -> A, Canvas AA -> AA)
@@ -354,6 +362,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const onConnect = useCallback(
     (params: Connection) => {
+      if (canvasMode === "lock") return;
       // 연결점의 색상 타입 확인
       const sourceHandle = document.querySelector(`[data-id="${params.source}"] [data-handle-id="${params.sourceHandle}"]`);
       const targetHandle = document.querySelector(`[data-id="${params.target}"] [data-handle-id="${params.targetHandle}"]`);
@@ -395,16 +404,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return;
       }
     },
-    [setEdges, edges, onEdgesChange, nodes]
+    [setEdges, edges, wrappedOnEdgesChange, nodes, canvasMode]
   );
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
+  const onDragOver = useCallback(
+    (event: React.DragEvent) => {
+      if (canvasMode === "lock") return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    },
+    [canvasMode]
+  );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
+      if (canvasMode === "lock") return;
       event.preventDefault();
 
       const type = event.dataTransfer.getData("application/reactflow");
@@ -503,9 +517,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.grey,
                 flowName: newFlowName,
-                onFlowNameChange: handleFlowNameChange,
-                onExecutePrompt: handleExecutePrompt,
-                onDeleteNode: handleDeleteNode,
+                onFlowNameChange: handleFlowNameChangeRef.current || (() => {}),
+                onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -517,7 +531,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 icon: "📥",
                 iconColor: colors.nodeIcon.blue,
                 nodeBg: colors.nodeBg.blue,
-                onDeleteNode: handleDeleteNode,
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -530,8 +544,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: getNodeBgByTypeLocal("model"),
                 model: "gpt-4o-mini",
-                onModelChange: handleModelChange,
-                onDeleteNode: handleDeleteNode,
+                onModelChange: handleModelChangeRef.current || (() => {}),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
             {
@@ -544,8 +558,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 iconColor: colors.nodeIcon.green,
                 nodeBg: colors.nodeBg.lightGreen,
                 format: "text",
-                onDeleteNode: handleDeleteNode,
-                onFormatChange: handleFormatChange,
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
+                onFormatChange: handleFormatChangeRef.current || (() => {}),
               },
             },
             // 프롬프트 생성 노드 추가
@@ -560,8 +574,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
                 name: "Task",
-                onContentChange: (content: string, fileName?: string) => handleNodeContentChange(getId(), content, fileName),
-                onDeleteNode: handleDeleteNode,
+                onContentChange: (content: string, fileName?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName),
+                onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
           ];
@@ -636,7 +650,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         });
       }
     },
-    [reactFlowInstance, setNodes, onNodesChange, nodes]
+    [reactFlowInstance, setNodes, wrappedOnNodesChange, nodes, wrappedOnEdgesChange, edges, getId, getCanvasPrefix, canvasMode, canvasName]
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
@@ -694,6 +708,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleNodeContentChangeRef.current = handleNodeContentChange;
 
   const handleModelChange = (nodeId: string, model: string) => {
     setNodes((nds) => {
@@ -703,6 +718,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleModelChangeRef.current = handleModelChange;
 
   const handleFormatChange = (nodeId: string, format: string) => {
     setNodes((nds) => {
@@ -711,6 +727,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleFormatChangeRef.current = handleFormatChange;
 
   const handleNameChange = (nodeId: string, name: string) => {
     setNodes((nds) => {
@@ -744,12 +761,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       return updatedNodes;
     });
   };
+  handleFlowNameChangeRef.current = handleFlowNameChange;
 
   const handleDeleteNode = (nodeId: string) => {
+    if (canvasMode === "lock") return;
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     setSelectedNodeId(null);
   };
+  handleDeleteNodeRef.current = handleDeleteNode;
 
   const handleExecutePrompt = async (prompt: string, startNodeId?: string) => {
     // 중복 실행 방지
@@ -996,16 +1016,19 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       console.log("🏁 handleExecutePrompt 완료");
     }
   };
+  handleExecutePromptRef.current = handleExecutePrompt;
 
   // useEffect는 제거 - setNodes/setEdges 호출 시점에 이미 wrappedOnNodesChange/wrappedOnEdgesChange를 호출하고 있음
 
   const deleteSelectedNode = () => {
+    if (canvasMode === "lock") return;
     if (selectedNodeId) {
       handleDeleteNode(selectedNodeId);
     }
   };
 
   const deleteSelectedNodes = () => {
+    if (canvasMode === "lock") return;
     if (selectedIds.length === 0) return;
     const idSet = new Set(selectedIds);
     const newNodes = nodes.filter((n) => !idSet.has(n.id));
@@ -1147,12 +1170,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   suggestions,
                   currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
                   onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
-                  onDeleteNode: handleDeleteNode,
-                  onModelChange: (model: string) => handleModelChange(node.id, model),
-                  onFormatChange: (format: string) => handleFormatChange(node.id, format),
-                  onFlowNameChange: (flowName: string) => handleFlowNameChange(node.id, flowName),
+                  onDeleteNode: handleDeleteNodeRef.current || (() => {}),
+                  onModelChange: (model: string) => handleModelChangeRef.current?.(node.id, model),
+                  onFormatChange: (format: string) => handleFormatChangeRef.current?.(node.id, format),
+                  onFlowNameChange: (flowName: string) => handleFlowNameChangeRef.current?.(node.id, flowName),
                   onNameChange: (name: string) => handleNameChange(node.id, name),
-                  onExecutePrompt: handleExecutePrompt,
+                  onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
                   showNameInput,
                   customName: node.data?.customName,
                 },
@@ -1176,6 +1199,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           selectionOnDrag={canvasMode === "select"}
           selectionMode={SelectionMode.Partial}
           panOnDrag={canvasMode === "pan"}
+          nodesDraggable={canvasMode !== "lock"}
+          nodesConnectable={canvasMode !== "lock"}
+          elementsSelectable={canvasMode !== "lock"}
+          zoomOnDoubleClick={false}
           onSelectionChange={(sel) => {
             const ids = (sel?.nodes || []).map((n) => n.id);
             if (selectionRafRef.current) cancelAnimationFrame(selectionRafRef.current);

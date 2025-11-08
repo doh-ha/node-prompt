@@ -42,7 +42,7 @@ function App() {
   const { canvases, currentCanvas, currentCanvasId, createCanvas, deleteCanvas, renameCanvas, switchCanvas, updateCurrentCanvas } = useCanvasManager();
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [canvasMode, setCanvasMode] = useState<"pan" | "select">("pan");
+  const [canvasMode, setCanvasMode] = useState<"pan" | "select" | "lock">("pan");
 
   // 이전 노드/엣지 값을 추적하여 실제 변경 시에만 업데이트
   const prevNodesRef = useRef<Node[]>(currentCanvas?.nodes || []);

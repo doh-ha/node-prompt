@@ -25,12 +25,13 @@ interface OutputNodeProps {
 export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) => {
   const [nodeHeight, setNodeHeight] = useState(120);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || !data.format;
+  const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || data.format === "JSON" || !data.format;
   const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
+  const showTextArea = isTextFormat || data.format === "JSON"; // JSON 형식일 때도 텍스트 영역 표시
 
   // 텍스트 길이에 따라 노드 높이 자동 조정
   useEffect(() => {
-    if (textareaRef.current && data.result && isTextFormat) {
+    if (textareaRef.current && data.result && showTextArea) {
       const textarea = textareaRef.current;
       textarea.style.height = "auto";
       const scrollHeight = textarea.scrollHeight;
@@ -38,7 +39,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       setNodeHeight(newHeight);
       textarea.style.height = `${newHeight - 80}px`;
     }
-  }, [data.result, isTextFormat]);
+  }, [data.result, showTextArea]);
 
   const handleDownload = () => {
     if (!data.result) return;
@@ -206,20 +207,48 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
           <option value="pdf">pdf</option>
         </select>
 
-        {isTextFormat && (
+        {showTextArea && (
           <div style={{ marginTop: 8 }}>
             <NodeInput
               ref={textareaRef}
               as="textarea"
               readOnly
               placeholder="결과가 여기에 표시됩니다"
-              value={data.result || ""}
+              value={
+                data.format === "JSON" && data.result
+                  ? (() => {
+                      try {
+                        const parsed = JSON.parse(data.result);
+                        return JSON.stringify(parsed, null, 2);
+                      } catch {
+                        return data.result;
+                      }
+                    })()
+                  : data.result || ""
+              }
+              onMouseDown={(e) => {
+                // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
+                e.stopPropagation();
+              }}
+              onSelect={(e) => {
+                // 텍스트 선택 시 이벤트 전파 막기
+                e.stopPropagation();
+              }}
               style={{
                 minHeight: "80px",
                 maxHeight: "260px",
                 resize: "none",
                 overflow: "auto",
                 width: "100%",
+                fontFamily: data.format === "JSON" ? "monospace" : "inherit",
+                userSelect: "text",
+                WebkitUserSelect: "text",
+                MozUserSelect: "text",
+                msUserSelect: "text",
               }}
             />
           </div>
