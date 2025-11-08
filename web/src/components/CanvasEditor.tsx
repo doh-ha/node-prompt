@@ -525,35 +525,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           nodeData.flowName = newFlowName;
         }
 
-        // 동일한 타입의 노드가 2개 이상이면 이름 생성
-        const sameTypeNodes = nodes.filter((n) => n.type === type);
-        const registryEntry = Object.values(nodesRegistry).find((e: any) => e.type === type) as any;
-        const defaultBaseName = registryEntry?.meta?.name || type;
-
-        if (sameTypeNodes.length >= 1) {
-          // 이미 같은 타입의 노드가 있으면 이름 생성
-          const existingNames = sameTypeNodes.map((n) => n.data?.customName || n.data?.label || defaultBaseName).filter((name) => (name && name !== defaultBaseName) || name?.match(/\(\d+\)$/));
-
-          let nameNumber = 1;
-          let newName = `${defaultBaseName} (${nameNumber})`;
-
-          // 기존 이름에서 숫자 추출하여 다음 번호 결정
-          const existingNumbers = existingNames
-            .map((name) => {
-              const match = name?.match(/\((\d+)\)$/);
-              return match ? parseInt(match[1], 10) : 0;
-            })
-            .filter((num) => num > 0);
-
-          if (existingNumbers.length > 0) {
-            nameNumber = Math.max(...existingNumbers) + 1;
-            newName = `${defaultBaseName} (${nameNumber})`;
-          }
-
-          nodeData.customName = newName;
-          nodeData.label = newName;
-        }
-
         // Flow 노드인 경우 5개의 연결된 노드 생성
         if (type === "flow") {
           const existingStartNodes = nodes.filter((n) => n.type === "start");
