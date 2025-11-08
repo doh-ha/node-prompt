@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+description: flow 노드와 primary 노드의 개념과 구조를 정의합니다
+---
+
+# Primary Nodes (주요 노드) 규칙
+
+## Primary Nodes 정의
+
+**Primary Nodes**는 flow 노드를 캔버스에 올릴 때 자동으로 생성되는 5개의 노드 세트를 의미합니다:
+
+1. **Start** 노드 (`type: "start"`)
+
+   - Flow의 시작점
+   - Flow 이름을 관리하고 프롬프트 실행 버튼 제공
+
+2. **Input** 노드 (`type: "input"`)
+
+   - 사용자 입력을 받는 노드
+
+3. **Model** 노드 (`type: "model"`)
+
+   - LLM 모델을 선택하는 노드
+
+4. **Output** 노드 (`type: "output"`)
+
+   - 결과를 출력하는 노드
+   - 출력 형식 선택 가능 (text, table, markdown, JSON, csv, pdf)
+
+5. **Task** 노드 (`type: "promptTemplate"`)
+   - 작업 지시문을 입력하는 노드
+
+## Flow 노드 동작
+
+- Flow 노드를 캔버스에 드롭하면 위 5개의 primary 노드가 자동으로 생성됩니다.
+- Primary 노드들은 세로로 배치되며, Start → Input → Model → Output 순서로 연결됩니다.
+- Task 노드는 Model 노드의 오른쪽에 배치되어 Model 노드와 연결됩니다.
+- 각 Flow는 고유한 이름을 가지며 (예: "Flow A1", "Flow A2"), Start 노드에서 관리됩니다.
+
+## 용어 사용 가이드
+
+- 코드, 주석, 문서에서 이 5개 노드를 언급할 때는 **"primary nodes"** 또는 **"primary 노드"**라는 용어를 사용합니다.
+- 개별적으로 언급할 때는 각 노드의 타입명 (start, input, model, output, promptTemplate)을 사용합니다.
+- Flow 노드 자체는 primary 노드에 포함되지 않으며, primary 노드를 생성하는 트리거 역할을 합니다.
+
+## 관련 파일
+
+- Primary 노드 생성 로직: [CanvasEditor.tsx](mdc:web/src/components/CanvasEditor.tsx) (458-607 라인)
+- Flow 노드 정의: [registry.ts](mdc:web/src/components/nodes/registry.ts)
+- 초기 Flow 노드 생성: [useCanvasManager.ts](mdc:web/src/hooks/useCanvasManager.ts)
