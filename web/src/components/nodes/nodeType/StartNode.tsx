@@ -45,7 +45,7 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
       try {
         await data.onExecutePrompt("", id);
       } catch (error) {
-        console.error("프롬프트 실행 중 오류:", error);
+        console.error("❌ 프롬프트 실행 중 오류:", error);
       } finally {
         setIsExecuting(false);
       }
