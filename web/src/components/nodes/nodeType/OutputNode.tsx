@@ -209,48 +209,68 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
         {showTextArea && (
           <div style={{ marginTop: 8 }}>
-            <NodeInput
-              ref={textareaRef}
-              as="textarea"
-              readOnly
-              placeholder="결과가 여기에 표시됩니다"
-              value={
-                data.format === "JSON" && data.result
-                  ? (() => {
-                      try {
-                        const parsed = JSON.parse(data.result);
-                        return JSON.stringify(parsed, null, 2);
-                      } catch {
-                        return data.result;
-                      }
-                    })()
-                  : data.result || ""
-              }
-              onMouseDown={(e) => {
-                // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
-                e.stopPropagation();
-              }}
-              onSelect={(e) => {
-                // 텍스트 선택 시 이벤트 전파 막기
-                e.stopPropagation();
-              }}
-              style={{
-                minHeight: "80px",
-                maxHeight: "260px",
-                resize: "none",
-                overflow: "auto",
-                width: "100%",
-                fontFamily: data.format === "JSON" ? "monospace" : "inherit",
-                userSelect: "text",
-                WebkitUserSelect: "text",
-                MozUserSelect: "text",
-                msUserSelect: "text",
-              }}
-            />
+            {data.result ? (
+              <NodeInput
+                ref={textareaRef}
+                as="textarea"
+                readOnly
+                value={
+                  data.format === "JSON" && data.result
+                    ? (() => {
+                        try {
+                          const parsed = JSON.parse(data.result);
+                          return JSON.stringify(parsed, null, 2);
+                        } catch {
+                          return data.result;
+                        }
+                      })()
+                    : data.result || ""
+                }
+                onMouseDown={(e) => {
+                  // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
+                  e.stopPropagation();
+                }}
+                onSelect={(e) => {
+                  // 텍스트 선택 시 이벤트 전파 막기
+                  e.stopPropagation();
+                }}
+                style={{
+                  minHeight: "80px",
+                  maxHeight: "260px",
+                  resize: "none",
+                  overflow: "auto",
+                  width: "100%",
+                  fontFamily: data.format === "JSON" ? "monospace" : "inherit",
+                  userSelect: "text",
+                  WebkitUserSelect: "text",
+                  MozUserSelect: "text",
+                  msUserSelect: "text",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  padding: "16px",
+                  borderRadius: "8px",
+                  border: "2px dashed #d1d5db",
+                  background: "#f9fafb",
+                  color: "#9ca3af",
+                  fontSize: "13px",
+                  textAlign: "center",
+                  minHeight: "80px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontStyle: "italic",
+                }}
+              >
+                결과가 여기에 표시됩니다
+              </div>
+            )}
           </div>
         )}
 

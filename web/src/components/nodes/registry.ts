@@ -160,7 +160,7 @@ export const nodesRegistry = {
     type: "promptTemplate",
     meta: {
       name: "Task",
-      description: "프롬프트 템플릿",
+      description: "지시문",
       icon: "📝",
       iconColor: colors.nodeIcon.purple,
 
@@ -210,7 +210,7 @@ export const nodesRegistry = {
     type: "output",
     meta: {
       name: "Output",
-      description: "출력형식",
+      description: "출력 형식",
       icon: "📤",
       iconColor: colors.nodeIcon.green,
       group: "output",
