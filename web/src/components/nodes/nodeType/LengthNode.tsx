@@ -40,8 +40,45 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
 
   // handleFocus 제거 - 자동 추천 비활성화
 
+  // description에서 📝 description 부분만 추출 (impact, risk 제외)
+  const extractDescriptionOnly = (fullDescription: string): string => {
+    const descriptionMarker = "📝 description:";
+    const impactMarker = "💡 impact:";
+    
+    if (!fullDescription.includes(descriptionMarker)) {
+      return fullDescription; // 형식이 다르면 전체 반환
+    }
+    
+    const descriptionStart = fullDescription.indexOf(descriptionMarker);
+    const descriptionText = fullDescription.substring(descriptionStart + descriptionMarker.length);
+    
+    // 💡 impact: 또는 ⚠️ risk: 이전까지 추출
+    const impactIndex = descriptionText.indexOf(impactMarker);
+    if (impactIndex !== -1) {
+      return descriptionText.substring(0, impactIndex).trim();
+    }
+    
+    // impact가 없으면 risk 찾기
+    const riskMarker = "⚠️ risk:";
+    const riskIndex = descriptionText.indexOf(riskMarker);
+    if (riskIndex !== -1) {
+      return descriptionText.substring(0, riskIndex).trim();
+    }
+    
+    // 둘 다 없으면 전체 반환
+    return descriptionText.trim();
+  };
+
   const handleSelectRecommendation = (recommendation: string, description?: string) => {
-    setValue(recommendation);
+    // description에서 📝 description 부분만 추출하여 표시
+    if (description) {
+      const descriptionOnly = extractDescriptionOnly(description);
+      const displayValue = descriptionOnly ? `${recommendation} (${descriptionOnly})` : recommendation;
+      setValue(displayValue);
+    } else {
+      setValue(recommendation);
+    }
+    
     if (data.onContentChange) {
       data.onContentChange(recommendation, undefined, description);
     }

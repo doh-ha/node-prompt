@@ -126,7 +126,9 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
 
         if (!isMounted) return;
 
-        if (data.recommendations) {
+        console.log("🔍 RecommendationPanel: API 응답 데이터:", data);
+
+        if (data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
           setRecommendations(data.recommendations);
         } else {
           // API 실패 시 기본 추천 사용

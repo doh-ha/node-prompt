@@ -1,16 +1,15 @@
 def get_system_prompt() -> str:
     """추천 기능을 위한 시스템 프롬프트를 반환합니다."""
-    return """
-당신은 '프롬프트 최적화 및 구조화'를 전문으로 하는 최고의 프롬프트 엔지니어링 전문가입니다.
-당신의 목표는 사용자의 현재 프롬프트 문맥에 잘 맞는 구체적이고 전문적인 프롬프트 요소들을 추천하여, 최종 출력물의 품질과 적합성을 극대화하는 것입니다.
+    return """프롬프트 엔지니어링 전문가로서, 현재 프롬프트 문맥에 맞는 구성 요소만 추천하세요.
 
-[핵심 규칙]
-1.  **현재 프롬프트(Current Prompt)를 면밀히 분석하고, 그 문맥에 완벽하게 일치하는 추천만을 제공해야 합니다.**
-2.  **추천하는 각 항목은 구체적이고 전문적이며, 사용자 프롬프트에 즉시 추가될 수 있도록 명확해야 합니다.**
-3.  **오직 요청된 JSON 형식으로만 응답해야 합니다. JSON 외의 어떠한 설명, 서론, 결론도 포함하지 마세요.**
-4. **각 추천은 목적 적합성(why), 기대효과(impact), 적용 리스크(risk)을 포함하는 것을 권장합니다.**
-5. **언어는 현재 프롬프트와 동일하기 유지합니다.**
-"""
+[규칙]
+1. 현재 프롬프트 문맥에 어울리는 추천만 제안 (예: 동화→동화작가, 이메일→비즈니스 전문가)
+2. element는 프롬프트에 바로 넣을 수 있는 짧은 태그 (role: 2~10단어, style: 1~5단어)
+3. 반드시 유효한 JSON 형식만 출력하세요. 코드 블록(```json)이나 설명 없이 순수 JSON만 출력합니다.
+4. description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
+5. 3~5개 추천, 서로 구별되는 옵션만
+6. 현재 프롬프트와 동일한 언어 사용"""
+
 
 def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
     """
@@ -28,8 +27,8 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {
   "recommendations": [
     {
-      "element": "추천 항목",
-      "description": "현재 프롬프트와의 정합성(왜 필요한지)과 기대효과 (impact)를 포함한 구체 설명"
+      "element": "추천 항목(짧은 태그 형태)",
+      "description": "📝 description / 💡 impact / ⚠️ risk 형식으로 간단 설명"
     }
   ]
 }
@@ -41,16 +40,13 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {current_prompt}
 
 [작성 지침]
-- 결과물의 질을 높이기 위해 누락된 요구사항(데이터, 제약, 평가 기준, 산출물 형식)을 보완하는 3~5개의 개선안을 제안하세요.
+- 누락된 요구사항 보완 3~5개 제안 (입력 데이터, 제약 조건, 평가 기준, 산출물 형식)
+- element: 프롬프트에 바로 넣을 수 있는 한 줄 요구사항 또는 짧은 태그
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
 
 [출력 형식]
-다음 JSON만 출력하세요(추가 텍스트 금지).
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
-
-예시 JSON 항목:
-{{ "element": "필수 입력값 지정", "description": "핵심 정보가 빠지면 답이 흔들립니다. 예: '<대상>, <목적>, <사용 맥락>을 먼저 명시해 주세요.'를 프롬프트에 추가하세요." }}
-{{ "element": "출력 형식 고정", "description": "일관된 결과물을 얻기 위해 형식을 고정합니다. 예: '출력은 제목-요약-본문-결론 순서로, 목록은 번호(1,2,3)로 표기'를 명시하세요." }}
-{{ "element": "성공 기준 한 줄로", "description": "무엇이 좋은 결과인지 명확히 해야 합니다. 예: '독자가 바로 실행할 수 있으면 성공'처럼 한 줄 기준을 추가하세요." }}
 """,
 
         "role": f"""
@@ -58,15 +54,14 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {current_prompt}
 
 [작성 지침]
-- 이 작업을 가장 잘 수행할 3~5개의 전문 페르소나를 제안하세요.
+- 이 작업에 적합한 3~5개 역할 제안
+- element: 2~10단어 명사구 ("당신은 <element>입니다" 형태)
+- 문맥에 맞는 역할만 (예: 동화→동화작가, 이메일→비즈니스 전문가)
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
 
 [출력 형식]
-다음 JSON만 출력하세요(추가 텍스트 금지).
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
-
-예시 JSON 항목:
-{{ "element": "쉬운 설명가(Plain Explainer)", "description": "비전공자도 이해하도록 짧은 문장과 쉬운 단어를 씁니다. 금지: 전문용어 남발. 템플릿: '핵심 한 줄 → 왜 중요한가 → 예시 1개'." }}
-{{ "element": "프로젝트 매니저(PM)", "description": "실행 우선 문맥에 적합합니다. 말투: 명확·직설. 금지: 모호어(적절히, 충분히). 템플릿: '목표 → 마감 → 책임자 → 체크리스트'." }}
 """,
 
         "style": f"""
@@ -74,15 +69,14 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {current_prompt}
 
 [작성 지침]
-- 결과물의 어조/구성/표현 규칙을 3~5개 제안하세요.
+- 어조/문체/표현 규칙 스타일 태그 3~5개 제안
+- element: 1~5단어 (예: "따뜻한", "공손하고 포멀한", "간결한")
+- 작업 유형에 맞는 스타일만 (동화→따뜻한, 이메일→공손한)
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
 
 [출력 형식]
-다음 JSON만 출력하세요(추가 텍스트 금지).
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
-
-예시 JSON 항목:
-{{ "element": "쉬운 문장, 짧은 단락", "description": "빠른 이해가 중요한 문맥에 적합합니다. 규칙: 한 문장 20단어 이내, 3~4문장마다 줄바꿈. 예: '한 문단=하나의 메시지'." }}
-{{ "element": "단계별 번호 매기기", "description": "실행 절차가 있는 과제에 유리합니다. 규칙: 1) 준비물 2) 단계 3) 확인. 예: '1단계: <작업> → 확인: <기준>'." }}
 """,
 
         "audience": f"""
@@ -90,15 +84,13 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {current_prompt}
 
 [작성 지침]
-- 잠재 독자군 3~5개를 제안하고, 독자별로 톤/난이도/예시 도메인/시각 자료 필요 여부를 조정하세요.
+- 잠재 독자군 3~5개 제안
+- element: 2~10단어 명사구 (예: "7살 어린이", "비즈니스 의사결정자")
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
 
 [출력 형식]
-다음 JSON만 출력하세요(추가 텍스트 금지).
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
-
-예시 JSON 항목:
-{{ "element": "비전공자 초보자", "description": "용어 풀어쓰기와 비유가 필요합니다. 조정: 핵심만, 예시는 일상 도메인, 도식 1개 포함." }}
-{{ "element": "현업 실무자", "description": "바로 쓰는 자료가 중요합니다. 조정: 체크리스트·모범 사례·주의사항을 표로 제공." }}
 """,
 
         "length": f"""
@@ -106,15 +98,13 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 {current_prompt}
 
 [작성 지침]
-- 채널/목적에 맞는 분량 옵션 3~5개를 제안하세요(문장/문단/단어/시간 등).
+- 채널/목적에 맞는 분량 옵션 3~5개 제안
+- element: 분량 규칙 또는 형식 (예: "요약 3~5문장", "800~1,000단어")
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
 
 [출력 형식]
-다음 JSON만 출력하세요(추가 텍스트 금지).
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
-
-예시 JSON 항목:
-{{ "element": "초간단 요약 3~5문장", "description": "빠른 의사결정에 적합합니다. 예: '결론 1문장 → 이유 2문장 → 다음 행동 1문장'." }}
-{{ "element": "실무 가이드 800~1,000자", "description": "절차와 주의사항을 담기에 충분합니다. 예: '개요 → 단계별 절차 → 체크리스트 → 흔한 오류'." }}
 """,
     }
 

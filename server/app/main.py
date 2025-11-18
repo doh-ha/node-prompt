@@ -182,21 +182,23 @@ def recommend_nodes(req: NodeRecommendationRequest):
         data = {
             "model": req.model,
             "messages": messages,
-            "temperature": req.temperature,
-            "max_tokens": 500
+            "temperature": min(req.temperature, 0.5),  # 추천은 더 결정적으로 (최대 0.5)
+            "max_tokens": 500  # JSON 완전성을 위해 충분한 토큰 확보
         }
         
-        with httpx.Client() as client:
+        with httpx.Client(timeout=20.0) as client:  # 타임아웃 단축 (30초 -> 20초)
             response = client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=30.0
+                timeout=20.0
             )
             
             if response.status_code == 200:
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
+                
+                print(f"🔍 DEBUG: OpenAI response content: {content[:500]}...")
                 
                 # 추천 항목들을 파싱하여 배열로 반환
                 recommendations = []
@@ -206,23 +208,49 @@ def recommend_nodes(req: NodeRecommendationRequest):
                     import json
                     # content가 JSON 문자열인 경우 파싱
                     content_cleaned = content.strip()
+                    
+                    # JSON 코드 블록 제거 (```json ... ```)
+                    if content_cleaned.startswith('```'):
+                        lines = content_cleaned.split('\n')
+                        json_start = -1
+                        json_end = -1
+                        for i, line in enumerate(lines):
+                            if line.strip().startswith('```') and json_start == -1:
+                                json_start = i + 1
+                            elif line.strip().startswith('```') and json_start != -1:
+                                json_end = i
+                                break
+                        if json_start != -1 and json_end != -1:
+                            content_cleaned = '\n'.join(lines[json_start:json_end]).strip()
+                    
                     if content_cleaned.startswith('{') or content_cleaned.startswith('['):
                         parsed_json = json.loads(content_cleaned)
                         if isinstance(parsed_json, dict) and "recommendations" in parsed_json:
                             for item in parsed_json["recommendations"]:
                                 if isinstance(item, dict):
-                                    recommendations.append({
-                                        "value": item.get("element", "").strip(),
-                                        "description": item.get("description", "").strip()
-                                    })
+                                    element = item.get("element", "").strip()
+                                    description = item.get("description", "").strip()
+                                    if element:  # element가 비어있지 않을 때만 추가
+                                        recommendations.append({
+                                            "value": element,
+                                            "description": description
+                                        })
                         elif isinstance(parsed_json, list):
                             for item in parsed_json:
                                 if isinstance(item, dict):
-                                    recommendations.append({
-                                        "value": item.get("element", "").strip(),
-                                        "description": item.get("description", "").strip()
-                                    })
-                except json.JSONDecodeError:
+                                    element = item.get("element", "").strip()
+                                    description = item.get("description", "").strip()
+                                    if element:  # element가 비어있지 않을 때만 추가
+                                        recommendations.append({
+                                            "value": element,
+                                            "description": description
+                                        })
+                    
+                    print(f"🔍 DEBUG: Parsed {len(recommendations)} recommendations")
+                    
+                except json.JSONDecodeError as e:
+                    print(f"🔍 DEBUG: JSON parsing failed: {e}")
+                    print(f"🔍 DEBUG: Content that failed to parse: {content_cleaned[:200]}...")
                     # JSON 파싱 실패 시 기존 줄 단위 파싱 시도
                     lines = content.strip().split('\n')
                     for line in lines:
@@ -240,6 +268,9 @@ def recommend_nodes(req: NodeRecommendationRequest):
                                     "value": parts[0].strip(),
                                     "description": ""
                                 })
+                
+                if not recommendations:
+                    print(f"⚠️ WARNING: No recommendations parsed from response")
                 
                 return {
                     "nodeType": req.nodeType,
