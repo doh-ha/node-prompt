@@ -46,7 +46,7 @@ interface RecommendationItem {
 interface RecommendationPanelProps {
   currentPrompt: string;
   nodeType: string;
-  onSelectRecommendation: (recommendation: string) => void;
+  onSelectRecommendation: (recommendation: string, description?: string) => void;
   isVisible: boolean;
   onClose: () => void;
 }
@@ -332,7 +332,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
               <button
                 key={index}
                 onClick={() => {
-                  onSelectRecommendation(item.value);
+                  onSelectRecommendation(item.value, item.description);
                 }}
                 style={{
                   padding: "8px 12px",

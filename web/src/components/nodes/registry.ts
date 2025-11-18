@@ -66,7 +66,12 @@ export const nodesRegistry = {
       group: "instruction",
     },
     component: RoleNode,
-    toPrompt: (d) => (d.content || d.role ? `[${d.name}]\n당신은 ${d.content || d.role} 입니다.` : null),
+    toPrompt: (d) => {
+      const content = d.content || d.role;
+      if (!content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n당신은 ${content}${description} 입니다.`;
+    },
   },
   // 추가 컨텍스트: Reference
   file: {
@@ -98,7 +103,11 @@ export const nodesRegistry = {
       group: "context",
     },
     component: AudienceNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n당신의 주요 독자(청중)는 ${d.content} 입니다.` : null),
+    toPrompt: (d: any) => {
+      if (!d.content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n당신의 주요 독자(청중)는 ${d.content}${description} 입니다.`;
+    },
   },
   // 추가 컨텍스트: Style
   style: {
@@ -112,7 +121,11 @@ export const nodesRegistry = {
       defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
     component: StyleNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n답변은 ${d.content} 스타일로 작성하세요.` : null),
+    toPrompt: (d: any) => {
+      if (!d.content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n답변은 ${d.content}${description} 스타일로 작성하세요.`;
+    },
   },
 
   // 누락 컨텍스트: Length
@@ -127,7 +140,11 @@ export const nodesRegistry = {
       defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
-    toPrompt: (d: any) => (d.content ? `[${d.name}]\n권장 길이: ${d.content}` : null),
+    toPrompt: (d: any) => {
+      if (!d.content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n권장 길이: ${d.content}${description}`;
+    },
   },
 
   // 추가 컨텍스트: Example
@@ -167,7 +184,12 @@ export const nodesRegistry = {
       group: "instruction",
     },
     component: TaskNode,
-    toPrompt: (d) => (d.content || d.template ? `[${d.name}]\n다음 작업을 수행하세요: ${d.content || d.template}.` : null),
+    toPrompt: (d) => {
+      const content = d.content || d.template;
+      if (!content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n다음 작업을 수행하세요: ${content}${description}.`;
+    },
   },
   model: {
     type: "model",

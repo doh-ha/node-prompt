@@ -10,7 +10,7 @@ interface RoleNodeProps {
     description: string;
     examples: string[];
     content?: string;
-    onContentChange?: (content: string) => void;
+    onContentChange?: (content: string, fileName?: string, description?: string) => void;
     onDeleteNode?: (id: string) => void;
     label?: string;
     icon?: string;
@@ -41,10 +41,12 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
 
   // handleFocus 제거 - 자동 추천 비활성화
 
-  const handleSelectRecommendation = (recommendation: string) => {
-    setValue(recommendation);
+  const handleSelectRecommendation = (recommendation: string, description?: string) => {
+    // description이 있으면 함께 표시: "value (description)"
+    const displayValue = description ? `${recommendation} (${description})` : recommendation;
+    setValue(displayValue);
     if (data.onContentChange) {
-      data.onContentChange(recommendation);
+      data.onContentChange(recommendation, undefined, description);
     }
     setShowRecommendations(false);
   };

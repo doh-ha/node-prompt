@@ -44,7 +44,11 @@ class NodeRecommendationRequest(BaseModel):
     temperature: Optional[float] = 0.7
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Honors Thesis API",
+    description="프롬프트 엔지니어링 시스템 API",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,6 +57,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "Honors Thesis API",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
 
 
 @app.get("/api/health")

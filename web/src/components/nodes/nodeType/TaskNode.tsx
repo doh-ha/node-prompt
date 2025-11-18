@@ -9,7 +9,7 @@ interface TaskNodeProps {
     template: string;
     variables: string[];
     content?: string;
-    onContentChange?: (content: string) => void;
+    onContentChange?: (content: string, fileName?: string, description?: string) => void;
     onDeleteNode?: (id: string) => void;
   };
   selected?: boolean;
@@ -36,10 +36,10 @@ export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
 
   // handleFocus 제거 - 자동 추천 비활성화
 
-  const handleSelectRecommendation = (recommendation: string) => {
+  const handleSelectRecommendation = (recommendation: string, description?: string) => {
     setValue(recommendation);
     if (data.onContentChange) {
-      data.onContentChange(recommendation);
+      data.onContentChange(recommendation, undefined, description);
     }
     setShowRecommendations(false);
   };

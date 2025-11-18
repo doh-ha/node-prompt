@@ -241,7 +241,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const handleDeleteNodeRef = useRef<((nodeId: string) => void) | null>(null);
   const handleModelChangeRef = useRef<((nodeId: string, model: string) => void) | null>(null);
   const handleFormatChangeRef = useRef<((nodeId: string, format: string) => void) | null>(null);
-  const handleNodeContentChangeRef = useRef<((nodeId: string, content: string, fileName?: string) => void) | null>(null);
+  const handleNodeContentChangeRef = useRef<((nodeId: string, content: string, fileName?: string, description?: string) => void) | null>(null);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
 
@@ -517,7 +517,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
                 name: "Task",
-                onContentChange: (content: string, fileName?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName),
+                onContentChange: (content: string, fileName?: string, description?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName, description),
                 onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
             },
@@ -644,13 +644,16 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     setContextMenu(null);
   };
 
-  const handleNodeContentChange = (nodeId: string, content: string, fileName?: string) => {
+  const handleNodeContentChange = (nodeId: string, content: string, fileName?: string, description?: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => {
         if (node.id === nodeId) {
           const updatedData = { ...node.data, content };
           if (fileName) {
             updatedData.fileName = fileName;
+          }
+          if (description !== undefined) {
+            updatedData.description = description;
           }
           return { ...node, data: updatedData };
         }
@@ -1113,7 +1116,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   ...node.data,
                   suggestions,
                   currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
-                  onContentChange: (content: string, fileName?: string) => handleNodeContentChange(node.id, content, fileName),
+                  onContentChange: (content: string, fileName?: string, description?: string) => handleNodeContentChange(node.id, content, fileName, description),
                   onDeleteNode: handleDeleteNodeRef.current || (() => {}),
                   onModelChange: (model: string) => handleModelChangeRef.current?.(node.id, model),
                   onFormatChange: (format: string) => handleFormatChangeRef.current?.(node.id, format),
