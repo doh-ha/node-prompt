@@ -7,10 +7,16 @@ from dotenv import load_dotenv
 from . import prompts
 
 # .env 탐색: 루트와 server 디렉토리 모두 시도
-load_dotenv()
+load_dotenv()  # 루트 디렉토리의 .env
+
+# server 디렉토리의 .env 파일 경로
 server_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-if os.path.exists(os.path.abspath(server_env_path)):
-    load_dotenv(os.path.abspath(server_env_path))
+server_env_abs = os.path.abspath(server_env_path)
+if os.path.exists(server_env_abs):
+    print(f"🔍 DEBUG: Loading .env from: {server_env_abs}")
+    load_dotenv(server_env_abs, override=True)  # override=True로 명시적으로 덮어쓰기
+else:
+    print(f"⚠️ WARNING: .env file not found at: {server_env_abs}")
 
 # OpenAI API 키와 기본 모델 설정 (환경변수로 오버라이드 가능)
 _api_key_raw = os.getenv("OPENAI_API_KEY")

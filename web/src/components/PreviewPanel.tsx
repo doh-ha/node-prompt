@@ -40,6 +40,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
   }, []);
 
   // Flow별로 노드들을 그룹화 (엣지 연결 기반)
+  // 노드가 여러 flow에 직접 연결되면 공유됨
   const flowGroups = useMemo(() => {
     const groups: { [key: string]: { nodes: any[]; edges: any[]; prompt: string } } = {};
 
@@ -51,10 +52,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
       return groups;
     }
 
-    // 각 Start 노드에 대해 엣지 연결을 따라가며 Flow 노드들 찾기
+    // 각 Start 노드에서 도달 가능한 노드들을 먼저 계산
+    const flowReachability: Map<string, Set<string>> = new Map();
+    
     startNodes.forEach((startNode) => {
       const flowName = startNode.data.flowName;
-      const flowNodeIds = new Set<string>([startNode.id]);
+      const reachableNodeIds = new Set<string>([startNode.id]);
       const visited = new Set<string>();
 
       // 하류(나가는 엣지) 방향으로 탐색
@@ -63,7 +66,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
           return;
         }
         visited.add(currentNodeId);
-        flowNodeIds.add(currentNodeId);
+        reachableNodeIds.add(currentNodeId);
 
         // 현재 노드에서 나가는 엣지 찾기
         const outgoingEdges = edges.filter((edge) => edge.source === currentNodeId);
@@ -76,8 +79,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
       const collectUpstream = (targetId: string) => {
         const incoming = edges.filter((e) => e.target === targetId);
         incoming.forEach((e) => {
-          if (!flowNodeIds.has(e.source)) {
-            flowNodeIds.add(e.source);
+          if (!reachableNodeIds.has(e.source)) {
+            reachableNodeIds.add(e.source);
             collectUpstream(e.source);
           }
         });
@@ -87,11 +90,24 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
       findFlowNodes(startNode.id);
 
       // 찾은 노드들에 대해 상류 역추적
-      Array.from(flowNodeIds).forEach((id) => collectUpstream(id));
+      Array.from(reachableNodeIds).forEach((id) => collectUpstream(id));
+
+      flowReachability.set(flowName, reachableNodeIds);
+    });
+
+    // 각 flow에 대해 노드와 엣지 필터링
+    startNodes.forEach((startNode) => {
+      const flowName = startNode.data.flowName;
+      const flowNodeIds = flowReachability.get(flowName)!;
 
       // Flow에 속한 노드와 엣지 필터링
+      // 노드가 이 flow에 도달 가능하면 포함 (다른 flow에도 도달 가능하면 공유됨)
       const flowNodes = nodes.filter((node) => flowNodeIds.has(node.id));
-      const flowEdges = edges.filter((edge) => flowNodeIds.has(edge.source) && flowNodeIds.has(edge.target));
+      
+      // 엣지는 양쪽 노드가 모두 이 flow에 속해야 함
+      const flowEdges = edges.filter((edge) => 
+        flowNodeIds.has(edge.source) && flowNodeIds.has(edge.target)
+      );
 
       // Flow별 프롬프트 생성
       const flowPrompt = generatePromptFromFlowNodes(flowNodes, flowEdges);
