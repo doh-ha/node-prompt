@@ -13,9 +13,27 @@ if os.path.exists(os.path.abspath(server_env_path)):
     load_dotenv(os.path.abspath(server_env_path))
 
 # OpenAI API 키와 기본 모델 설정 (환경변수로 오버라이드 가능)
-_api_key = os.getenv("OPENAI_API_KEY")
+_api_key_raw = os.getenv("OPENAI_API_KEY")
+if _api_key_raw:
+    # 앞뒤 공백 제거 및 따옴표 제거
+    _api_key = _api_key_raw.strip().strip('"').strip("'")
+    # API 키 형식 검증 (sk- 또는 sk-proj-로 시작해야 함)
+    if not (_api_key.startswith("sk-") or _api_key.startswith("sk-proj-")):
+        print(f"⚠️ WARNING: API Key format may be incorrect. Should start with 'sk-' or 'sk-proj-'")
+        print(f"⚠️ WARNING: API Key starts with: {_api_key[:10] if len(_api_key) > 10 else _api_key}")
+else:
+    _api_key = None
+
 _default_model = os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4o-mini")
 print(f"🔍 DEBUG: API Key loaded: {_api_key is not None}")
+if _api_key:
+    # API 키의 앞부분만 표시 (보안)
+    api_key_preview = _api_key[:10] + "..." + _api_key[-4:] if len(_api_key) > 14 else "***"
+    print(f"🔍 DEBUG: API Key preview: {api_key_preview}")
+    print(f"🔍 DEBUG: API Key length: {len(_api_key)} characters")
+    print(f"🔍 DEBUG: API Key starts with: {_api_key[:7]}")
+else:
+    print(f"⚠️ WARNING: OPENAI_API_KEY environment variable is not set!")
 print(f"🔍 DEBUG: Default model: {_default_model}")
 
 
@@ -131,11 +149,17 @@ def run_flow(req: FlowRequest):
                         error_type = error_obj.get("type", "")
                         error_code = error_obj.get("code", "")
                         
+                        # API 키가 에러 메시지에 포함되어 있으면 제거
+                        if _api_key and _api_key in error_message:
+                            error_message = error_message.replace(_api_key, "***API_KEY***")
+                        
                         # quota 관련 에러 감지
                         if error_type == "insufficient_quota" or error_code == "insufficient_quota" or "quota" in error_message.lower():
                             error_detail = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요."
                         elif error_type == "rate_limit_exceeded" or error_code == "rate_limit_exceeded":
                             error_detail = "OpenAI API 요청 한도가 초과되었습니다. 잠시 후 다시 시도해주세요."
+                        elif "Incorrect API key" in error_message or "invalid_api_key" in error_type.lower():
+                            error_detail = "OpenAI API 키가 올바르지 않습니다. .env 파일의 OPENAI_API_KEY를 확인해주세요. (공백이나 따옴표가 포함되어 있지 않은지 확인하세요)"
                         else:
                             error_detail = error_message or str(error_json)
                 except:
@@ -145,8 +169,12 @@ def run_flow(req: FlowRequest):
         
     except Exception as e:  # pragma: no cover
         print(f"🔍 DEBUG: Exception caught: {type(e).__name__}: {e}")
+        # 에러 메시지에서 API 키 제거 (보안)
+        error_msg = str(e)
+        if _api_key and _api_key in error_msg:
+            error_msg = error_msg.replace(_api_key, "***API_KEY***")
         # 에러 원인 가시화
-        raise HTTPException(status_code=500, detail=f"OpenAI request failed: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"OpenAI request failed: {type(e).__name__}: {error_msg}")
 
 
 @app.post("/api/recommend")
@@ -278,10 +306,46 @@ def recommend_nodes(req: NodeRecommendationRequest):
                     "rawContent": content
                 }
             else:
-                raise HTTPException(status_code=500, detail=f"OpenAI API error: {response.status_code} - {response.text}")
+                # OpenAI API 에러 응답 파싱
+                error_text = response.text
+                # API 키가 에러 텍스트에 포함되어 있으면 제거
+                if _api_key and _api_key in error_text:
+                    error_text = error_text.replace(_api_key, "***API_KEY***")
+                
+                try:
+                    error_json = response.json()
+                    if "error" in error_json:
+                        error_obj = error_json["error"]
+                        error_message = error_obj.get("message", "")
+                        error_type = error_obj.get("type", "")
+                        error_code = error_obj.get("code", "")
+                        
+                        # API 키가 에러 메시지에 포함되어 있으면 제거
+                        if _api_key and _api_key in error_message:
+                            error_message = error_message.replace(_api_key, "***API_KEY***")
+                        
+                        # 특정 에러 타입 처리
+                        if error_type == "insufficient_quota" or error_code == "insufficient_quota":
+                            error_detail = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요."
+                        elif error_type == "rate_limit_exceeded" or error_code == "rate_limit_exceeded":
+                            error_detail = "OpenAI API 요청 한도가 초과되었습니다. 잠시 후 다시 시도해주세요."
+                        elif "Incorrect API key" in error_message or "invalid_api_key" in error_type.lower():
+                            error_detail = "OpenAI API 키가 올바르지 않습니다. .env 파일의 OPENAI_API_KEY를 확인해주세요."
+                        else:
+                            error_detail = error_message
+                    else:
+                        error_detail = error_text[:200]
+                except:
+                    error_detail = error_text[:200]
+                
+                raise HTTPException(status_code=500, detail=f"OpenAI API error: {response.status_code} - {error_detail}")
         
     except Exception as e:
         print(f"🔍 DEBUG: Recommendation exception: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail=f"Recommendation request failed: {type(e).__name__}: {e}")
+        # 에러 메시지에서 API 키 제거 (보안)
+        error_msg = str(e)
+        if _api_key and _api_key in error_msg:
+            error_msg = error_msg.replace(_api_key, "***API_KEY***")
+        raise HTTPException(status_code=500, detail=f"Recommendation request failed: {type(e).__name__}: {error_msg}")
 
 

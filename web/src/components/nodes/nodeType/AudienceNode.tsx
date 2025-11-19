@@ -78,7 +78,9 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
     }
     
     if (data.onContentChange) {
-      data.onContentChange(recommendation, undefined, description);
+      // description에서 📝 description 부분만 추출하여 전달 (impact, risk 제외)
+      const descriptionOnly = description ? extractDescriptionOnly(description) : undefined;
+      data.onContentChange(recommendation, undefined, descriptionOnly);
     }
     setShowRecommendations(false);
   };

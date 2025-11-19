@@ -177,6 +177,53 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
     return <div>{sections}</div>;
   };
 
+  // 기본 추천 데이터 (fallback용)
+  const getDefaultRecommendations = React.useCallback(() => {
+    return {
+      task: [
+        {
+          value: "영어 단어장 만들기",
+          description: "영어 단어와 뜻, 예문을 정리한 단어장을 작성합니다.",
+        },
+        {
+          value: "독서감상문 쓰기",
+          description: "읽은 책에 대한 감상과 생각을 정리한 글을 작성합니다.",
+        },
+        {
+          value: "이메일 초안 작성하기",
+          description: "비즈니스나 개인용 이메일의 초안을 작성합니다.",
+        },
+      ],
+      role: [
+        { value: "영어 교사", description: "영어 학습을 도와주는 전문가" },
+        { value: "일본어 전문가", description: "일본어 문법과 표현을 가르치는 전문가" },
+        { value: "중학생", description: "중학생 수준의 이해도로 설명" },
+        { value: "작가", description: "창의적이고 문학적인 글쓰기 전문가" },
+        { value: "번역가", description: "정확한 번역과 언어 전달 전문가" },
+      ],
+      style: [
+        { value: "친근한 톤", description: "따뜻하고 친근한 말투" },
+        { value: "전문적인 톤", description: "정확하고 전문적인 표현" },
+        { value: "유머러스한 톤", description: "재미있고 유쾌한 분위기" },
+        { value: "격식있는 톤", description: "정중하고 격식있는 표현" },
+        { value: "캐주얼한 톤", description: "편안하고 자연스러운 말투" },
+      ],
+      audience: [
+        { value: "초등학생", description: "6-12세 어린이 대상" },
+        { value: "중학생", description: "13-15세 청소년 대상" },
+        { value: "고등학생", description: "16-18세 고등학생 대상" },
+        { value: "대학생", description: "19-22세 대학생 대상" },
+        { value: "성인", description: "성인 학습자 대상" },
+      ],
+      length: [
+        { value: "짧게 (1-2문장)", description: "간결하고 핵심적인 내용" },
+        { value: "보통 (3-5문장)", description: "적당한 길이의 설명" },
+        { value: "길게 (6-10문장)", description: "자세하고 풍부한 설명" },
+        { value: "매우 길게 (10문장 이상)", description: "포괄적이고 상세한 내용" },
+      ],
+    };
+  }, []);
+
   // API 호출 함수
   const fetchRecommendations = React.useCallback(
     (forceRegenerate: boolean = false) => {
@@ -266,43 +313,9 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
             // 캐시에 저장
             recommendationsCacheRef.current.set(cacheKey, recommendationsData);
           } else {
-            // API 실패 시 기본 추천 사용
-            const mockRecommendations = {
-              task: [
-                { value: "주제와 대상 명시", description: "주제와 대상을 명확하게 지정" },
-                { value: "출력 형식 명시", description: "구체적인 출력 형식 제시" },
-                { value: "주요 내용 포함", description: "핵심 내용 요구사항 명시" },
-              ],
-              role: [
-                { value: "영어 교사", description: "영어 학습을 도와주는 전문가" },
-                { value: "일본어 전문가", description: "일본어 문법과 표현을 가르치는 전문가" },
-                { value: "중학생", description: "중학생 수준의 이해도로 설명" },
-                { value: "작가", description: "창의적이고 문학적인 글쓰기 전문가" },
-                { value: "번역가", description: "정확한 번역과 언어 전달 전문가" },
-              ],
-              style: [
-                { value: "친근한 톤", description: "따뜻하고 친근한 말투" },
-                { value: "전문적인 톤", description: "정확하고 전문적인 표현" },
-                { value: "유머러스한 톤", description: "재미있고 유쾌한 분위기" },
-                { value: "격식있는 톤", description: "정중하고 격식있는 표현" },
-                { value: "캐주얼한 톤", description: "편안하고 자연스러운 말투" },
-              ],
-              audience: [
-                { value: "초등학생", description: "6-12세 어린이 대상" },
-                { value: "중학생", description: "13-15세 청소년 대상" },
-                { value: "고등학생", description: "16-18세 고등학생 대상" },
-                { value: "대학생", description: "19-22세 대학생 대상" },
-                { value: "성인", description: "성인 학습자 대상" },
-              ],
-              length: [
-                { value: "짧게 (1-2문장)", description: "간결하고 핵심적인 내용" },
-                { value: "보통 (3-5문장)", description: "적당한 길이의 설명" },
-                { value: "길게 (6-10문장)", description: "자세하고 풍부한 설명" },
-                { value: "매우 길게 (10문장 이상)", description: "포괄적이고 상세한 내용" },
-              ],
-            };
-
-            const mockData = mockRecommendations[nodeType as keyof typeof mockRecommendations] || [];
+            // API 응답은 성공했지만 추천 데이터가 없는 경우 기본 추천 사용
+            const defaultRecommendations = getDefaultRecommendations();
+            const mockData = defaultRecommendations[nodeType as keyof typeof defaultRecommendations] || [];
             if (isMounted) {
               setRecommendations(mockData);
               // 캐시에 저장
@@ -338,43 +351,9 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
           // 에러 메시지 저장
           setErrorMessage(error.message);
 
-          // API 실패 시 기본 추천 사용
-          const mockRecommendions = {
-            task: [
-              { value: '주제와 대상 명시: "초등학생을 위한 영어 동화 작성"', description: "주제와 대상을 명확하게 지정" },
-              { value: '출력 형식 명시: "500단어 분량의 간단한 이야기"', description: "구체적인 출력 형식 제시" },
-              { value: '주요 내용 포함: "도덕적 교훈이 포함된 이야기"', description: "핵심 내용 요구사항 명시" },
-            ],
-            role: [
-              { value: "영어 교사", description: "영어 학습을 도와주는 전문가" },
-              { value: "일본어 전문가", description: "일본어 문법과 표현을 가르치는 전문가" },
-              { value: "중학생", description: "중학생 수준의 이해도로 설명" },
-              { value: "작가", description: "창의적이고 문학적인 글쓰기 전문가" },
-              { value: "번역가", description: "정확한 번역과 언어 전달 전문가" },
-            ],
-            style: [
-              { value: "친근한 톤", description: "따뜻하고 친근한 말투" },
-              { value: "전문적인 톤", description: "정확하고 전문적인 표현" },
-              { value: "유머러스한 톤", description: "재미있고 유쾌한 분위기" },
-              { value: "격식있는 톤", description: "정중하고 격식있는 표현" },
-              { value: "캐주얼한 톤", description: "편안하고 자연스러운 말투" },
-            ],
-            audience: [
-              { value: "초등학생", description: "6-12세 어린이 대상" },
-              { value: "중학생", description: "13-15세 청소년 대상" },
-              { value: "고등학생", description: "16-18세 고등학생 대상" },
-              { value: "대학생", description: "19-22세 대학생 대상" },
-              { value: "성인", description: "성인 학습자 대상" },
-            ],
-            length: [
-              { value: "짧게 (1-2문장)", description: "간결하고 핵심적인 내용" },
-              { value: "보통 (3-5문장)", description: "적당한 길이의 설명" },
-              { value: "길게 (6-10문장)", description: "자세하고 풍부한 설명" },
-              { value: "매우 길게 (10문장 이상)", description: "포괄적이고 상세한 내용" },
-            ],
-          };
-
-          const mockData = mockRecommendions[nodeType as keyof typeof mockRecommendions] || [];
+          // API 호출 실패 시 기본 추천 사용
+          const defaultRecommendations = getDefaultRecommendations();
+          const mockData = defaultRecommendations[nodeType as keyof typeof defaultRecommendations] || [];
           console.log("📝 RecommendationPanel: 기본 추천 데이터 사용 (API 실패)", mockData);
           if (isMounted) {
             setRecommendations(mockData);
@@ -391,7 +370,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
         abortController.abort();
       };
     },
-    [currentPrompt, nodeType]
+    [currentPrompt, nodeType, getDefaultRecommendations]
   );
 
   // 패널이 보일 때만 캐시된 데이터를 로드하거나 처음이면 API 호출
@@ -509,12 +488,6 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
               }}
             >
               ⚠️ API 연결 실패로 기본 추천을 표시합니다
-              {errorMessage && (
-                <>
-                  <br />
-                  <span style={{ fontSize: "10px", marginTop: "4px", display: "block" }}>{errorMessage}</span>
-                </>
-              )}
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
