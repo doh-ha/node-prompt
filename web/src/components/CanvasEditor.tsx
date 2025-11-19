@@ -252,6 +252,53 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     return match ? match[1].toUpperCase() : "";
   }, [canvasName]);
 
+  // 노드가 속한 Flow들을 찾는 함수 (노드가 여러 Flow에 속할 수 있음)
+  const findFlowsForNode = useCallback((nodeId: string): string[] => {
+    const startNodes = nodes.filter((node) => node.type === "start" && node.data?.flowName);
+    const flows: string[] = [];
+
+    startNodes.forEach((startNode) => {
+      const flowName = startNode.data.flowName;
+      const reachableNodeIds = new Set<string>([startNode.id]);
+      const visited = new Set<string>();
+
+      // 하류(나가는 엣지) 방향으로 탐색
+      const findFlowNodes = (currentNodeId: string) => {
+        if (visited.has(currentNodeId)) {
+          return;
+        }
+        visited.add(currentNodeId);
+        reachableNodeIds.add(currentNodeId);
+
+        const outgoingEdges = edges.filter((edge) => edge.source === currentNodeId);
+        outgoingEdges.forEach((edge) => {
+          findFlowNodes(edge.target);
+        });
+      };
+
+      // 상류(들어오는 엣지) 방향으로 역추적
+      const collectUpstream = (targetId: string) => {
+        const incoming = edges.filter((e) => e.target === targetId);
+        incoming.forEach((e) => {
+          if (!reachableNodeIds.has(e.source)) {
+            reachableNodeIds.add(e.source);
+            collectUpstream(e.source);
+          }
+        });
+      };
+
+      findFlowNodes(startNode.id);
+      Array.from(reachableNodeIds).forEach((id) => collectUpstream(id));
+
+      // 이 노드가 이 Flow에 속하는지 확인
+      if (reachableNodeIds.has(nodeId)) {
+        flows.push(flowName);
+      }
+    });
+
+    return flows;
+  }, [nodes, edges]);
+
   // Flow별 프롬프트 생성 함수
   const generateFlowPrompt = (startNodeId: string) => {
     // 해당 Flow의 노드들 찾기
@@ -304,6 +351,91 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
     return flowPrompt;
   };
+
+  // 노드가 속한 Flow의 프롬프트를 생성하는 함수
+  // 노드가 여러 Flow에 속하면 모든 Flow의 프롬프트를 병합
+  const getFlowPromptForNode = useCallback((nodeId: string): string => {
+    const flows = findFlowsForNode(nodeId);
+    
+    // 노드가 속한 Flow가 없으면 빈 문자열 반환
+    if (flows.length === 0) {
+      return "";
+    }
+
+    // Flow별 프롬프트 생성 헬퍼 함수
+    const generateFlowPromptForStartNode = (startNodeId: string): string => {
+      // 해당 Flow의 노드들 찾기
+      const findFlowNodes = (currentNodeId: string, visited: Set<string> = new Set()): string[] => {
+        if (visited.has(currentNodeId)) {
+          return [];
+        }
+        visited.add(currentNodeId);
+
+        const currentNode = nodes.find((n) => n.id === currentNodeId);
+        if (!currentNode) {
+          return [];
+        }
+
+        const result = [currentNodeId];
+
+        // 현재 노드에서 연결된 다음 노드들을 찾기
+        const outgoingEdges = edges.filter((edge) => edge.source === currentNodeId);
+        const nextNodes = outgoingEdges.map((edge) => edge.target);
+
+        nextNodes.forEach((nextNodeId) => {
+          const subResult = findFlowNodes(nextNodeId, visited);
+          result.push(...subResult);
+        });
+
+        return result;
+      };
+
+      // 1) 하류(나가는 엣지) 방향으로 탐색해 기본 플로우 수집
+      const flowNodeIds = findFlowNodes(startNodeId);
+
+      // 2) 상류(들어오는 엣지) 방향으로 역추적하여 입력 노드 포함
+      const allIds = new Set<string>(flowNodeIds);
+      const collectUpstream = (targetId: string) => {
+        const incoming = edges.filter((e) => e.target === targetId);
+        incoming.forEach((e) => {
+          if (!allIds.has(e.source)) {
+            allIds.add(e.source);
+            collectUpstream(e.source);
+          }
+        });
+      };
+      flowNodeIds.forEach((id) => collectUpstream(id));
+
+      const flowNodes = nodes.filter((node) => allIds.has(node.id));
+      const flowEdges = edges.filter((edge) => allIds.has(edge.source) && allIds.has(edge.target));
+
+      // 해당 Flow의 프롬프트 생성
+      const flowPrompt = generatePromptFromWorkflow(flowNodes, flowEdges);
+      return flowPrompt.finalPrompt || "";
+    };
+
+    // 노드가 속한 모든 Flow의 프롬프트 생성
+    const flowPrompts: string[] = [];
+    flows.forEach((flowName) => {
+      const startNode = nodes.find((n) => n.type === "start" && n.data?.flowName === flowName);
+      if (startNode) {
+        const prompt = generateFlowPromptForStartNode(startNode.id);
+        if (prompt) {
+          flowPrompts.push(prompt);
+        }
+      }
+    });
+
+    // 여러 Flow의 프롬프트를 병합 (중복 제거를 위해 Set 사용)
+    if (flowPrompts.length === 0) {
+      return "";
+    } else if (flowPrompts.length === 1) {
+      return flowPrompts[0];
+    } else {
+      // 여러 Flow의 프롬프트를 병합 (각 Flow를 구분하여 표시)
+      return flowPrompts.join("\n\n---\n\n");
+    }
+  }, [nodes, edges, findFlowsForNode]);
 
   const getId = useCallback(() => {
     return `node_${Date.now()}_${nodeIdCounter.current++}`;
@@ -1110,12 +1242,16 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               const sameTypeCount = node.type ? typeCounts.get(node.type) || 0 : 0;
               const showNameInput = sameTypeCount >= 2;
 
+              // 노드가 속한 Flow의 프롬프트만 가져오기
+              const flowPrompt = getFlowPromptForNode(node.id);
+              const nodePrompt = flowPrompt || generatedPrompt.finalPrompt; // Flow 프롬프트가 없으면 전체 프롬프트 사용
+
               return {
                 ...node,
                 data: {
                   ...node.data,
                   suggestions,
-                  currentFullPrompt: generatedPrompt.finalPrompt, // 전체 프롬프트 전달
+                  currentFullPrompt: nodePrompt, // 노드가 속한 Flow의 프롬프트만 전달
                   onContentChange: (content: string, fileName?: string, description?: string) => handleNodeContentChange(node.id, content, fileName, description),
                   onDeleteNode: handleDeleteNodeRef.current || (() => {}),
                   onModelChange: (model: string) => handleModelChangeRef.current?.(node.id, model),
@@ -1131,7 +1267,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 type: node.type === "context" ? "context" : node.type,
               };
             });
-          }, [nodes])}
+          }, [nodes, edges, getFlowPromptForNode])}
           edges={edges}
           onNodesChange={onNodesChangeInternal}
           onEdgesChange={onEdgesChangeInternal}

@@ -54,7 +54,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
 
     // 각 Start 노드에서 도달 가능한 노드들을 먼저 계산
     const flowReachability: Map<string, Set<string>> = new Map();
-    
+
     startNodes.forEach((startNode) => {
       const flowName = startNode.data.flowName;
       const reachableNodeIds = new Set<string>([startNode.id]);
@@ -103,11 +103,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
       // Flow에 속한 노드와 엣지 필터링
       // 노드가 이 flow에 도달 가능하면 포함 (다른 flow에도 도달 가능하면 공유됨)
       const flowNodes = nodes.filter((node) => flowNodeIds.has(node.id));
-      
+
       // 엣지는 양쪽 노드가 모두 이 flow에 속해야 함
-      const flowEdges = edges.filter((edge) => 
-        flowNodeIds.has(edge.source) && flowNodeIds.has(edge.target)
-      );
+      const flowEdges = edges.filter((edge) => flowNodeIds.has(edge.source) && flowNodeIds.has(edge.target));
 
       // Flow별 프롬프트 생성
       const flowPrompt = generatePromptFromFlowNodes(flowNodes, flowEdges);
