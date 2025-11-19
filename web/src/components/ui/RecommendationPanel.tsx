@@ -62,6 +62,38 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
   const recommendationsCacheRef = React.useRef<Map<string, RecommendationItem[]>>(new Map());
   const cacheKeyRef = React.useRef<string>("");
 
+  // role 노드에서 "당신은 ~입니다." 형식에서 element만 추출
+  const extractElementFromRole = React.useCallback(
+    (value: string): string => {
+      if (nodeType !== "role") {
+        return value;
+      }
+
+      // "당신은"으로 시작하고 "입니다"로 끝나는 경우
+      if (value.startsWith("당신은") && value.endsWith("입니다")) {
+        const element = value.substring(3, value.length - 3).trim(); // "당신은" (3자) 제거, "입니다" (3자) 제거
+        return element;
+      }
+
+      // "당신은"으로 시작하는 경우
+      if (value.startsWith("당신은")) {
+        let element = value.substring(3).trim(); // "당신은" (3자) 제거
+        // "입니다", "입니다.", "입니다!" 등으로 끝나는 경우 제거
+        if (element.endsWith("입니다")) {
+          element = element.substring(0, element.length - 3).trim();
+        } else if (element.endsWith("입니다.")) {
+          element = element.substring(0, element.length - 4).trim();
+        } else if (element.endsWith("입니다!")) {
+          element = element.substring(0, element.length - 4).trim();
+        }
+        return element;
+      }
+
+      return value;
+    },
+    [nodeType]
+  );
+
   // 이모지를 아이콘으로 교체하고 각 섹션을 줄바꿈하는 함수
   const renderDescriptionWithIcons = (description: string) => {
     const sections: React.ReactElement[] = [];
@@ -220,6 +252,12 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
         { value: "보통 (3-5문장)", description: "적당한 길이의 설명" },
         { value: "길게 (6-10문장)", description: "자세하고 풍부한 설명" },
         { value: "매우 길게 (10문장 이상)", description: "포괄적이고 상세한 내용" },
+      ],
+      topic: [
+        { value: "테니스", description: "테니스에 관한 주제" },
+        { value: "인공지능", description: "인공지능 기술과 미래에 관한 주제" },
+        { value: "환경 보호", description: "환경 보호와 지속가능성에 관한 주제" },
+        { value: "교육", description: "교육과 학습에 관한 주제" },
       ],
     };
   }, []);
@@ -526,7 +564,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                <div style={{ fontWeight: "600", marginBottom: "2px" }}>{item.value}</div>
+                <div style={{ fontWeight: "600", marginBottom: "2px" }}>{extractElementFromRole(item.value)}</div>
                 {item.description && <div style={{ fontSize: "10px", color: "#64748b", lineHeight: "1.3" }}>{renderDescriptionWithIcons(item.description)}</div>}
               </button>
             ))}

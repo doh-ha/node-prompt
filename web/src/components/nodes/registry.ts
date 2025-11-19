@@ -15,6 +15,7 @@ import { LengthNode } from "./nodeType/LengthNode";
 import { InputNode } from "./nodeType/InputNode";
 import { OutputNode } from "./nodeType/OutputNode";
 import { FlowNode } from "./nodeType/FlowNode";
+import { TopicNode } from "./nodeType/TopicNode";
 import { colors } from "../../constants";
 
 type NodeTypeKey =
@@ -27,6 +28,7 @@ type NodeTypeKey =
   | "text"
   | "example"
   | "length"
+  | "topic"
   | "start"
   | "result"
   | "textOutput"
@@ -144,6 +146,23 @@ export const nodesRegistry = {
       if (!d.content) return null;
       const description = d.description ? ` (${d.description})` : "";
       return `[${d.name}]\n권장 길이: ${d.content}${description}`;
+    },
+  },
+  // 주제 노드
+  topic: {
+    type: "topic",
+    meta: {
+      name: "Topic",
+      description: "주제",
+      icon: "📌",
+      iconColor: colors.nodeIcon.purple,
+      group: "instruction",
+    },
+    component: TopicNode,
+    toPrompt: (d: any) => {
+      if (!d.content) return null;
+      const description = d.description ? ` (${d.description})` : "";
+      return `[${d.name}]\n주제: ${d.content}${description}`;
     },
   },
 
@@ -325,6 +344,7 @@ export const nodeComponents = Object.fromEntries(
           "text",
           "example",
           "length",
+          "topic",
           "start",
           "result",
           "textOutput",
@@ -347,12 +367,12 @@ const GROUP_CONFIG = {
   OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
 };
 
-// 각 그룹별 노드 순서 정의
+  // 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
   // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
-  INSTRUCTION: { role: 0, audience: 1, style: 2, promptTemplate: 3 },
+  INSTRUCTION: { role: 0, audience: 1, style: 2, topic: 3, promptTemplate: 4, length: 5 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
