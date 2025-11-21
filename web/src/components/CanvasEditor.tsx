@@ -241,6 +241,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const handleDeleteNodeRef = useRef<((nodeId: string) => void) | null>(null);
   const handleModelChangeRef = useRef<((nodeId: string, model: string) => void) | null>(null);
   const handleFormatChangeRef = useRef<((nodeId: string, format: string) => void) | null>(null);
+  const handleNodeSizeChangeRef = useRef<((nodeId: string, width: number, height: number) => void) | null>(null);
   const handleNodeContentChangeRef = useRef<((nodeId: string, content: string, fileName?: string, description?: string) => void) | null>(null);
 
   const { generatedPrompt } = usePromptGenerator(nodes, edges);
@@ -817,6 +818,19 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   };
   handleFormatChangeRef.current = handleFormatChange;
 
+  const handleNodeSizeChange = (nodeId: string, width: number, height: number) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => 
+        node.id === nodeId 
+          ? { ...node, data: { ...node.data, width, height } } 
+          : node
+      );
+      wrappedOnNodesChange(updatedNodes);
+      return updatedNodes;
+    });
+  };
+  handleNodeSizeChangeRef.current = handleNodeSizeChange;
+
   const handleNameChange = (nodeId: string, name: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => {
@@ -1295,6 +1309,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onFlowNameChange: (flowName: string) => handleFlowNameChangeRef.current?.(node.id, flowName),
                   onNameChange: (name: string) => handleNameChange(node.id, name),
                   onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
+                  onSizeChange: (width: number, height: number) => handleNodeSizeChangeRef.current?.(node.id, width, height),
                   showNameInput,
                   customName: node.data?.customName,
                   // Input 노드에 연결 정보 전달
@@ -1303,6 +1318,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,
                 type: node.type === "context" ? "context" : node.type,
+                // Output 노드의 경우 width/height 설정
+                ...(node.data?.width ? { width: node.data.width } : {}),
+                ...(node.data?.height ? { height: node.data.height } : {}),
               };
             });
           }, [nodes, edges, getFlowPromptForNode])}

@@ -17,14 +17,17 @@ interface OutputNodeProps {
     showNameInput?: boolean;
     customName?: string;
     onNameChange?: (name: string) => void;
+    onSizeChange?: (width: number, height: number) => void;
+    width?: number;
+    height?: number;
   };
   selected?: boolean;
   id?: string;
 }
 
 export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) => {
-  const [nodeHeight, setNodeHeight] = useState(120);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || data.format === "JSON" || !data.format;
   const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
   const showTextArea = isTextFormat || data.format === "JSON"; // JSON 형식일 때도 텍스트 영역 표시
@@ -33,7 +36,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   const getDisplayResult = (): string => {
     const result = data.result;
     if (!result) return "";
-    
+
     // 결과가 객체 형태면 (Flow별 결과 저장)
     if (typeof result === "object" && !Array.isArray(result)) {
       // 가장 최근에 실행된 Flow의 결과를 표시 (마지막 키의 값)
@@ -44,24 +47,53 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       }
       return "";
     }
-    
+
     // 문자열이면 그대로 반환
     return typeof result === "string" ? result : "";
   };
 
   const displayResult = getDisplayResult();
 
-  // 텍스트 길이에 따라 노드 높이 자동 조정
+  // 텍스트 길이에 따라 노드 크기 자동 조정
   useEffect(() => {
-    if (textareaRef.current && displayResult && showTextArea) {
-      const textarea = textareaRef.current;
-      textarea.style.height = "auto";
-      const scrollHeight = textarea.scrollHeight;
-      const newHeight = Math.max(120, Math.min(300, scrollHeight + 80));
-      setNodeHeight(newHeight);
-      textarea.style.height = `${newHeight - 80}px`;
-    }
-  }, [displayResult, showTextArea]);
+    if (!data.onSizeChange || !showTextArea) return;
+
+    // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 크기 계산
+    const timeoutId = setTimeout(() => {
+      if (textareaRef.current && containerRef.current) {
+        const textarea = textareaRef.current;
+        const container = containerRef.current;
+
+        // 텍스트 영역 높이 자동 조정
+        textarea.style.height = "auto";
+        const scrollHeight = textarea.scrollHeight;
+
+        // 최소 높이: 120px, 최대 높이: 800px (더 많은 텍스트를 볼 수 있도록)
+        const minHeight = 120;
+        const maxHeight = 800;
+        const textAreaHeight = Math.max(80, Math.min(720, scrollHeight));
+
+        // 노드 전체 높이 계산 (헤더 + 선택박스 + 텍스트영역 + 여백)
+        const headerHeight = 40; // NodeShell 헤더 높이
+        const selectHeight = 36; // 선택박스 높이
+        const padding = 32; // 상하 여백
+        const newHeight = Math.max(minHeight, Math.min(maxHeight, headerHeight + selectHeight + textAreaHeight + padding));
+
+        // 텍스트 영역 높이 설정
+        textarea.style.height = `${textAreaHeight}px`;
+
+        // 노드 너비는 기본값 유지 (220px) 또는 기존 width 사용
+        const nodeWidth = data.width || 220;
+
+        // 크기 변경 콜백 호출
+        if (data.onSizeChange) {
+          data.onSizeChange(nodeWidth, newHeight);
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timeoutId);
+  }, [displayResult, showTextArea, data.onSizeChange, data.width]);
 
   const handleDownload = () => {
     const resultToDownload = getDisplayResult();
@@ -176,7 +208,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       customName={data.customName}
       onNameChange={data.onNameChange}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <select
           value={data.format || "text"}
           onChange={(e) => data.onFormatChange?.(e.target.value)}
@@ -225,7 +257,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 }}
                 style={{
                   minHeight: "80px",
-                  maxHeight: "260px",
+                  maxHeight: "720px",
                   resize: "none",
                   overflow: "auto",
                   width: "100%",
