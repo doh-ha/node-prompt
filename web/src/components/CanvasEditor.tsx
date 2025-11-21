@@ -569,12 +569,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         if (type === "flow") {
           const existingStartNodes = nodes.filter((n) => n.type === "start");
 
-          // 최대 3개 제한
-          if (existingStartNodes.length >= 5) {
-            alert("플로우는 최대 5개까지만 추가할 수 있습니다.");
-            return;
-          }
-
           const existingFlowNames = existingStartNodes.filter((n) => n.data?.flowName).map((n) => n.data.flowName as string);
           const prefix = getCanvasPrefix();
 
