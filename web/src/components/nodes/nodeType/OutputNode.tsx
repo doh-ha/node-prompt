@@ -29,9 +29,31 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
   const showTextArea = isTextFormat || data.format === "JSON"; // JSON 형식일 때도 텍스트 영역 표시
 
+  // Flow별 결과에서 현재 표시할 결과 추출
+  const getDisplayResult = (): string => {
+    const result = data.result;
+    if (!result) return "";
+    
+    // 결과가 객체 형태면 (Flow별 결과 저장)
+    if (typeof result === "object" && !Array.isArray(result)) {
+      // 가장 최근에 실행된 Flow의 결과를 표시 (마지막 키의 값)
+      const flowNames = Object.keys(result);
+      if (flowNames.length > 0) {
+        // 마지막 Flow의 결과 반환 (가장 최근 실행)
+        return result[flowNames[flowNames.length - 1]] || "";
+      }
+      return "";
+    }
+    
+    // 문자열이면 그대로 반환
+    return typeof result === "string" ? result : "";
+  };
+
+  const displayResult = getDisplayResult();
+
   // 텍스트 길이에 따라 노드 높이 자동 조정
   useEffect(() => {
-    if (textareaRef.current && data.result && showTextArea) {
+    if (textareaRef.current && displayResult && showTextArea) {
       const textarea = textareaRef.current;
       textarea.style.height = "auto";
       const scrollHeight = textarea.scrollHeight;
@@ -39,16 +61,17 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       setNodeHeight(newHeight);
       textarea.style.height = `${newHeight - 80}px`;
     }
-  }, [data.result, showTextArea]);
+  }, [displayResult, showTextArea]);
 
   const handleDownload = () => {
-    if (!data.result) return;
+    const resultToDownload = getDisplayResult();
+    if (!resultToDownload) return;
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
 
     if (data.format === "csv") {
       // CSV 다운로드
-      const csvContent = convertToCSV(data.result);
+      const csvContent = convertToCSV(resultToDownload);
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -62,9 +85,9 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       // JSON 다운로드
       try {
         // JSON 형식인지 확인하고 파싱 시도
-        let jsonContent = data.result;
+        let jsonContent = resultToDownload;
         try {
-          const parsed = JSON.parse(data.result);
+          const parsed = JSON.parse(resultToDownload);
           jsonContent = JSON.stringify(parsed, null, 2);
         } catch {
           // JSON이 아니면 그대로 사용
@@ -106,7 +129,8 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   };
 
   const handleDownloadPDF = async () => {
-    if (!data.result) return;
+    const resultToDownload = getDisplayResult();
+    if (!resultToDownload) return;
 
     try {
       // 서버에서 PDF 생성
@@ -115,7 +139,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content: data.result }),
+        body: JSON.stringify({ content: resultToDownload }),
       });
 
       if (response.ok) {
@@ -130,51 +154,12 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
-        // 서버 API가 없으면 클라이언트에서 간단한 PDF 생성
-        generateClientSidePDF(data.result);
+        alert("PDF 생성 API에 연결할 수 없습니다.");
       }
     } catch (error) {
-      console.error("PDF 생성 실패, 클라이언트에서 생성 시도:", error);
-      // 서버 API가 없으면 클라이언트에서 간단한 PDF 생성
-      generateClientSidePDF(data.result);
+      console.error("PDF 생성 실패:", error);
+      alert("PDF 생성 API에 연결할 수 없습니다.");
     }
-  };
-
-  const generateClientSidePDF = (text: string) => {
-    // 간단한 방법: HTML을 PDF로 변환 (브라우저 인쇄 기능 활용)
-    // 사용자가 "PDF로 저장" 옵션을 선택할 수 있도록 인쇄 다이얼로그 열기
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      alert("팝업이 차단되었습니다. PDF를 다운로드하려면 팝업을 허용해주세요.");
-      return;
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>PDF Export</title>
-          <style>
-            @media print {
-              @page { margin: 2cm; }
-            }
-            body { 
-              font-family: Arial, sans-serif; 
-              padding: 20px; 
-              white-space: pre-wrap; 
-              line-height: 1.6;
-            }
-          </style>
-        </head>
-        <body>${text.replace(/\n/g, "<br>").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</body>
-      </html>
-    `);
-    printWindow.document.close();
-
-    // 인쇄 다이얼로그 열기 (사용자가 "PDF로 저장" 선택 가능)
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
   };
 
   return (
@@ -209,22 +194,22 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
         {showTextArea && (
           <div style={{ marginTop: 8 }}>
-            {data.result ? (
+            {displayResult ? (
               <NodeInput
                 ref={textareaRef}
                 as="textarea"
                 readOnly
                 value={
-                  data.format === "JSON" && data.result
+                  data.format === "JSON" && displayResult
                     ? (() => {
                         try {
-                          const parsed = JSON.parse(data.result);
+                          const parsed = JSON.parse(displayResult);
                           return JSON.stringify(parsed, null, 2);
                         } catch {
-                          return data.result;
+                          return displayResult;
                         }
                       })()
-                    : data.result || ""
+                    : displayResult || ""
                 }
                 onMouseDown={(e) => {
                   // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
@@ -276,7 +261,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
         {isFileFormat && (
           <div style={{ marginTop: 8 }}>
-            {data.result ? (
+            {displayResult ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
