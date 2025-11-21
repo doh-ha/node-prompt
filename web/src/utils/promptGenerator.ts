@@ -22,9 +22,7 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
   const finalPrompt = registryFragments.join("\n");
 
   // 최종 프롬프트에 출력 지시사항 추가
-  const promptWithInstructions = finalPrompt
-    ? `${finalPrompt}\n\n[출력 지시사항]\n앞뒤로 불필요한 내용은 제외하고 핵심 내용만 출력해주세요.`
-    : "";
+  const promptWithInstructions = finalPrompt ? `${finalPrompt}\n\n[출력 지시사항]\n앞뒤로 불필요한 내용은 제외하고 핵심 내용만 출력해주세요.` : "";
 
   return {
     finalPrompt: promptWithInstructions,
