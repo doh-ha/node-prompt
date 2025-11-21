@@ -248,10 +248,10 @@ export const nodesRegistry = {
     toPrompt: (data: any, node?: any, edges?: any[], nodes?: any[]) => {
       // Input 노드에 연결된 Output 노드 찾기
       if (!node || !edges || !nodes) return null;
-      
+
       // 현재 Input 노드로 들어오는 엣지 찾기 (Output 노드에서 오는 것)
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
-      
+
       // Output 노드에서 온 엣지 찾기
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
@@ -269,14 +269,14 @@ export const nodesRegistry = {
             } else if (typeof outputResult === "string") {
               resultText = outputResult;
             }
-            
+
             if (resultText) {
               return `[Input]\ninput value: ${resultText}`;
             }
           }
         }
       }
-      
+
       return null;
     },
   },
@@ -401,12 +401,12 @@ const GROUP_CONFIG = {
   OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
 };
 
-  // 각 그룹별 노드 순서 정의
+// 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
   // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
-  INSTRUCTION: { role: 0, audience: 1, style: 2, topic: 3, promptTemplate: 4, length: 5 },
+  INSTRUCTION: { promptTemplate: 0, role: 1, audience: 2, style: 3, topic: 4, length: 5 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
