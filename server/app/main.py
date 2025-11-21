@@ -21,12 +21,56 @@ else:
 # OpenAI API 키와 기본 모델 설정 (환경변수로 오버라이드 가능)
 _api_key_raw = os.getenv("OPENAI_API_KEY")
 if _api_key_raw:
+    # 원본 키 검증 (공백이나 따옴표 포함 여부 확인)
+    has_leading_space = _api_key_raw.startswith(" ")
+    has_trailing_space = _api_key_raw.endswith(" ")
+    has_internal_space = " " in _api_key_raw.strip()
+    has_leading_quote = _api_key_raw.startswith('"') or _api_key_raw.startswith("'")
+    has_trailing_quote = _api_key_raw.endswith('"') or _api_key_raw.endswith("'")
+    has_internal_quote = ('"' in _api_key_raw.strip('"')) or ("'" in _api_key_raw.strip("'"))
+    has_newline = "\n" in _api_key_raw or "\r" in _api_key_raw
+    has_tab = "\t" in _api_key_raw
+    
+    # 문제가 있는 경우 경고 출력
+    issues = []
+    if has_leading_space:
+        issues.append("앞에 공백이 있습니다")
+    if has_trailing_space:
+        issues.append("뒤에 공백이 있습니다")
+    if has_internal_space:
+        issues.append("중간에 공백이 있습니다")
+    if has_leading_quote:
+        issues.append("앞에 따옴표가 있습니다")
+    if has_trailing_quote:
+        issues.append("뒤에 따옴표가 있습니다")
+    if has_internal_quote:
+        issues.append("중간에 따옴표가 있습니다")
+    if has_newline:
+        issues.append("줄바꿈 문자가 포함되어 있습니다")
+    if has_tab:
+        issues.append("탭 문자가 포함되어 있습니다")
+    
+    if issues:
+        print(f"⚠️ WARNING: API Key에 문제가 있습니다:")
+        for issue in issues:
+            print(f"   - {issue}")
+        print(f"⚠️ 원본 키 길이: {len(_api_key_raw)}")
+        print(f"⚠️ 원본 키 앞부분 (repr): {repr(_api_key_raw[:30])}")
+        print(f"⚠️ 원본 키 뒷부분 (repr): {repr(_api_key_raw[-30:])}")
+    
     # 앞뒤 공백 제거 및 따옴표 제거
     _api_key = _api_key_raw.strip().strip('"').strip("'")
+    
+    # 정리 후에도 문제가 있는지 확인
+    if _api_key != _api_key_raw:
+        print(f"✅ API Key 정리 완료: 길이 {len(_api_key_raw)} -> {len(_api_key)}")
+    
     # API 키 형식 검증 (sk- 또는 sk-proj-로 시작해야 함)
     if not (_api_key.startswith("sk-") or _api_key.startswith("sk-proj-")):
         print(f"⚠️ WARNING: API Key format may be incorrect. Should start with 'sk-' or 'sk-proj-'")
         print(f"⚠️ WARNING: API Key starts with: {_api_key[:10] if len(_api_key) > 10 else _api_key}")
+    else:
+        print(f"✅ API Key 형식 검증 통과: {_api_key[:15]}...{_api_key[-5:]}")
 else:
     _api_key = None
 

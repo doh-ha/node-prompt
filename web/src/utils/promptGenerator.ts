@@ -11,7 +11,8 @@ export const generatePromptFromWorkflow = (nodes: Node[], edges: Edge[]): Genera
     }
     const entry: any = (nodesRegistry as any)[key];
     if (entry && typeof entry.toPrompt === "function") {
-      const piece = entry.toPrompt(node.data);
+      // toPrompt 함수가 추가 파라미터를 받을 수 있도록 node, edges, nodes 전달
+      const piece = entry.toPrompt(node.data, node, edges, nodes);
       if (piece && typeof piece === "string" && piece.trim()) {
         registryFragments.push(piece.trim());
       }

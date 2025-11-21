@@ -1297,6 +1297,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                   onExecutePrompt: handleExecutePromptRef.current || (async () => {}),
                   showNameInput,
                   customName: node.data?.customName,
+                  // Input 노드에 연결 정보 전달
+                  ...(node.type === "input" ? { allNodes: nodes, allEdges: edges } : {}),
                 },
                 // 그룹별 배경색 적용
                 style: node.data?.nodeBg ? { ...(node.style || {}), background: node.data.nodeBg } : node.style,

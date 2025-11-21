@@ -245,6 +245,40 @@ export const nodesRegistry = {
       group: "flow",
     },
     component: InputNode,
+    toPrompt: (data: any, node?: any, edges?: any[], nodes?: any[]) => {
+      // Input 노드에 연결된 Output 노드 찾기
+      if (!node || !edges || !nodes) return null;
+      
+      // 현재 Input 노드로 들어오는 엣지 찾기 (Output 노드에서 오는 것)
+      const incomingEdges = edges.filter((edge) => edge.target === node.id);
+      
+      // Output 노드에서 온 엣지 찾기
+      for (const edge of incomingEdges) {
+        const sourceNode = nodes.find((n) => n.id === edge.source);
+        if (sourceNode && sourceNode.type === "output") {
+          // Output 노드의 결과 가져오기
+          const outputResult = sourceNode.data?.result;
+          if (outputResult) {
+            // 결과가 객체 형태면 (Flow별 결과 저장) 가장 최근 결과 사용
+            let resultText = "";
+            if (typeof outputResult === "object" && !Array.isArray(outputResult)) {
+              const flowNames = Object.keys(outputResult);
+              if (flowNames.length > 0) {
+                resultText = outputResult[flowNames[flowNames.length - 1]] || "";
+              }
+            } else if (typeof outputResult === "string") {
+              resultText = outputResult;
+            }
+            
+            if (resultText) {
+              return `[Input]\ninput value: ${resultText}`;
+            }
+          }
+        }
+      }
+      
+      return null;
+    },
   },
   // 흐름용
   output: {
