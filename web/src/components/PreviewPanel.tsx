@@ -38,7 +38,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
       }
     });
 
-    return registryFragments.join("\n\n");
+    const finalPrompt = registryFragments.join("\n\n");
+
+    // 최종 프롬프트에 출력 지시사항 추가
+    return finalPrompt ? `${finalPrompt}\n\n[출력 지시사항]\n앞뒤로 불필요한 내용은 제외하고 핵심 내용만 출력해주세요.` : "";
   }, []);
 
   // Flow별로 노드들을 그룹화 (엣지 연결 기반)
