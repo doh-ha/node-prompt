@@ -20,6 +20,7 @@ interface OutputNodeProps {
     onSizeChange?: (width: number, height: number) => void;
     width?: number;
     height?: number;
+    maxHeight?: number;
   };
   selected?: boolean;
   id?: string;
@@ -31,6 +32,13 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || data.format === "JSON" || !data.format;
   const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
   const showTextArea = isTextFormat || data.format === "JSON"; // JSON 형식일 때도 텍스트 영역 표시
+
+  // 최대 높이 계산 (사용자 지정 또는 기본값)
+  const maxHeight = data.maxHeight || 400;
+  const headerHeight = 40; // NodeShell 헤더 높이
+  const selectHeight = 36; // 선택박스 높이
+  const padding = 32; // 상하 여백
+  const maxTextAreaHeight = Math.max(80, maxHeight - headerHeight - selectHeight - padding);
 
   // Flow별 결과에서 현재 표시할 결과 추출
   const getDisplayResult = (): string => {
@@ -68,15 +76,13 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         textarea.style.height = "auto";
         const scrollHeight = textarea.scrollHeight;
 
-        // 최소 높이: 120px, 최대 높이: 800px (더 많은 텍스트를 볼 수 있도록)
+        // 최소 높이: 120px
         const minHeight = 120;
-        const maxHeight = 800;
-        const textAreaHeight = Math.max(80, Math.min(720, scrollHeight));
+
+        // 텍스트 영역 높이 계산
+        const textAreaHeight = Math.max(80, Math.min(maxTextAreaHeight, scrollHeight));
 
         // 노드 전체 높이 계산 (헤더 + 선택박스 + 텍스트영역 + 여백)
-        const headerHeight = 40; // NodeShell 헤더 높이
-        const selectHeight = 36; // 선택박스 높이
-        const padding = 32; // 상하 여백
         const newHeight = Math.max(minHeight, Math.min(maxHeight, headerHeight + selectHeight + textAreaHeight + padding));
 
         // 텍스트 영역 높이 설정
@@ -122,7 +128,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [displayResult, showTextArea, data.onSizeChange, data.width]);
+  }, [displayResult, showTextArea, data.onSizeChange, data.width, data.maxHeight]);
 
   const handleDownload = () => {
     const resultToDownload = getDisplayResult();
@@ -300,7 +306,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 }}
                 style={{
                   minHeight: "80px",
-                  maxHeight: "720px",
+                  maxHeight: `${maxTextAreaHeight}px`,
                   resize: "none",
                   overflow: "auto",
                   width: "100%",
