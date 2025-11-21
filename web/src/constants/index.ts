@@ -3,6 +3,9 @@
 // 색상 상수 export
 export { colors } from "./colors";
 
+// 모델 상수 export
+export { DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from "./models";
+
 // 노드 타입 상수
 export const NODE_TYPES = {
   ROLE: "role",

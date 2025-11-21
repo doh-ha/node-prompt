@@ -3,6 +3,7 @@ import { PreviewContainer, PreviewHeader, PreviewTitle, TabContainer, Tab, Promp
 import { usePromptGenerator } from "../hooks/usePromptGenerator";
 import { Button } from "./ui";
 import { nodesRegistry } from "./nodes/registry";
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "../constants";
 
 interface PreviewPanelProps {
   nodes: any[];
@@ -155,8 +156,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ nodes, edges, onClos
         },
         body: JSON.stringify({
           prompt: currentPrompt,
-          model: "gpt-4o-mini",
-          temperature: 0.7,
+          model: DEFAULT_MODEL,
+          temperature: DEFAULT_TEMPERATURE,
         }),
       });
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { NodeShell } from "../NodeShell";
+import { DEFAULT_MODEL } from "../../../constants";
 
 interface ModelNodeProps {
   data: {
@@ -49,7 +50,7 @@ const modelInfo: Record<string, { name: string; description: string }> = {
     name: "gpt-3.5-turbo",
     description: "저렴하고 기본 기능에 충실한 모델로, 단순 대화나 가벼운 작업에 적합",
   },
-  "o1": {
+  o1: {
     name: "o1",
     description: "추론 능력이 뛰어난 모델로, 복잡한 문제 해결이나 논리적 분석에 적합",
   },
@@ -61,7 +62,7 @@ const modelInfo: Record<string, { name: string; description: string }> = {
     name: "o1-mini",
     description: "o1의 경량 버전으로, 빠른 추론이 필요한 작업에 적합",
   },
-  "o3": {
+  o3: {
     name: "o3",
     description: "최신 추론 모델로, 복잡한 수학 문제나 논리적 추론이 필요한 작업에 최적화",
   },
@@ -113,7 +114,7 @@ export const ModelNode: React.FC<ModelNodeProps> = ({ data, selected, id }) => {
     }
   }, [isOpen]);
 
-  const currentModel = modelInfo[data.model] || modelInfo["gpt-4o-mini"];
+  const currentModel = modelInfo[data.model] || modelInfo[DEFAULT_MODEL];
 
   return (
     <NodeShell

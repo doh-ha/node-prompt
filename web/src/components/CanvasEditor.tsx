@@ -4,7 +4,7 @@ import "reactflow/dist/style.css";
 import { EditorContainer, FlowContainer } from "../styles/nodeStyles";
 import { Button } from "./ui";
 import { nodeComponents, nodesRegistry } from "./nodes/registry";
-import { colors } from "../constants";
+import { colors, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from "../constants";
 import { usePromptGenerator } from "../hooks/usePromptGenerator";
 import { generatePromptFromWorkflow } from "../utils/promptGenerator";
 
@@ -78,9 +78,9 @@ const initialNodes: Node[] = [
     data: {
       ...getMetaFromRegistry("model"),
       nodeBg: getNodeBgByTypeLocal("model"),
-      model: "gpt-4o-mini",
-      temperature: 0.7,
-      maxTokens: 1000,
+      model: DEFAULT_MODEL,
+      temperature: DEFAULT_TEMPERATURE,
+      maxTokens: DEFAULT_MAX_TOKENS,
     },
   },
   {
@@ -619,7 +619,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 icon: "🤖",
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: getNodeBgByTypeLocal("model"),
-                model: "gpt-4o-mini",
+                model: DEFAULT_MODEL,
                 onModelChange: handleModelChangeRef.current || (() => {}),
                 onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
