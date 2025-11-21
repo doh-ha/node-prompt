@@ -7,15 +7,83 @@ from dotenv import load_dotenv
 from . import prompts
 
 # .env 탐색: 루트와 server 디렉토리 모두 시도
-load_dotenv()
+load_dotenv()  # 루트 디렉토리의 .env
+
+# server 디렉토리의 .env 파일 경로
 server_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-if os.path.exists(os.path.abspath(server_env_path)):
-    load_dotenv(os.path.abspath(server_env_path))
+server_env_abs = os.path.abspath(server_env_path)
+if os.path.exists(server_env_abs):
+    print(f"🔍 DEBUG: Loading .env from: {server_env_abs}")
+    load_dotenv(server_env_abs, override=True)  # override=True로 명시적으로 덮어쓰기
+else:
+    print(f"⚠️ WARNING: .env file not found at: {server_env_abs}")
 
 # OpenAI API 키와 기본 모델 설정 (환경변수로 오버라이드 가능)
-_api_key = os.getenv("OPENAI_API_KEY")
+_api_key_raw = os.getenv("OPENAI_API_KEY")
+if _api_key_raw:
+    # 원본 키 검증 (공백이나 따옴표 포함 여부 확인)
+    has_leading_space = _api_key_raw.startswith(" ")
+    has_trailing_space = _api_key_raw.endswith(" ")
+    has_internal_space = " " in _api_key_raw.strip()
+    has_leading_quote = _api_key_raw.startswith('"') or _api_key_raw.startswith("'")
+    has_trailing_quote = _api_key_raw.endswith('"') or _api_key_raw.endswith("'")
+    has_internal_quote = ('"' in _api_key_raw.strip('"')) or ("'" in _api_key_raw.strip("'"))
+    has_newline = "\n" in _api_key_raw or "\r" in _api_key_raw
+    has_tab = "\t" in _api_key_raw
+    
+    # 문제가 있는 경우 경고 출력
+    issues = []
+    if has_leading_space:
+        issues.append("앞에 공백이 있습니다")
+    if has_trailing_space:
+        issues.append("뒤에 공백이 있습니다")
+    if has_internal_space:
+        issues.append("중간에 공백이 있습니다")
+    if has_leading_quote:
+        issues.append("앞에 따옴표가 있습니다")
+    if has_trailing_quote:
+        issues.append("뒤에 따옴표가 있습니다")
+    if has_internal_quote:
+        issues.append("중간에 따옴표가 있습니다")
+    if has_newline:
+        issues.append("줄바꿈 문자가 포함되어 있습니다")
+    if has_tab:
+        issues.append("탭 문자가 포함되어 있습니다")
+    
+    if issues:
+        print(f"⚠️ WARNING: API Key에 문제가 있습니다:")
+        for issue in issues:
+            print(f"   - {issue}")
+        print(f"⚠️ 원본 키 길이: {len(_api_key_raw)}")
+        print(f"⚠️ 원본 키 앞부분 (repr): {repr(_api_key_raw[:30])}")
+        print(f"⚠️ 원본 키 뒷부분 (repr): {repr(_api_key_raw[-30:])}")
+    
+    # 앞뒤 공백 제거 및 따옴표 제거
+    _api_key = _api_key_raw.strip().strip('"').strip("'")
+    
+    # 정리 후에도 문제가 있는지 확인
+    if _api_key != _api_key_raw:
+        print(f"✅ API Key 정리 완료: 길이 {len(_api_key_raw)} -> {len(_api_key)}")
+    
+    # API 키 형식 검증 (sk- 또는 sk-proj-로 시작해야 함)
+    if not (_api_key.startswith("sk-") or _api_key.startswith("sk-proj-")):
+        print(f"⚠️ WARNING: API Key format may be incorrect. Should start with 'sk-' or 'sk-proj-'")
+        print(f"⚠️ WARNING: API Key starts with: {_api_key[:10] if len(_api_key) > 10 else _api_key}")
+    else:
+        print(f"✅ API Key 형식 검증 통과: {_api_key[:15]}...{_api_key[-5:]}")
+else:
+    _api_key = None
+
 _default_model = os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4o-mini")
 print(f"🔍 DEBUG: API Key loaded: {_api_key is not None}")
+if _api_key:
+    # API 키의 앞부분만 표시 (보안)
+    api_key_preview = _api_key[:10] + "..." + _api_key[-4:] if len(_api_key) > 14 else "***"
+    print(f"🔍 DEBUG: API Key preview: {api_key_preview}")
+    print(f"🔍 DEBUG: API Key length: {len(_api_key)} characters")
+    print(f"🔍 DEBUG: API Key starts with: {_api_key[:7]}")
+else:
+    print(f"⚠️ WARNING: OPENAI_API_KEY environment variable is not set!")
 print(f"🔍 DEBUG: Default model: {_default_model}")
 
 
@@ -44,7 +112,11 @@ class NodeRecommendationRequest(BaseModel):
     temperature: Optional[float] = 0.7
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Honors Thesis API",
+    description="프롬프트 엔지니어링 시스템 API",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,6 +125,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "Honors Thesis API",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
 
 
 @app.get("/api/health")
@@ -118,11 +199,17 @@ def run_flow(req: FlowRequest):
                         error_type = error_obj.get("type", "")
                         error_code = error_obj.get("code", "")
                         
+                        # API 키가 에러 메시지에 포함되어 있으면 제거
+                        if _api_key and _api_key in error_message:
+                            error_message = error_message.replace(_api_key, "***API_KEY***")
+                        
                         # quota 관련 에러 감지
                         if error_type == "insufficient_quota" or error_code == "insufficient_quota" or "quota" in error_message.lower():
                             error_detail = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요."
                         elif error_type == "rate_limit_exceeded" or error_code == "rate_limit_exceeded":
                             error_detail = "OpenAI API 요청 한도가 초과되었습니다. 잠시 후 다시 시도해주세요."
+                        elif "Incorrect API key" in error_message or "invalid_api_key" in error_type.lower():
+                            error_detail = "OpenAI API 키가 올바르지 않습니다. .env 파일의 OPENAI_API_KEY를 확인해주세요. (공백이나 따옴표가 포함되어 있지 않은지 확인하세요)"
                         else:
                             error_detail = error_message or str(error_json)
                 except:
@@ -132,8 +219,12 @@ def run_flow(req: FlowRequest):
         
     except Exception as e:  # pragma: no cover
         print(f"🔍 DEBUG: Exception caught: {type(e).__name__}: {e}")
+        # 에러 메시지에서 API 키 제거 (보안)
+        error_msg = str(e)
+        if _api_key and _api_key in error_msg:
+            error_msg = error_msg.replace(_api_key, "***API_KEY***")
         # 에러 원인 가시화
-        raise HTTPException(status_code=500, detail=f"OpenAI request failed: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"OpenAI request failed: {type(e).__name__}: {error_msg}")
 
 
 @app.post("/api/recommend")
@@ -169,21 +260,23 @@ def recommend_nodes(req: NodeRecommendationRequest):
         data = {
             "model": req.model,
             "messages": messages,
-            "temperature": req.temperature,
-            "max_tokens": 500
+            "temperature": min(req.temperature, 0.5),  # 추천은 더 결정적으로 (최대 0.5)
+            "max_tokens": 500  # JSON 완전성을 위해 충분한 토큰 확보
         }
         
-        with httpx.Client() as client:
+        with httpx.Client(timeout=20.0) as client:  # 타임아웃 단축 (30초 -> 20초)
             response = client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=30.0
+                timeout=20.0
             )
             
             if response.status_code == 200:
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
+                
+                print(f"🔍 DEBUG: OpenAI response content: {content[:500]}...")
                 
                 # 추천 항목들을 파싱하여 배열로 반환
                 recommendations = []
@@ -193,23 +286,49 @@ def recommend_nodes(req: NodeRecommendationRequest):
                     import json
                     # content가 JSON 문자열인 경우 파싱
                     content_cleaned = content.strip()
+                    
+                    # JSON 코드 블록 제거 (```json ... ```)
+                    if content_cleaned.startswith('```'):
+                        lines = content_cleaned.split('\n')
+                        json_start = -1
+                        json_end = -1
+                        for i, line in enumerate(lines):
+                            if line.strip().startswith('```') and json_start == -1:
+                                json_start = i + 1
+                            elif line.strip().startswith('```') and json_start != -1:
+                                json_end = i
+                                break
+                        if json_start != -1 and json_end != -1:
+                            content_cleaned = '\n'.join(lines[json_start:json_end]).strip()
+                    
                     if content_cleaned.startswith('{') or content_cleaned.startswith('['):
                         parsed_json = json.loads(content_cleaned)
                         if isinstance(parsed_json, dict) and "recommendations" in parsed_json:
                             for item in parsed_json["recommendations"]:
                                 if isinstance(item, dict):
-                                    recommendations.append({
-                                        "value": item.get("element", "").strip(),
-                                        "description": item.get("description", "").strip()
-                                    })
+                                    element = item.get("element", "").strip()
+                                    description = item.get("description", "").strip()
+                                    if element:  # element가 비어있지 않을 때만 추가
+                                        recommendations.append({
+                                            "value": element,
+                                            "description": description
+                                        })
                         elif isinstance(parsed_json, list):
                             for item in parsed_json:
                                 if isinstance(item, dict):
-                                    recommendations.append({
-                                        "value": item.get("element", "").strip(),
-                                        "description": item.get("description", "").strip()
-                                    })
-                except json.JSONDecodeError:
+                                    element = item.get("element", "").strip()
+                                    description = item.get("description", "").strip()
+                                    if element:  # element가 비어있지 않을 때만 추가
+                                        recommendations.append({
+                                            "value": element,
+                                            "description": description
+                                        })
+                    
+                    print(f"🔍 DEBUG: Parsed {len(recommendations)} recommendations")
+                    
+                except json.JSONDecodeError as e:
+                    print(f"🔍 DEBUG: JSON parsing failed: {e}")
+                    print(f"🔍 DEBUG: Content that failed to parse: {content_cleaned[:200]}...")
                     # JSON 파싱 실패 시 기존 줄 단위 파싱 시도
                     lines = content.strip().split('\n')
                     for line in lines:
@@ -228,16 +347,55 @@ def recommend_nodes(req: NodeRecommendationRequest):
                                     "description": ""
                                 })
                 
+                if not recommendations:
+                    print(f"⚠️ WARNING: No recommendations parsed from response")
+                
                 return {
                     "nodeType": req.nodeType,
                     "recommendations": recommendations,
                     "rawContent": content
                 }
             else:
-                raise HTTPException(status_code=500, detail=f"OpenAI API error: {response.status_code} - {response.text}")
+                # OpenAI API 에러 응답 파싱
+                error_text = response.text
+                # API 키가 에러 텍스트에 포함되어 있으면 제거
+                if _api_key and _api_key in error_text:
+                    error_text = error_text.replace(_api_key, "***API_KEY***")
+                
+                try:
+                    error_json = response.json()
+                    if "error" in error_json:
+                        error_obj = error_json["error"]
+                        error_message = error_obj.get("message", "")
+                        error_type = error_obj.get("type", "")
+                        error_code = error_obj.get("code", "")
+                        
+                        # API 키가 에러 메시지에 포함되어 있으면 제거
+                        if _api_key and _api_key in error_message:
+                            error_message = error_message.replace(_api_key, "***API_KEY***")
+                        
+                        # 특정 에러 타입 처리
+                        if error_type == "insufficient_quota" or error_code == "insufficient_quota":
+                            error_detail = "OpenAI API 사용량이 초과되었습니다. 요금제를 확인하거나 새 API 키를 사용해주세요."
+                        elif error_type == "rate_limit_exceeded" or error_code == "rate_limit_exceeded":
+                            error_detail = "OpenAI API 요청 한도가 초과되었습니다. 잠시 후 다시 시도해주세요."
+                        elif "Incorrect API key" in error_message or "invalid_api_key" in error_type.lower():
+                            error_detail = "OpenAI API 키가 올바르지 않습니다. .env 파일의 OPENAI_API_KEY를 확인해주세요."
+                        else:
+                            error_detail = error_message
+                    else:
+                        error_detail = error_text[:200]
+                except:
+                    error_detail = error_text[:200]
+                
+                raise HTTPException(status_code=500, detail=f"OpenAI API error: {response.status_code} - {error_detail}")
         
     except Exception as e:
         print(f"🔍 DEBUG: Recommendation exception: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail=f"Recommendation request failed: {type(e).__name__}: {e}")
+        # 에러 메시지에서 API 키 제거 (보안)
+        error_msg = str(e)
+        if _api_key and _api_key in error_msg:
+            error_msg = error_msg.replace(_api_key, "***API_KEY***")
+        raise HTTPException(status_code=500, detail=f"Recommendation request failed: {type(e).__name__}: {error_msg}")
 
 

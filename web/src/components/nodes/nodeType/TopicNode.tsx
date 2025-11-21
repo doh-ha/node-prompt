@@ -4,24 +4,21 @@ import { NodeShell } from "../NodeShell";
 import { useAutosizeTextArea } from "../../../hooks/useAutosizeTextArea";
 import { RecommendationPanel, RecommendationIcon } from "../../ui";
 
-interface RoleNodeProps {
+interface TopicNodeProps {
   data: {
-    role: string;
-    description: string;
-    examples: string[];
-    content?: string;
-    onContentChange?: (content: string, fileName?: string, description?: string) => void;
-    onDeleteNode?: (id: string) => void;
+    content: string;
     label?: string;
     icon?: string;
-    iconBg?: string;
     iconColor?: string;
+    nodeBg?: string;
+    onContentChange?: (content: string, fileName?: string, description?: string) => void;
+    onDeleteNode?: (id: string) => void;
   };
   selected?: boolean;
   id?: string;
 }
 
-export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
+export const TopicNode: React.FC<TopicNodeProps> = ({ data, selected, id }) => {
   const [value, setValue] = useState(data.content ?? "");
   const [showRecommendations, setShowRecommendations] = useState(false);
   const textAreaRef = useAutosizeTextArea(value);
@@ -113,13 +110,13 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
         title={data.label}
         icon={data.icon}
         iconColor={data.iconColor}
-        bg={(data as any).nodeBg}
+        bg={data.nodeBg}
         onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-        nodeType="role"
+        nodeType="topic"
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="역할 내용을 입력하세요..."
+          placeholder="주제를 입력하세요..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -133,7 +130,8 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
 
       <RecommendationIcon onClick={() => setShowRecommendations(!showRecommendations)} isVisible={showRecommendations} />
 
-      <RecommendationPanel currentPrompt={currentPrompt} nodeType="role" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
+      <RecommendationPanel currentPrompt={currentPrompt} nodeType="topic" onSelectRecommendation={handleSelectRecommendation} isVisible={showRecommendations} onClose={handleCloseRecommendations} />
     </ContextNodeContainer>
   );
 };
+

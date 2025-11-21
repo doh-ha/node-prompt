@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { Node, Edge } from "../types/nodeTypes";
 import { MarkerType } from "reactflow";
-import { colors } from "../constants";
+import { colors, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from "../constants";
 import { nodesRegistry } from "../components/nodes/registry";
 
 export interface Canvas {
@@ -90,9 +90,9 @@ function createInitialFlowNodes(canvasName: string): { nodes: Node[]; edges: Edg
       data: {
         ...getMetaFromRegistry("model"),
         nodeBg: getNodeBgByTypeLocal("model"),
-        model: "gpt-4o-mini",
-        temperature: 0.7,
-        maxTokens: 1000,
+        model: DEFAULT_MODEL,
+        temperature: DEFAULT_TEMPERATURE,
+        maxTokens: DEFAULT_MAX_TOKENS,
       },
     },
     {

@@ -16,9 +16,10 @@ interface NodeShellProps {
   showNameInput?: boolean;
   customName?: string;
   onNameChange?: (name: string) => void;
+  containerStyle?: React.CSSProperties;
 }
 
-export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = colors.primary, bg, onDelete, children, nodeType, showNameInput, customName, onNameChange }) => {
+export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon = "⬚", iconColor = colors.primary, bg, onDelete, children, nodeType, showNameInput, customName, onNameChange, containerStyle }) => {
   const iconStyle = { background: "transparent", color: iconColor } as React.CSSProperties;
 
   // 연결점 표시 규칙
@@ -127,8 +128,10 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
 
   // 잠금 UI 제거
 
+  const mergedStyle = { ...(bg ? { background: bg } : {}), ...containerStyle };
+
   return (
-    <NodeContainer className={selected ? "selected" : ""} style={bg ? { background: bg } : undefined}>
+    <NodeContainer className={selected ? "selected" : ""} style={Object.keys(mergedStyle).length > 0 ? mergedStyle : undefined}>
       {/* 좌/우 핸들: 규칙에 따라 표시 */}
       {showLeftHandle && <Handle id="left" isConnectable={true} type="target" position={Position.Left} style={getHandleStyle(Position.Left)} data-handle-type={getHandleColorType(Position.Left)} />}
       {showTopHandle && <Handle id="top" isConnectable={true} type="target" position={Position.Top} style={getHandleStyle(Position.Top)} data-handle-type={getHandleColorType(Position.Top)} />}
