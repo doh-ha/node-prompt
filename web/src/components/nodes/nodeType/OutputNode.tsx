@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { NodeShell } from "../NodeShell";
 import { NodeInput } from "../../../styles/nodeStyles";
+import { OutputRecommendationPanel } from "../../ui/OutputRecommendationPanel";
+import { RiLightbulbLine } from "react-icons/ri";
+import { colors } from "../../../constants";
 
 interface OutputNodeProps {
   data: {
@@ -29,16 +32,14 @@ interface OutputNodeProps {
 export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) => {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const isTextFormat = data.format === "text" || data.format === "markdown" || data.format === "table" || data.format === "JSON" || !data.format;
-  const isFileFormat = data.format === "JSON" || data.format === "csv" || data.format === "pdf";
-  const showTextArea = isTextFormat || data.format === "JSON"; // JSON 형식일 때도 텍스트 영역 표시
+  const nodeRef = React.useRef<HTMLDivElement>(null);
+  const [showRecommendationPanel, setShowRecommendationPanel] = useState(false);
 
   // 최대 높이 계산 (사용자 지정 또는 기본값)
-  const maxHeight = data.maxHeight || 400;
+  const maxHeight = data.maxHeight || 600;
   const headerHeight = 40; // NodeShell 헤더 높이
-  const selectHeight = 36; // 선택박스 높이
   const padding = 32; // 상하 여백
-  const maxTextAreaHeight = Math.max(80, maxHeight - headerHeight - selectHeight - padding);
+  const minTextAreaHeight = 80;
 
   // Flow별 결과에서 현재 표시할 결과 추출
   const getDisplayResult = (): string => {
@@ -62,54 +63,61 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
   const displayResult = getDisplayResult();
 
+  // 전체 프롬프트 가져오기
+  const currentPrompt = (data as any).currentFullPrompt || "";
+
+  // 패널 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (nodeRef.current && !nodeRef.current.contains(event.target as Node)) {
+        setShowRecommendationPanel(false);
+      }
+    };
+
+    if (showRecommendationPanel) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showRecommendationPanel]);
+
   // 텍스트 길이에 따라 노드 크기 자동 조정
   useEffect(() => {
-    if (!data.onSizeChange || !showTextArea) return;
+    if (!data.onSizeChange || !textareaRef.current) return;
 
     // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 크기 계산
     const timeoutId = setTimeout(() => {
-      if (textareaRef.current && containerRef.current) {
+      if (textareaRef.current) {
         const textarea = textareaRef.current;
-        const container = containerRef.current;
 
         // 텍스트 영역 높이 자동 조정
         textarea.style.height = "auto";
         const scrollHeight = textarea.scrollHeight;
 
-        // 최소 높이: 120px
-        const minHeight = 120;
+        // 텍스트 영역 높이 계산 (최소 높이 보장)
+        const textAreaHeight = Math.max(minTextAreaHeight, scrollHeight);
 
-        // 텍스트 영역 높이 계산
-        const textAreaHeight = Math.max(80, Math.min(maxTextAreaHeight, scrollHeight));
-
-        // 노드 전체 높이 계산 (헤더 + 선택박스 + 텍스트영역 + 여백)
-        const newHeight = Math.max(minHeight, Math.min(maxHeight, headerHeight + selectHeight + textAreaHeight + padding));
+        // 노드 전체 높이 계산 (헤더 + 텍스트영역 + 여백)
+        const newHeight = Math.max(120, Math.min(maxHeight, headerHeight + textAreaHeight + padding));
 
         // 텍스트 영역 높이 설정
         textarea.style.height = `${textAreaHeight}px`;
 
-        // 노드 너비 계산: 높이에 따라 자동으로 증가
-        const baseWidth = 220; // 기본 너비
-        const minWidth = 220; // 최소 너비
-        const maxWidth = 600; // 최대 너비
+        // 노드 너비 계산: 텍스트 길이에 따라 자동으로 증가
+        const baseWidth = 300; // 기본 너비
+        const minWidth = 250; // 최소 너비
+        const maxWidth = 800; // 최대 너비
 
-        // 높이가 일정 값 이상이면 너비도 증가
+        // 텍스트 길이에 따라 너비 계산
+        const textLength = displayResult.length;
         let nodeWidth = baseWidth;
-        if (newHeight >= 500) {
-          // 높이가 500px 이상이면 너비를 500px로
-          nodeWidth = 500;
-        } else if (newHeight >= 400) {
-          // 높이가 400px 이상이면 너비를 400px로
-          nodeWidth = 400;
-        } else if (newHeight >= 300) {
-          // 높이가 300px 이상이면 너비를 300px로
-          nodeWidth = 300;
-        } else if (newHeight >= 200) {
-          // 높이가 200px 이상이면 너비를 280px로
-          nodeWidth = 280;
-        } else {
-          // 기본 너비 유지
-          nodeWidth = baseWidth;
+
+        if (textLength > 500) {
+          nodeWidth = Math.min(maxWidth, baseWidth + Math.floor((textLength - 500) / 10));
+        } else if (textLength > 200) {
+          nodeWidth = baseWidth + 50;
         }
 
         // 기존 width가 설정되어 있고, 계산된 너비보다 크면 기존 값 사용
@@ -128,106 +136,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [displayResult, showTextArea, data.onSizeChange, data.width, data.maxHeight]);
-
-  const handleDownload = () => {
-    const resultToDownload = getDisplayResult();
-    if (!resultToDownload) return;
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
-
-    if (data.format === "csv") {
-      // CSV 다운로드
-      const csvContent = convertToCSV(resultToDownload);
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `output_${timestamp}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else if (data.format === "JSON") {
-      // JSON 다운로드
-      try {
-        // JSON 형식인지 확인하고 파싱 시도
-        let jsonContent = resultToDownload;
-        try {
-          const parsed = JSON.parse(resultToDownload);
-          jsonContent = JSON.stringify(parsed, null, 2);
-        } catch {
-          // JSON이 아니면 그대로 사용
-        }
-        const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `output_${timestamp}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error("JSON 다운로드 실패:", error);
-      }
-    } else if (data.format === "pdf") {
-      // PDF 다운로드
-      handleDownloadPDF();
-    }
-  };
-
-  const convertToCSV = (text: string): string => {
-    // 텍스트를 CSV 형식으로 변환
-    // 줄바꿈으로 구분된 텍스트를 CSV 행으로 변환
-    const lines = text.split("\n").filter((line) => line.trim());
-    if (lines.length === 0) return "";
-
-    // 첫 줄이 헤더처럼 보이면 그대로 사용, 아니면 기본 헤더 추가
-    const csvLines = lines.map((line) => {
-      // 쉼표나 탭이 있으면 그대로 사용, 없으면 전체를 하나의 컬럼으로
-      if (line.includes(",") || line.includes("\t")) {
-        return line;
-      }
-      return `"${line.replace(/"/g, '""')}"`;
-    });
-
-    return csvLines.join("\n");
-  };
-
-  const handleDownloadPDF = async () => {
-    const resultToDownload = getDisplayResult();
-    if (!resultToDownload) return;
-
-    try {
-      // 서버에서 PDF 생성
-      const response = await fetch("/api/generate-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ content: resultToDownload }),
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
-        link.href = url;
-        link.download = `output_${timestamp}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        alert("PDF 생성 API에 연결할 수 없습니다.");
-      }
-    } catch (error) {
-      console.error("PDF 생성 실패:", error);
-      alert("PDF 생성 API에 연결할 수 없습니다.");
-    }
-  };
+  }, [displayResult, data.onSizeChange, data.width, data.maxHeight, headerHeight, padding, minTextAreaHeight]);
 
   // 노드 크기 스타일 계산 - NodeContainer에 직접 적용
   const containerStyle: React.CSSProperties = {};
@@ -243,145 +152,145 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   }
 
   return (
-    <NodeShell
-      id={id}
-      selected={selected}
-      title={data.label}
-      icon={data.icon}
-      iconColor={data.iconColor}
-      bg={(data as any).nodeBg}
-      onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
-      nodeType="output"
-      showNameInput={data.showNameInput}
-      customName={data.customName}
-      onNameChange={data.onNameChange}
-      containerStyle={containerStyle}
-    >
-      <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <select
-          value={data.format || "text"}
-          onChange={(e) => data.onFormatChange?.(e.target.value)}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e5e7eb", width: "100%" }}
-        >
-          <option value="text">text</option>
-          <option value="table">table</option>
-          <option value="markdown">markdown</option>
-          <option value="JSON">JSON</option>
-          <option value="csv">csv</option>
-          <option value="pdf">pdf</option>
-        </select>
+    <div ref={nodeRef} style={{ position: "relative" }}>
+      <NodeShell
+        id={id}
+        selected={selected}
+        title={data.label}
+        icon={data.icon}
+        iconColor={data.iconColor}
+        bg={colors.nodeBg.lightGreen}
+        onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
+        nodeType="output"
+        showNameInput={data.showNameInput}
+        customName={data.customName}
+        onNameChange={data.onNameChange}
+        containerStyle={containerStyle}
+      >
+        <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 8, position: "relative" }}>
+          {displayResult ? (
+            <NodeInput
+              ref={textareaRef}
+              as="textarea"
+              readOnly
+              value={displayResult || ""}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              onSelect={(e) => {
+                e.stopPropagation();
+              }}
+              style={{
+                minHeight: `${minTextAreaHeight}px`,
+                resize: "none",
+                overflow: "auto",
+                width: "100%",
+                fontFamily: "inherit",
+                userSelect: "text",
+                WebkitUserSelect: "text",
+                MozUserSelect: "text",
+                msUserSelect: "text",
+                boxSizing: "border-box",
+                border: "none",
+                background: "white",
+                padding: "8px",
+                borderRadius: "4px",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                padding: "16px",
+                borderRadius: "8px",
+                border: "2px dashed #d1d5db",
+                background: "#f9fafb",
+                color: "#9ca3af",
+                fontSize: "13px",
+                textAlign: "center",
+                minHeight: `${minTextAreaHeight}px`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontStyle: "italic",
+              }}
+            >
+              결과가 여기에 표시됩니다
+            </div>
+          )}
 
-        {showTextArea && (
-          <div style={{ marginTop: 8 }}>
-            {displayResult ? (
-              <NodeInput
-                ref={textareaRef}
-                as="textarea"
-                readOnly
-                value={
-                  data.format === "JSON" && displayResult
-                    ? (() => {
-                        try {
-                          const parsed = JSON.parse(displayResult);
-                          return JSON.stringify(parsed, null, 2);
-                        } catch {
-                          return displayResult;
-                        }
-                      })()
-                    : displayResult || ""
-                }
-                onMouseDown={(e) => {
-                  // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  // 텍스트 선택을 허용하기 위해 이벤트 전파만 막음
-                  e.stopPropagation();
-                }}
-                onSelect={(e) => {
-                  // 텍스트 선택 시 이벤트 전파 막기
-                  e.stopPropagation();
-                }}
-                style={{
-                  minHeight: "80px",
-                  maxHeight: `${maxTextAreaHeight}px`,
-                  resize: "none",
-                  overflow: "auto",
-                  width: "100%",
-                  fontFamily: data.format === "JSON" ? "monospace" : "inherit",
-                  userSelect: "text",
-                  WebkitUserSelect: "text",
-                  MozUserSelect: "text",
-                  msUserSelect: "text",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  padding: "16px",
-                  borderRadius: "8px",
-                  border: "2px dashed #d1d5db",
-                  background: "#f9fafb",
-                  color: "#9ca3af",
-                  fontSize: "13px",
-                  textAlign: "center",
-                  minHeight: "80px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontStyle: "italic",
-                }}
-              >
-                결과가 여기에 표시됩니다
-              </div>
-            )}
-          </div>
-        )}
-
-        {isFileFormat && (
-          <div style={{ marginTop: 8 }}>
-            {displayResult ? (
+          {/* 추천 버튼 - NodeInput 외부, NodeShell 내부 오른쪽 하단 */}
+          {displayResult && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "4px" }}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDownload();
+                  setShowRecommendationPanel(!showRecommendationPanel);
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 style={{
-                  padding: "8px 12px",
-                  borderRadius: 6,
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
                   border: "1px solid #e5e7eb",
-                  background: "#4f46e5",
-                  color: "white",
+                  background: showRecommendationPanel ? "#4f46e5" : "white",
+                  color: showRecommendationPanel ? "white" : "#4f46e5",
                   cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "16px",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                  transition: "all 0.2s",
                 }}
+                onMouseEnter={(e) => {
+                  if (!showRecommendationPanel) {
+                    e.currentTarget.style.background = "#f3f4f6";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showRecommendationPanel) {
+                    e.currentTarget.style.background = "white";
+                  }
+                }}
+                title="추천 보기"
               >
-                {data.format === "pdf" ? "PDF 다운로드" : data.format === "csv" ? "CSV 다운로드" : data.format === "JSON" ? "JSON 다운로드" : "파일 다운로드"}
+                {React.createElement(RiLightbulbLine as any, { size: 18 })}
               </button>
-            ) : (
-              <div
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #e5e7eb",
-                  background: "#f9fafb",
-                  color: "#6b7280",
-                  fontSize: 12,
-                  textAlign: "center",
-                  width: "100%",
-                }}
-              >
-                Flow를 실행하면 파일이 생성됩니다
-              </div>
-            )}
+            </div>
+          )}
+        </div>
+        {showRecommendationPanel && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "8px",
+              left: "8px",
+              right: "8px",
+              maxHeight: "300px",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                backgroundColor: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: "12px",
+                boxShadow: "0 8px 25px rgba(0, 0, 0, 0.15)",
+                padding: "16px",
+                maxHeight: "300px",
+                overflowY: "auto",
+              }}
+            >
+              <OutputRecommendationPanel currentPrompt={currentPrompt} outputResult={displayResult} isVisible={showRecommendationPanel} onClose={() => setShowRecommendationPanel(false)} />
+            </div>
           </div>
         )}
-      </div>
-    </NodeShell>
+      </NodeShell>
+    </div>
   );
 };
