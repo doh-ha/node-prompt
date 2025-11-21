@@ -820,11 +820,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const handleNodeSizeChange = (nodeId: string, width: number, height: number) => {
     setNodes((nds) => {
-      const updatedNodes = nds.map((node) => 
-        node.id === nodeId 
-          ? { ...node, data: { ...node.data, width, height } } 
-          : node
-      );
+      const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, width, height } } : node));
       wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
     });

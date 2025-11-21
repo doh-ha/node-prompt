@@ -82,8 +82,37 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         // 텍스트 영역 높이 설정
         textarea.style.height = `${textAreaHeight}px`;
 
-        // 노드 너비는 기본값 유지 (220px) 또는 기존 width 사용
-        const nodeWidth = data.width || 220;
+        // 노드 너비 계산: 높이에 따라 자동으로 증가
+        const baseWidth = 220; // 기본 너비
+        const minWidth = 220; // 최소 너비
+        const maxWidth = 600; // 최대 너비
+
+        // 높이가 일정 값 이상이면 너비도 증가
+        let nodeWidth = baseWidth;
+        if (newHeight >= 500) {
+          // 높이가 500px 이상이면 너비를 500px로
+          nodeWidth = 500;
+        } else if (newHeight >= 400) {
+          // 높이가 400px 이상이면 너비를 400px로
+          nodeWidth = 400;
+        } else if (newHeight >= 300) {
+          // 높이가 300px 이상이면 너비를 300px로
+          nodeWidth = 300;
+        } else if (newHeight >= 200) {
+          // 높이가 200px 이상이면 너비를 280px로
+          nodeWidth = 280;
+        } else {
+          // 기본 너비 유지
+          nodeWidth = baseWidth;
+        }
+
+        // 기존 width가 설정되어 있고, 계산된 너비보다 크면 기존 값 사용
+        if (data.width && data.width > nodeWidth) {
+          nodeWidth = data.width;
+        }
+
+        // 최소/최대 너비 제한
+        nodeWidth = Math.max(minWidth, Math.min(maxWidth, nodeWidth));
 
         // 크기 변경 콜백 호출
         if (data.onSizeChange) {
@@ -194,6 +223,19 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
     }
   };
 
+  // 노드 크기 스타일 계산 - NodeContainer에 직접 적용
+  const containerStyle: React.CSSProperties = {};
+  if (data.width) {
+    containerStyle.width = `${data.width}px`;
+    containerStyle.minWidth = `${data.width}px`;
+    containerStyle.maxWidth = `${data.width}px`;
+  }
+  if (data.height) {
+    containerStyle.height = `${data.height}px`;
+    containerStyle.minHeight = `${data.height}px`;
+    containerStyle.maxHeight = `${data.height}px`;
+  }
+
   return (
     <NodeShell
       id={id}
@@ -207,6 +249,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
       showNameInput={data.showNameInput}
       customName={data.customName}
       onNameChange={data.onNameChange}
+      containerStyle={containerStyle}
     >
       <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <select
