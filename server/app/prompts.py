@@ -13,7 +13,7 @@ def get_system_prompt() -> str:
 8. 💡 impact와 ⚠️ risk에는 기존 프롬프트의 전체 맥락을 반영해도 됩니다."""
 
 
-def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
+def get_recommendation_prompt(current_prompt: str, node_type: str, output_result: str = None) -> str:
     """
     노드 타입에 맞는 추천 프롬프트를 반환합니다.
     
@@ -134,6 +134,24 @@ def get_recommendation_prompt(current_prompt: str, node_type: str) -> str:
 반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
 {json_schema}
 """,
+
+        "output": (
+            f"""[현재 프롬프트]
+{current_prompt}
+"""
+            + (f"[현재 결과]\n{output_result}\n\n" if output_result else "")
+            + f"""[작성 지침]
+- 현재 프롬프트와 결과를 기반으로 다음 단계나 개선 방안을 정확히 4개 제안
+- element: 다음 단계나 개선 방안을 나타내는 짧은 문구 (예: "다른 스타일로 재생성", "Role 노드 수정", "더 구체적인 지시 추가")
+- description 형식: 📝 description: ... 💡 impact: ... ⚠️ risk: ...
+- 추천 유형: 다음 단계(next-step), 프롬프트 개선(prompt-improvement), 출력 제안(output-suggestion)
+- 💡 impact와 ⚠️ risk에는 기존 프롬프트와 결과의 전체 맥락을 반영해도 됩니다.
+
+[출력 형식]
+반드시 다음 JSON 형식으로만 응답하세요. 코드 블록이나 설명 없이 순수 JSON만 출력합니다:
+{json_schema}
+"""
+        ),
     }
 
     return prompts.get(

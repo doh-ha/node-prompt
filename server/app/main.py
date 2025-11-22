@@ -107,7 +107,8 @@ class FlowRequest(BaseModel):
 
 class NodeRecommendationRequest(BaseModel):
     currentPrompt: str
-    nodeType: str  # "role", "style", "audience", "length" 등
+    nodeType: str  # "role", "style", "audience", "length", "output" 등
+    outputResult: Optional[str] = None  # output 타입일 때 결과 포함
     model: Optional[str] = _default_model
     temperature: Optional[float] = 0.7
 
@@ -234,6 +235,8 @@ def recommend_nodes(req: NodeRecommendationRequest):
     예: Task가 "일본어 문장 1개 작성"이면 Role을 "일본어 전문가", "중학생" 등으로 추천
     """
     print(f"🔍 DEBUG: Node recommendation request: {req.nodeType} for prompt: {req.currentPrompt}")
+    if req.outputResult:
+        print(f"🔍 DEBUG: Output result provided: {req.outputResult[:200]}...")
     
     if not _api_key:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY")
@@ -242,7 +245,11 @@ def recommend_nodes(req: NodeRecommendationRequest):
         import httpx
         
         # 프롬프트 모듈에서 추천 프롬프트 가져오기
-        prompt = prompts.get_recommendation_prompt(req.currentPrompt, req.nodeType)
+        # output 타입일 때는 outputResult도 포함
+        if req.nodeType == "output" and req.outputResult:
+            prompt = prompts.get_recommendation_prompt(req.currentPrompt, req.nodeType, req.outputResult)
+        else:
+            prompt = prompts.get_recommendation_prompt(req.currentPrompt, req.nodeType)
         
         messages = [
             {"role": "system", "content": prompts.get_system_prompt()},
