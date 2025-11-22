@@ -15,7 +15,6 @@ import { LengthNode } from "./nodeType/LengthNode";
 import { InputNode } from "./nodeType/InputNode";
 import { OutputNode } from "./nodeType/OutputNode";
 import { FlowNode } from "./nodeType/FlowNode";
-import { TopicNode } from "./nodeType/TopicNode";
 import { colors } from "../../constants";
 
 type NodeTypeKey =
@@ -61,7 +60,7 @@ export const nodesRegistry = {
     type: "role",
     meta: {
       name: "Role",
-      description: "AI의 역할을 정의",
+      description: "AI의 역할/정체성/관점",
       icon: "🎭",
       iconColor: colors.nodeIcon.purple,
 
@@ -99,7 +98,7 @@ export const nodesRegistry = {
     type: "audience",
     meta: {
       name: "Audience",
-      description: "대상 사용자(학습자)",
+      description: "대상 독자",
       icon: "🧑‍🎓",
       iconColor: colors.nodeIcon.purple,
       group: "context",
@@ -116,7 +115,7 @@ export const nodesRegistry = {
     type: "style",
     meta: {
       name: "Style",
-      description: "문체/톤/말투",
+      description: "출력물의 문체/톤/말투",
       icon: "🎨",
       iconColor: colors.nodeIcon.purple,
       group: "instruction",
@@ -135,7 +134,7 @@ export const nodesRegistry = {
     type: "length",
     meta: {
       name: "Length",
-      description: "길이",
+      description: "출력물의 분량",
       icon: "📏",
       iconColor: colors.nodeIcon.purple,
       group: "instruction",
@@ -146,23 +145,6 @@ export const nodesRegistry = {
       if (!d.content) return null;
       const description = d.description ? ` (${d.description})` : "";
       return `[${d.name}]\n권장 길이: ${d.content}${description}`;
-    },
-  },
-  // 주제 노드
-  topic: {
-    type: "topic",
-    meta: {
-      name: "Topic",
-      description: "주제",
-      icon: "📌",
-      iconColor: colors.nodeIcon.purple,
-      group: "instruction",
-    },
-    component: TopicNode,
-    toPrompt: (d: any) => {
-      if (!d.content) return null;
-      const description = d.description ? ` (${d.description})` : "";
-      return `[${d.name}]\n주제: ${d.content}${description}`;
     },
   },
 
@@ -196,7 +178,7 @@ export const nodesRegistry = {
     type: "promptTemplate",
     meta: {
       name: "Task",
-      description: "지시문",
+      description: "수행할 작업",
       icon: "📝",
       iconColor: colors.nodeIcon.purple,
 
@@ -394,7 +376,7 @@ export const nodeComponents = Object.fromEntries(
           "text",
           "example",
           "length",
-          "topic",
+
           "start",
           "result",
           "textOutput",
@@ -422,7 +404,7 @@ const NODE_ORDERS = {
   // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
-  INSTRUCTION: { promptTemplate: 0, role: 1, audience: 2, style: 3, topic: 4, length: 5 },
+  INSTRUCTION: { promptTemplate: 0, role: 1, audience: 2, style: 3, length: 4 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
