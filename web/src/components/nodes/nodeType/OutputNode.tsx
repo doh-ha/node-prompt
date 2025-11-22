@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { NodeShell } from "../NodeShell";
 import { NodeInput } from "../../../styles/nodeStyles";
 import { OutputRecommendationPanel } from "../../ui/OutputRecommendationPanel";
-import { RiLightbulbLine } from "react-icons/ri";
+import { RiLightbulbLine, RiZoomInLine } from "react-icons/ri";
 import { colors } from "../../../constants";
 
 interface OutputNodeProps {
@@ -31,6 +31,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
 
   const [showPanel, setShowPanel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const maxHeight = data.maxHeight || 600;
 
   /** Flow result에서 마지막 값 추출 */
@@ -173,9 +174,30 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
             </div>
           )}
 
-          {/* 추천 아이콘 */}
+          {/* 버튼들 */}
           {displayResult && (
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModal(true);
+                }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
+                  border: "1px solid #e5e7eb",
+                  background: "white",
+                  color: "#4f46e5",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="확대"
+              >
+                {React.createElement(RiZoomInLine as any, { size: 18 })}
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -193,6 +215,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                   alignItems: "center",
                   justifyContent: "center",
                 }}
+                title="추천 보기"
               >
                 {React.createElement(RiLightbulbLine as any, { size: 18 })}
               </button>
@@ -226,6 +249,94 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
           </div>
         )}
       </NodeShell>
+
+      {/* 확대 모달 */}
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: 12,
+              padding: 32,
+              width: "90vw",
+              height: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#111827" }}>전체 내용</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 24,
+                  color: "#6b7280",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  lineHeight: 1,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* 내용 */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: 24,
+                backgroundColor: "#f9fafb",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                fontSize: 14,
+                lineHeight: 1.8,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                fontFamily: "monospace",
+                minHeight: 0,
+              }}
+            >
+              {displayResult || "내용이 없습니다."}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
