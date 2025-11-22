@@ -255,10 +255,10 @@ export const nodesRegistry = {
 
       // 현재 Input 노드로 들어오는 엣지 찾기
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
-      
+
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
-        
+
         // 1. 이전 Flow의 Output에서 연결된 데이터
         if (sourceNode && sourceNode.type === "output") {
           const outputResult = sourceNode.data?.result;
@@ -278,7 +278,7 @@ export const nodesRegistry = {
             }
           }
         }
-        
+
         // 2. Text 노드에서 연결된 데이터
         if (sourceNode && sourceNode.type === "text") {
           const textContent = sourceNode.data?.content;
