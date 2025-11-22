@@ -246,21 +246,20 @@ export const nodesRegistry = {
     },
     component: InputNode,
     toPrompt: (data: any, node?: any, edges?: any[], nodes?: any[]) => {
-      // Input 노드에 연결된 Output 노드 찾기
+      // Input 노드에 연결된 노드들 찾기
       if (!node || !edges || !nodes) {
-        // 연결 정보가 없어도 직접 입력된 content가 있으면 사용
-        if (data?.content && data.content.trim().length > 0) {
-          return `[Input - 직접 입력]\n${data.content}`;
-        }
         return null;
       }
 
       const inputParts: string[] = [];
 
-      // 1. 이전 Flow의 Output에서 연결된 데이터
+      // 현재 Input 노드로 들어오는 엣지 찾기
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
+
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
+
+        // 1. 이전 Flow의 Output에서 연결된 데이터
         if (sourceNode && sourceNode.type === "output") {
           const outputResult = sourceNode.data?.result;
           if (outputResult) {
@@ -279,11 +278,14 @@ export const nodesRegistry = {
             }
           }
         }
-      }
 
-      // 2. 직접 입력된 content
-      if (data?.content && data.content.trim().length > 0) {
-        inputParts.push(`[Input - 직접 입력]\n${data.content}`);
+        // 2. Text 노드에서 연결된 데이터
+        if (sourceNode && sourceNode.type === "text") {
+          const textContent = sourceNode.data?.content;
+          if (textContent && textContent.trim().length > 0) {
+            inputParts.push(`[Input - Text 노드 입력]\n${textContent}`);
+          }
+        }
       }
 
       // 둘 다 있으면 모두 포함, 하나만 있으면 그것만 반환
