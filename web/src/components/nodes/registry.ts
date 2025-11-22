@@ -247,19 +247,23 @@ export const nodesRegistry = {
     component: InputNode,
     toPrompt: (data: any, node?: any, edges?: any[], nodes?: any[]) => {
       // Input 노드에 연결된 Output 노드 찾기
-      if (!node || !edges || !nodes) return null;
+      if (!node || !edges || !nodes) {
+        // 연결 정보가 없어도 직접 입력된 content가 있으면 사용
+        if (data?.content && data.content.trim().length > 0) {
+          return `[Input - 직접 입력]\n${data.content}`;
+        }
+        return null;
+      }
 
-      // 현재 Input 노드로 들어오는 엣지 찾기 (Output 노드에서 오는 것)
+      const inputParts: string[] = [];
+
+      // 1. 이전 Flow의 Output에서 연결된 데이터
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
-
-      // Output 노드에서 온 엣지 찾기
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
         if (sourceNode && sourceNode.type === "output") {
-          // Output 노드의 결과 가져오기
           const outputResult = sourceNode.data?.result;
           if (outputResult) {
-            // 결과가 객체 형태면 (Flow별 결과 저장) 가장 최근 결과 사용
             let resultText = "";
             if (typeof outputResult === "object" && !Array.isArray(outputResult)) {
               const flowNames = Object.keys(outputResult);
@@ -271,10 +275,20 @@ export const nodesRegistry = {
             }
 
             if (resultText) {
-              return `[Input]\ninput value: ${resultText}`;
+              inputParts.push(`[Input - 이전 Flow Output]\n${resultText}`);
             }
           }
         }
+      }
+
+      // 2. 직접 입력된 content
+      if (data?.content && data.content.trim().length > 0) {
+        inputParts.push(`[Input - 직접 입력]\n${data.content}`);
+      }
+
+      // 둘 다 있으면 모두 포함, 하나만 있으면 그것만 반환
+      if (inputParts.length > 0) {
+        return inputParts.join("\n\n");
       }
 
       return null;
