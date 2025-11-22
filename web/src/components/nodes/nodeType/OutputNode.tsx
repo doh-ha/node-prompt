@@ -59,37 +59,26 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
     const textAreaHeight = Math.min(scrollHeight, maxHeight);
     textarea.style.height = `${textAreaHeight}px`;
 
-    // 텍스트 길이에 따라 노드 너비 자동 조정
-    const baseWidth = 300; // 기본 너비
-    const minWidth = 250; // 최소 너비
-    const maxWidth = 800; // 최대 너비
-
-    const textLength = displayResult.length;
-    let nodeWidth = baseWidth;
-
-    if (textLength > 500) {
-      nodeWidth = Math.min(maxWidth, baseWidth + Math.floor((textLength - 500) / 10));
-    } else if (textLength > 200) {
-      nodeWidth = baseWidth + 50;
-    }
-
-    // 기존 width가 설정되어 있고, 계산된 너비보다 크면 기존 값 사용
-    if (data.width && data.width > nodeWidth) {
-      nodeWidth = data.width;
-    }
-
-    // 최소/최대 너비 제한
-    nodeWidth = Math.max(minWidth, Math.min(maxWidth, nodeWidth));
-
     // wrapper 높이 반영하여 노드 전체 height 자동 반영
     const wrapperHeight = wrapperRef.current.offsetHeight;
     const newHeight = wrapperHeight + 60; // 헤더 포함 보정치
 
     // 이전 값과 비교하여 실제로 변경이 있을 때만 업데이트 (무한 루프 방지)
+    // data.width가 있으면 너비도 함께 업데이트, 없으면 높이만 업데이트 (너비는 자동 조정)
     const lastSize = lastSizeRef.current;
-    if (!lastSize || lastSize.width !== nodeWidth || lastSize.height !== newHeight) {
-      lastSizeRef.current = { width: nodeWidth, height: newHeight };
-      data.onSizeChange(nodeWidth, newHeight);
+    if (data.width) {
+      // width가 설정되어 있으면 너비와 높이 모두 업데이트
+      if (!lastSize || lastSize.width !== data.width || lastSize.height !== newHeight) {
+        lastSizeRef.current = { width: data.width, height: newHeight };
+        data.onSizeChange(data.width, newHeight);
+      }
+    } else {
+      // width가 없으면 높이만 업데이트 (너비는 자동 조정되므로 업데이트하지 않음)
+      if (!lastSize || lastSize.height !== newHeight) {
+        lastSizeRef.current = { width: 0, height: newHeight };
+        // 높이만 업데이트하려면 기존 width를 유지하거나 업데이트하지 않음
+        // 다른 노드들처럼 컨텐츠에 맞춰 자동으로 너비가 조정됨
+      }
     }
   }, [displayResult, maxHeight, data.onSizeChange]);
 
@@ -118,9 +107,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         onNameChange={data.onNameChange}
         onDelete={id ? () => data.onDeleteNode?.(id) : undefined}
         containerStyle={{
-          width: data.width || 300,
-          minWidth: data.width || 300,
-          maxWidth: data.width || 300,
+          ...(data.width ? { width: data.width, minWidth: data.width, maxWidth: data.width } : {}),
           paddingBottom: 12,
         }}
       >
@@ -259,9 +246,12 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            width: "50vw",
+            height: "100vh",
+            //backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backgroundColor: "transparent",
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
             zIndex: 10000,
           }}
@@ -271,9 +261,11 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
             style={{
               backgroundColor: "white",
               borderRadius: 12,
-              padding: 32,
-              width: "90vw",
-              height: "90vh",
+              padding: 24,
+              width: "50vw",
+              maxWidth: "80vw",
+              height: "98vh",
+              maxHeight: "98vh",
               display: "flex",
               flexDirection: "column",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
@@ -320,12 +312,12 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: 24,
+                padding: 32,
                 backgroundColor: "#f9fafb",
                 borderRadius: 8,
                 border: "1px solid #e5e7eb",
-                fontSize: 14,
-                lineHeight: 1.8,
+                fontSize: 15,
+                lineHeight: 1.9,
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
                 fontFamily: "monospace",
