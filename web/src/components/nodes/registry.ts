@@ -251,14 +251,14 @@ export const nodesRegistry = {
         return null;
       }
 
-      const inputParts: string[] = [];
+      const inputValues: string[] = [];
 
       // 현재 Input 노드로 들어오는 엣지 찾기
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
-
+      
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
-
+        
         // 1. 이전 Flow의 Output에서 연결된 데이터
         if (sourceNode && sourceNode.type === "output") {
           const outputResult = sourceNode.data?.result;
@@ -274,23 +274,23 @@ export const nodesRegistry = {
             }
 
             if (resultText) {
-              inputParts.push(`[Input - 이전 Flow Output]\n${resultText}`);
+              inputValues.push(resultText);
             }
           }
         }
-
+        
         // 2. Text 노드에서 연결된 데이터
         if (sourceNode && sourceNode.type === "text") {
           const textContent = sourceNode.data?.content;
           if (textContent && textContent.trim().length > 0) {
-            inputParts.push(`[Input - Text 노드 입력]\n${textContent}`);
+            inputValues.push(textContent);
           }
         }
       }
 
-      // 둘 다 있으면 모두 포함, 하나만 있으면 그것만 반환
-      if (inputParts.length > 0) {
-        return inputParts.join("\n\n");
+      // 모든 입력값을 하나의 [Input] 섹션으로 합치기
+      if (inputValues.length > 0) {
+        return `[Input]\ninput value: ${inputValues.join(", ")}`;
       }
 
       return null;

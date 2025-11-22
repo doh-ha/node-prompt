@@ -146,24 +146,6 @@ export const InputNode: React.FC<InputNodeProps> = ({ data, selected, id }) => {
             />
           </div>
         )}
-
-        {/* 둘 다 없을 때 안내 메시지 */}
-        {!hasConnectedOutput && !hasConnectedText && (
-          <div
-            style={{
-              padding: "12px",
-              fontSize: "12px",
-              color: "#9ca3af",
-              fontStyle: "italic",
-              textAlign: "center",
-              border: "1px dashed #d1d5db",
-              borderRadius: "6px",
-              background: "#f9fafb",
-            }}
-          >
-            Output 노드나 Text 노드를 연결하세요
-          </div>
-        )}
       </div>
     </NodeShell>
   );
