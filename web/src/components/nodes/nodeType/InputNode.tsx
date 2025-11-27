@@ -56,7 +56,30 @@ export const InputNode: React.FC<InputNodeProps> = ({ data, selected, id }) => {
     return null;
   }, [id, data.allNodes, data.allEdges]);
 
+  // 연결된 Text 노드의 내용 가져오기
+  const connectedTextContent = useMemo(() => {
+    if (!id || !data.allNodes || !data.allEdges) return null;
+
+    // 현재 Input 노드로 들어오는 엣지 찾기
+    const incomingEdges = data.allEdges.filter((edge) => edge.target === id);
+
+    // Text 노드에서 온 엣지 찾기
+    for (const edge of incomingEdges) {
+      const sourceNode = data.allNodes.find((n) => n.id === edge.source);
+      if (sourceNode && sourceNode.type === "text") {
+        // Text 노드의 content 가져오기
+        const textContent = sourceNode.data?.content;
+        if (textContent && textContent.trim().length > 0) {
+          return textContent;
+        }
+      }
+    }
+
+    return null;
+  }, [id, data.allNodes, data.allEdges]);
+
   const hasConnectedOutput = connectedOutputResult !== null;
+  const hasConnectedText = connectedTextContent !== null;
 
   return (
     <NodeShell
@@ -69,30 +92,61 @@ export const InputNode: React.FC<InputNodeProps> = ({ data, selected, id }) => {
       onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}
       nodeType="input"
     >
-      {hasConnectedOutput && (
-        <div style={{ marginTop: 8 }}>
-          <NodeInput
-            as="textarea"
-            readOnly
-            value={connectedOutputResult}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onSelect={(e) => e.stopPropagation()}
-            style={{
-              minHeight: "80px",
-              maxHeight: "200px",
-              resize: "none",
-              overflow: "auto",
-              width: "100%",
-              fontSize: "13px",
-              userSelect: "text",
-              WebkitUserSelect: "text",
-              MozUserSelect: "text",
-              msUserSelect: "text",
-            }}
-          />
-        </div>
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+        {/* 이전 Flow의 Output */}
+        {hasConnectedOutput && (
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", marginBottom: 4 }}>[이전 Flow Output]</div>
+            <NodeInput
+              as="textarea"
+              readOnly
+              value={connectedOutputResult}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onSelect={(e) => e.stopPropagation()}
+              style={{
+                minHeight: "60px",
+                maxHeight: "150px",
+                resize: "none",
+                overflow: "auto",
+                width: "100%",
+                fontSize: "13px",
+                userSelect: "text",
+                WebkitUserSelect: "text",
+                MozUserSelect: "text",
+                msUserSelect: "text",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Text 노드에서 연결된 입력 */}
+        {hasConnectedText && (
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", marginBottom: 4 }}>[Text 노드 입력]</div>
+            <NodeInput
+              as="textarea"
+              readOnly
+              value={connectedTextContent}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onSelect={(e) => e.stopPropagation()}
+              style={{
+                minHeight: "60px",
+                maxHeight: "150px",
+                resize: "none",
+                overflow: "auto",
+                width: "100%",
+                fontSize: "13px",
+                userSelect: "text",
+                WebkitUserSelect: "text",
+                MozUserSelect: "text",
+                msUserSelect: "text",
+              }}
+            />
+          </div>
+        )}
+      </div>
     </NodeShell>
   );
 };

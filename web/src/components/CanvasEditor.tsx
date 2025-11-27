@@ -7,6 +7,7 @@ import { nodeComponents, nodesRegistry } from "./nodes/registry";
 import { colors, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from "../constants";
 import { usePromptGenerator } from "../hooks/usePromptGenerator";
 import { generatePromptFromWorkflow } from "../utils/promptGenerator";
+import { logger } from "../services/logger";
 
 interface CanvasEditorProps {
   onNodesChange: (nodes: Node[]) => void;
@@ -29,7 +30,7 @@ const getNodeBgByTypeLocal = (type: string): string => {
       ? colors.nodeBg.blue
       : original === "output"
       ? colors.nodeBg.lightGreen
-      : original === "instruction"
+      : original === "context" || original === "instruction"
       ? colors.nodeBg.red
       : colors.nodeBg.purple;
 
@@ -109,7 +110,7 @@ const initialNodes: Node[] = [
       ...getMetaFromRegistry("promptTemplate"),
       nodeBg: getNodeBgByTypeLocal("promptTemplate"),
       content: "",
-      name: "Task",
+      name: "Directive",
     },
   },
 ];
@@ -195,11 +196,29 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     onEdgesChangeRef.current = onEdgesChange;
   }, [onNodesChange, onEdgesChange]);
 
-  // 캔버스 전환 시 초기 마운트 플래그 재설정
+  // 캔버스 전환 시 초기 마운트 플래그 재설정 및 로깅 시작
   useEffect(() => {
     if (canvasId !== prevCanvasIdRef.current) {
+      // 이전 캔버스 로깅 중지
+      if (prevCanvasIdRef.current && logger.getIsLogging()) {
+        logger.stopLogging();
+      }
+
       prevCanvasIdRef.current = canvasId;
       isInitialMountRef.current = true;
+
+      // 새 캔버스 로깅 시작
+      if (canvasId) {
+        logger.startLogging(canvasId);
+        // 저장된 캔버스 로그가 있으면 불러오기
+        const storedLog = logger.getStoredCanvasLog(canvasId);
+        if (storedLog) {
+          logger.setCanvasId(canvasId);
+        }
+      }
+    } else if (canvasId && !logger.getIsLogging()) {
+      // 같은 캔버스지만 로깅이 시작되지 않은 경우
+      logger.startLogging(canvasId);
     }
   }, [canvasId]);
 
@@ -644,12 +663,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               type: "promptTemplate",
               position: { x: position.x + 300, y: position.y + 380 },
               data: {
-                label: "Task",
+                label: "Directive",
                 icon: "📝",
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
-                name: "Task",
+                name: "Directive",
                 onContentChange: (content: string, fileName?: string, description?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName, description),
                 onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },
@@ -707,6 +726,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
           ];
 
           setNodes((prev) => {
+            // 로그 수집: Flow 노드 생성 (각 노드별로)
+            flowNodes.forEach((node) => {
+              if (node.type) {
+                logger.logNodeStructure("node_created", node.id, node.type, node.data, node.position);
+              }
+            });
             const updatedNodes = prev.concat(flowNodes);
             wrappedOnNodesChange(updatedNodes);
             return updatedNodes;
@@ -729,6 +754,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         };
 
         setNodes((prev) => {
+          // 로그 수집: 노드 생성
+          if (newNode.type) {
+            logger.logNodeStructure("node_created", newNode.id, newNode.type, newNode.data, newNode.position);
+          }
           const updatedNodes = prev.concat(newNode);
           // 노드 추가 즉시 상위 컴포넌트에 알림
           wrappedOnNodesChange(updatedNodes);
@@ -779,6 +808,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const handleNodeContentChange = (nodeId: string, content: string, fileName?: string, description?: string) => {
     setNodes((nds) => {
+      const node = nds.find((n) => n.id === nodeId);
       const updatedNodes = nds.map((node) => {
         if (node.id === nodeId) {
           const updatedData = { ...node.data, content };
@@ -792,6 +822,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         }
         return node;
       });
+
+      // 로그 수집: 노드 수정
+      if (node && node.type) {
+        logger.logNodeStructure("node_updated", nodeId, node.type, updatedNodes.find((n) => n.id === nodeId)?.data, node.position);
+        logger.logIteration("node_modified", node.data?.flowName, {
+          modified: [{ nodeId, nodeType: node.type, changes: { content, fileName, description } }],
+        });
+      }
+
       // 노드 내용 변경 즉시 상위 컴포넌트에 알림
       wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
@@ -802,6 +841,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
   const handleModelChange = (nodeId: string, model: string) => {
     setNodes((nds) => {
       const updatedNodes = nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, model } } : node));
+
+      // 로그 수집: 모델 선택
+      logger.logFeatureUsage("model_selection", { nodeId, model });
+
       // 모델 변경 즉시 상위 컴포넌트에 알림
       wrappedOnNodesChange(updatedNodes);
       return updatedNodes;
@@ -863,9 +906,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
   const handleDeleteNode = (nodeId: string) => {
     if (canvasMode === "lock") return;
+
+    // 삭제 전 노드 정보 저장
+    const nodeToDelete = nodes.find((n) => n.id === nodeId);
+
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     setSelectedNodeId(null);
+
+    // 로그 수집: 노드 삭제
+    if (nodeToDelete && nodeToDelete.type) {
+      logger.logNodeStructure("node_deleted", nodeId, nodeToDelete.type, nodeToDelete.data, nodeToDelete.position);
+      logger.logIteration("node_deleted", nodeToDelete.data?.flowName, {
+        deleted: [{ nodeId, nodeType: nodeToDelete.type }],
+      });
+    }
   };
   handleDeleteNodeRef.current = handleDeleteNode;
 
@@ -892,6 +947,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         console.warn("⚠️ 프롬프트가 비어있습니다!");
         return;
       }
+
+      // 로그 수집: 플로우 실행 시작
+      const flowId = startNodeId ? nodes.find((n) => n.id === startNodeId)?.data?.flowName : undefined;
+      logger.logIteration("flow_executed", flowId);
 
       const requestBody: any = {
         prompt: actualPrompt,
@@ -996,6 +1055,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
         // 실행된 Flow의 이름 가져오기
         const executedFlowName = startNodeId ? nodes.find((n) => n.id === startNodeId)?.data?.flowName : null;
+
+        // 로그 수집: 출력물 저장
+        logger.logOutput(result, executedFlowName || undefined, true);
 
         // 특정 Flow의 Result 노드와 Output 노드에 결과 표시
         setNodes((nds) => {
@@ -1177,6 +1239,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
     // 연결된 노드들만 복사
     setCopiedNodes(selectedNodes);
+
+    // 로그 수집: 복사
+    logger.logFeatureUsage("copy_paste", { action: "copy", nodeCount: selectedNodes.length, nodeTypes: selectedNodes.map((n) => n.type) });
+
     console.log("📋 복사됨:", selectedNodes.length, "개 노드");
   };
 
@@ -1222,8 +1288,20 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     }
 
     // 새 노드를 추가
-    setNodes([...nodes, ...newNodes]);
+    setNodes((prev) => {
+      // 로그 수집: 붙여넣기된 노드들 생성
+      newNodes.forEach((node) => {
+        if (node.type) {
+          logger.logNodeStructure("node_created", node.id, node.type, node.data, node.position);
+        }
+      });
+      return [...prev, ...newNodes];
+    });
     setCopyOffset({ x: copyOffset.x + 10, y: copyOffset.y + 10 }); // 붙여넣기마다 오프셋 증가
+
+    // 로그 수집: 붙여넣기
+    logger.logFeatureUsage("copy_paste", { action: "paste", nodeCount: newNodes.length, nodeTypes: newNodes.map((n) => n.type).filter(Boolean) });
+
     console.log("📄 붙여넣기됨:", newNodes.length, "개 노드");
   };
 

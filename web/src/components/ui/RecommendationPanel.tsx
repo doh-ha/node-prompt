@@ -1,6 +1,7 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
 import { RiRefreshLine, RiFileTextLine, RiLightbulbLine, RiErrorWarningLine } from "react-icons/ri";
+import { logger } from "../../services/logger";
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
@@ -533,6 +534,8 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ curren
               <button
                 key={index}
                 onClick={() => {
+                  // 로그 수집: 노드 추천 사용
+                  logger.logFeatureUsage("node_recommendation", { nodeType, recommendation: item.value });
                   onSelectRecommendation(item.value, item.description);
                 }}
                 style={{

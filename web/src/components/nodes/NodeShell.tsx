@@ -33,8 +33,10 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
   const showLeftHandle = isStart || isResult ? false : true;
   const showRightHandle = isStart || isResult ? false : true;
 
-  // instruction 그룹 노드 타입들
-  const isInstructionNode = nodeType === "role" || nodeType === "promptTemplate" || nodeType === "style" || nodeType === "length";
+  // context/instruction 그룹 노드 타입들 (분홍색 연결점)
+  const isInstructionNode = nodeType === "role" || nodeType === "promptTemplate";
+  // output 그룹 노드 타입들 (초록색 연결점)
+  const isOutputNode = nodeType === "style" || nodeType === "length";
   // input 그룹 노드 타입들
   const isInputNode = nodeType === "file" || nodeType === "example" || nodeType === "text";
 
@@ -44,9 +46,13 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
     if (nodeType === "model" && (position === Position.Left || position === Position.Right)) {
       return "#ec4899"; // 분홍색
     }
-    // instruction 노드의 모든 연결점은 분홍색
+    // context 노드의 모든 연결점은 분홍색
     if (isInstructionNode) {
       return "#ec4899"; // 분홍색
+    }
+    // output 노드(style, length)의 모든 연결점은 초록색
+    if (isOutputNode) {
+      return "#16a34a"; // 진한 초록색
     }
     // input 노드의 모든 연결점은 파란색
     if (isInputNode) {
@@ -68,9 +74,11 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       height: "8px",
     };
 
-    // instruction 노드의 모든 연결점은 분홍색, input 노드의 모든 연결점은 파란색
+    // context 노드의 모든 연결점은 분홍색, output 노드는 초록색, input 노드의 모든 연결점은 파란색
     const handleColor = isInstructionNode
       ? "#ec4899"
+      : isOutputNode
+      ? "#16a34a"
       : isInputNode
       ? "#1e40af"
       : position === Position.Top || position === Position.Bottom
@@ -82,14 +90,14 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
       case Position.Top:
         return {
           ...baseStyle,
-          background: isInstructionNode || isInputNode ? "#ffffff" : "transparent", // instruction/input 노드는 흰 배경
+          background: isInstructionNode || isOutputNode || isInputNode ? "#ffffff" : "transparent", // context/output/input 노드는 흰 배경
           border: `2px solid ${handleColor}`,
           transform: "translate(-50%, -50%)",
         };
       case Position.Bottom:
         return {
           ...baseStyle,
-          background: isInstructionNode || isInputNode ? "#ffffff" : "transparent", // instruction/input 노드는 흰 배경
+          background: isInstructionNode || isOutputNode || isInputNode ? "#ffffff" : "transparent", // context/output/input 노드는 흰 배경
           border: `2px solid ${handleColor}`,
           transform: "translate(-50%, 50%)",
         };

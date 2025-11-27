@@ -15,7 +15,6 @@ import { LengthNode } from "./nodeType/LengthNode";
 import { InputNode } from "./nodeType/InputNode";
 import { OutputNode } from "./nodeType/OutputNode";
 import { FlowNode } from "./nodeType/FlowNode";
-import { TopicNode } from "./nodeType/TopicNode";
 import { colors } from "../../constants";
 
 type NodeTypeKey =
@@ -61,11 +60,11 @@ export const nodesRegistry = {
     type: "role",
     meta: {
       name: "Role",
-      description: "AI의 역할을 정의",
+      description: "AI의 역할/정체성/관점",
       icon: "🎭",
       iconColor: colors.nodeIcon.purple,
 
-      group: "instruction",
+      group: "context",
     },
     component: RoleNode,
     toPrompt: (d) => {
@@ -99,7 +98,7 @@ export const nodesRegistry = {
     type: "audience",
     meta: {
       name: "Audience",
-      description: "대상 사용자(학습자)",
+      description: "대상 독자",
       icon: "🧑‍🎓",
       iconColor: colors.nodeIcon.purple,
       group: "context",
@@ -116,10 +115,10 @@ export const nodesRegistry = {
     type: "style",
     meta: {
       name: "Style",
-      description: "문체/톤/말투",
+      description: "출력물의 문체/톤/말투",
       icon: "🎨",
       iconColor: colors.nodeIcon.purple,
-      group: "instruction",
+      group: "output",
       defaultSuggestions: ["친근하고 따뜻한", "전문적이고 정확한", "간결하고 명확한", "유머러스하고 재미있는"],
     },
     component: StyleNode,
@@ -135,10 +134,10 @@ export const nodesRegistry = {
     type: "length",
     meta: {
       name: "Length",
-      description: "길이",
+      description: "출력물의 분량",
       icon: "📏",
       iconColor: colors.nodeIcon.purple,
-      group: "instruction",
+      group: "output",
       defaultSuggestions: ["짧게 (1-2문단)", "보통 (3-5문단)", "길게 (6-10문단)", "매우 길게 (10문단 이상)"],
     },
     component: LengthNode,
@@ -146,23 +145,6 @@ export const nodesRegistry = {
       if (!d.content) return null;
       const description = d.description ? ` (${d.description})` : "";
       return `[${d.name}]\n권장 길이: ${d.content}${description}`;
-    },
-  },
-  // 주제 노드
-  topic: {
-    type: "topic",
-    meta: {
-      name: "Topic",
-      description: "주제",
-      icon: "📌",
-      iconColor: colors.nodeIcon.purple,
-      group: "instruction",
-    },
-    component: TopicNode,
-    toPrompt: (d: any) => {
-      if (!d.content) return null;
-      const description = d.description ? ` (${d.description})` : "";
-      return `[${d.name}]\n주제: ${d.content}${description}`;
     },
   },
 
@@ -183,8 +165,8 @@ export const nodesRegistry = {
   text: {
     type: "text",
     meta: {
-      name: "Text Input",
-      description: "텍스트 입력",
+      name: "Additional Information",
+      description: "추가 정보",
       icon: "✍️",
       iconColor: colors.nodeIcon.black,
       group: "input",
@@ -195,8 +177,8 @@ export const nodesRegistry = {
   promptTemplate: {
     type: "promptTemplate",
     meta: {
-      name: "Task",
-      description: "지시문",
+      name: "Directive",
+      description: "지시사항",
       icon: "📝",
       iconColor: colors.nodeIcon.purple,
 
@@ -246,20 +228,23 @@ export const nodesRegistry = {
     },
     component: InputNode,
     toPrompt: (data: any, node?: any, edges?: any[], nodes?: any[]) => {
-      // Input 노드에 연결된 Output 노드 찾기
-      if (!node || !edges || !nodes) return null;
-      
-      // 현재 Input 노드로 들어오는 엣지 찾기 (Output 노드에서 오는 것)
+      // Input 노드에 연결된 노드들 찾기
+      if (!node || !edges || !nodes) {
+        return null;
+      }
+
+      const inputValues: string[] = [];
+
+      // 현재 Input 노드로 들어오는 엣지 찾기
       const incomingEdges = edges.filter((edge) => edge.target === node.id);
-      
-      // Output 노드에서 온 엣지 찾기
+
       for (const edge of incomingEdges) {
         const sourceNode = nodes.find((n) => n.id === edge.source);
+
+        // 1. 이전 Flow의 Output에서 연결된 데이터
         if (sourceNode && sourceNode.type === "output") {
-          // Output 노드의 결과 가져오기
           const outputResult = sourceNode.data?.result;
           if (outputResult) {
-            // 결과가 객체 형태면 (Flow별 결과 저장) 가장 최근 결과 사용
             let resultText = "";
             if (typeof outputResult === "object" && !Array.isArray(outputResult)) {
               const flowNames = Object.keys(outputResult);
@@ -269,14 +254,27 @@ export const nodesRegistry = {
             } else if (typeof outputResult === "string") {
               resultText = outputResult;
             }
-            
+
             if (resultText) {
-              return `[Input]\ninput value: ${resultText}`;
+              inputValues.push(resultText);
             }
           }
         }
+
+        // 2. Text 노드에서 연결된 데이터
+        if (sourceNode && sourceNode.type === "text") {
+          const textContent = sourceNode.data?.content;
+          if (textContent && textContent.trim().length > 0) {
+            inputValues.push(textContent);
+          }
+        }
       }
-      
+
+      // 모든 입력값을 하나의 [Input] 섹션으로 합치기
+      if (inputValues.length > 0) {
+        return `[Input]\ninput value: ${inputValues.join(", ")}`;
+      }
+
       return null;
     },
   },
@@ -284,7 +282,7 @@ export const nodesRegistry = {
   output: {
     type: "output",
     meta: {
-      name: "Output",
+      name: "Output Format",
       description: "출력 형식",
       icon: "📤",
       iconColor: colors.nodeIcon.green,
@@ -378,7 +376,7 @@ export const nodeComponents = Object.fromEntries(
           "text",
           "example",
           "length",
-          "topic",
+
           "start",
           "result",
           "textOutput",
@@ -398,15 +396,18 @@ const GROUP_CONFIG = {
   STRUCTURE: { title: "STRUCTURE", bg: colors.nodeBg.grey, order: 0 },
   INPUT: { title: "INPUT", bg: colors.nodeBg.blue, order: 1 },
   INSTRUCTION: { title: "INSTRUCTION", bg: colors.nodeBg.red, order: 2 },
-  OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 3 },
+  CONTEXT: { title: "CONTEXT", bg: colors.nodeBg.red, order: 3 },
+  OUTPUT: { title: "OUTPUT", bg: colors.nodeBg.lightGreen, order: 4 },
 };
 
-  // 각 그룹별 노드 순서 정의
+// 각 그룹별 노드 순서 정의
 const NODE_ORDERS = {
   // FLOW: { flow: 0, start: 1, input: 2, model: 3, output: 4, result: 5 },
   STRUCTURE: { flow: 0 },
   INPUT: { text: 0, file: 1, example: 2 },
-  INSTRUCTION: { role: 0, audience: 1, style: 2, topic: 3, promptTemplate: 4, length: 5 },
+  INSTRUCTION: { promptTemplate: 0 },
+  CONTEXT: { role: 0, audience: 1 },
+  OUTPUT: { style: 0, length: 1, output: 2 },
 };
 
 export const groupedTemplates = Object.entries(GROUP_CONFIG)
@@ -415,7 +416,20 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
     const items = Object.values(nodesRegistry)
       .filter((entry) => {
         const original = entry.meta.group;
-        const mappedTitle = original === "structure" ? "STRUCTURE" : original === "flow" ? "FLOW" : original === "input" ? "INPUT" : original === "output" ? "OUTPUT" : "INSTRUCTION";
+        const mappedTitle =
+          original === "structure"
+            ? "STRUCTURE"
+            : original === "flow"
+            ? "FLOW"
+            : original === "input"
+            ? "INPUT"
+            : original === "output"
+            ? "OUTPUT"
+            : original === "context"
+            ? "CONTEXT"
+            : original === "instruction"
+            ? "INSTRUCTION"
+            : "CONTEXT";
         return mappedTitle === groupKey;
       })
       .map((entry) => ({
@@ -430,7 +444,7 @@ export const groupedTemplates = Object.entries(GROUP_CONFIG)
           entry.type === "input"
             ? GROUP_CONFIG.INPUT.bg // start는 INPUT 색상
             : entry.type === "model"
-            ? GROUP_CONFIG.INSTRUCTION.bg // model은 CONTEXT 색상
+            ? GROUP_CONFIG.INSTRUCTION.bg // model은 INSTRUCTION 색상
             : entry.type === "output"
             ? GROUP_CONFIG.OUTPUT.bg // result는 OUTPUT 색상
             : config.bg,

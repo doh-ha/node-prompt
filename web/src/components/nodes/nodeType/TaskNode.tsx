@@ -114,7 +114,7 @@ export const TaskNode: React.FC<TaskNodeProps> = ({ data, selected, id }) => {
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="수행할 작업(지시문)을 입력하세요..."
+          placeholder="지시사항을 입력하세요..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
