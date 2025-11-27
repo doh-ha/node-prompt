@@ -30,7 +30,7 @@ const getNodeBgByTypeLocal = (type: string): string => {
       ? colors.nodeBg.blue
       : original === "output"
       ? colors.nodeBg.lightGreen
-      : original === "instruction"
+      : original === "context" || original === "instruction"
       ? colors.nodeBg.red
       : colors.nodeBg.purple;
 
@@ -110,7 +110,7 @@ const initialNodes: Node[] = [
       ...getMetaFromRegistry("promptTemplate"),
       nodeBg: getNodeBgByTypeLocal("promptTemplate"),
       content: "",
-      name: "Task",
+      name: "Directive",
     },
   },
 ];
@@ -196,11 +196,29 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     onEdgesChangeRef.current = onEdgesChange;
   }, [onNodesChange, onEdgesChange]);
 
-  // 캔버스 전환 시 초기 마운트 플래그 재설정
+  // 캔버스 전환 시 초기 마운트 플래그 재설정 및 로깅 시작
   useEffect(() => {
     if (canvasId !== prevCanvasIdRef.current) {
+      // 이전 캔버스 로깅 중지
+      if (prevCanvasIdRef.current && logger.getIsLogging()) {
+        logger.stopLogging();
+      }
+
       prevCanvasIdRef.current = canvasId;
       isInitialMountRef.current = true;
+
+      // 새 캔버스 로깅 시작
+      if (canvasId) {
+        logger.startLogging(canvasId);
+        // 저장된 캔버스 로그가 있으면 불러오기
+        const storedLog = logger.getStoredCanvasLog(canvasId);
+        if (storedLog) {
+          logger.setCanvasId(canvasId);
+        }
+      }
+    } else if (canvasId && !logger.getIsLogging()) {
+      // 같은 캔버스지만 로깅이 시작되지 않은 경우
+      logger.startLogging(canvasId);
     }
   }, [canvasId]);
 
@@ -645,12 +663,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               type: "promptTemplate",
               position: { x: position.x + 300, y: position.y + 380 },
               data: {
-                label: "Task",
+                label: "Directive",
                 icon: "📝",
                 iconColor: colors.nodeIcon.purple,
                 nodeBg: getNodeBgByTypeLocal("promptTemplate"),
                 content: "",
-                name: "Task",
+                name: "Directive",
                 onContentChange: (content: string, fileName?: string, description?: string) => handleNodeContentChangeRef.current?.(getId(), content, fileName, description),
                 onDeleteNode: handleDeleteNodeRef.current || (() => {}),
               },

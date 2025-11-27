@@ -37,7 +37,7 @@ const getNodeBgByTypeLocal = (type: string): string => {
       ? colors.nodeBg.blue
       : original === "output"
       ? colors.nodeBg.lightGreen
-      : original === "instruction"
+      : original === "context" || original === "instruction"
       ? colors.nodeBg.red
       : colors.nodeBg.purple;
 
@@ -113,7 +113,7 @@ function createInitialFlowNodes(canvasName: string): { nodes: Node[]; edges: Edg
         ...getMetaFromRegistry("promptTemplate"),
         nodeBg: getNodeBgByTypeLocal("promptTemplate"),
         content: "",
-        name: "Task",
+        name: "Directive",
       },
     },
   ];

@@ -12,6 +12,8 @@ interface OutputNodeProps {
     iconBg?: string;
     iconColor?: string;
     result?: string;
+    format?: string;
+    onFormatChange?: (format: string) => void;
     customName?: string;
     showNameInput?: boolean;
     onNameChange?: (name: string) => void;
@@ -121,6 +123,44 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
             position: "relative",
           }}
         >
+          {/* Format 드롭다운 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#6b7280",
+                whiteSpace: "nowrap",
+              }}
+            >
+              형식:
+            </label>
+            <select
+              value={data.format || "text"}
+              onChange={(e) => {
+                e.stopPropagation();
+                data.onFormatChange?.(e.target.value);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                flex: 1,
+                padding: "6px 8px",
+                border: "1px solid #e5e7eb",
+                borderRadius: 6,
+                fontSize: 13,
+                backgroundColor: "white",
+                color: "#374151",
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              <option value="text">텍스트</option>
+              <option value="csv">CSV</option>
+              <option value="markdown">Markdown</option>
+              <option value="table">Table</option>
+            </select>
+          </div>
           {displayResult ? (
             <NodeInput
               as="textarea"

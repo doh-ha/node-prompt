@@ -73,7 +73,7 @@ export const OutputRecommendationPanel: React.FC<OutputRecommendationPanelProps>
       {
         type: "next-step",
         title: "더 구체적인 지시 추가",
-        description: "Task 노드에 더 상세한 요구사항을 추가하면 더 정확한 결과를 얻을 수 있습니다.",
+        description: "Directive 노드에 더 상세한 요구사항을 추가하면 더 정확한 결과를 얻을 수 있습니다.",
       },
       {
         type: "prompt-improvement",

@@ -181,19 +181,31 @@ export const Toolbar: React.FC<ModeToggleProps> = ({ mode, onModeChange }) => {
           <ToolbarButton $active={mode === "pan"} onClick={() => onModeChange("pan")}>
             ✋ 캔버스 이동
           </ToolbarButton>
-          <ToolbarButton $active={mode === "select"} onClick={() => onModeChange("select")}>
-            ⬜ 영역 선택
+          <ToolbarButton 
+            $active={mode === "select" || mode === "lock"} 
+            onClick={() => {
+              // select와 lock 모드 사이를 순환
+              if (mode === "select") {
+                onModeChange("lock");
+              } else if (mode === "lock") {
+                onModeChange("select");
+              } else {
+                // pan 모드일 때는 select로 시작
+                onModeChange("select");
+              }
+            }}
+          >
+            {mode === "lock" ? "🔒 잠금" : "⬜ 영역 선택"}
           </ToolbarButton>
-          <ToolbarButton $active={mode === "lock"} onClick={() => onModeChange("lock")}>
-            🔒 잠금
-          </ToolbarButton>
-          <LogButton $isLogging={isLogging} onClick={handleLogToggle}>
+          {/* 로그 관련 버튼 숨김 */}
+          {/* <LogButton $isLogging={isLogging} onClick={handleLogToggle}>
             {isLogging ? "⏹ 로그 수집 중지" : "▶ 로그 수집 시작"}
-          </LogButton>
+          </LogButton> */}
         </ToolbarCenter>
         <ToolbarRight>
-          <LogViewButton onClick={handleViewLogs}>로그 확인</LogViewButton>
-          <LogViewButton onClick={handleDownloadLogs}>다운로드</LogViewButton>
+          {/* 로그 관련 버튼 숨김 */}
+          {/* <LogViewButton onClick={handleViewLogs}>로그 확인</LogViewButton>
+          <LogViewButton onClick={handleDownloadLogs}>다운로드</LogViewButton> */}
         </ToolbarRight>
       </ToolbarContainer>
 
