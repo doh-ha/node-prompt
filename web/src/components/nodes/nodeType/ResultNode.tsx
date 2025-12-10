@@ -57,7 +57,7 @@ export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) =>
           ref={textareaRef}
           as="textarea"
           readOnly
-          placeholder="결과가 여기에 표시됩니다"
+          placeholder="Result will be displayed here"
           value={data.result || ""}
           style={{
             minHeight: "80px",

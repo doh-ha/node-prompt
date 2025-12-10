@@ -118,7 +118,7 @@ export const LengthNode: React.FC<LengthNodeProps> = ({ data, selected, id }) =>
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="권장 길이를 입력하세요..."
+          placeholder="Enter recommended length..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}

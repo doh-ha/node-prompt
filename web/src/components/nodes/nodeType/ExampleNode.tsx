@@ -154,7 +154,7 @@ export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) 
               {pairs.length > 1 && <div style={{ fontSize: 12, color: "#6b7280" }}>Example {i + 1}</div>}
               <div style={{ fontSize: 12, color: "#374151" }}>Input</div>
               <NodeInput
-                placeholder="입력 예시를 적어주세요..."
+                placeholder="Enter input example..."
                 value={p.input}
                 onChange={(e) => updatePair(i, "input", e.target.value)}
                 onPaste={(e) => e.stopPropagation()}
@@ -165,7 +165,7 @@ export const ExampleNode: React.FC<ExampleNodeProps> = ({ data, selected, id }) 
               />
               <div style={{ fontSize: 12, color: "#374151", marginTop: 2 }}>Output</div>
               <NodeInput
-                placeholder="출력 예시를 적어주세요..."
+                placeholder="Enter output example..."
                 value={p.output}
                 onChange={(e) => updatePair(i, "output", e.target.value)}
                 onPaste={(e) => e.stopPropagation()}

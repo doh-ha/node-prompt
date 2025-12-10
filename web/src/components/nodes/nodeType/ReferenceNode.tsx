@@ -91,7 +91,7 @@ export const ReferenceNode: React.FC<ReferenceNodeProps> = ({ data, selected, id
 
       {inputMode === "text" ? (
         <NodeInput
-          placeholder="참고 자료나 문헌을 입력하세요..."
+          placeholder="Enter reference material..."
           defaultValue={textContent}
           onBlur={(e) => {
             handleTextChange(e.target.value);

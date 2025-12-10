@@ -133,7 +133,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 whiteSpace: "nowrap",
               }}
             >
-              형식:
+              Format:
             </label>
             <select
               value={data.format || "text"}
@@ -155,7 +155,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 outline: "none",
               }}
             >
-              <option value="text">텍스트</option>
+              <option value="text">Text</option>
               <option value="csv">CSV</option>
               <option value="markdown">Markdown</option>
               <option value="table">Table</option>
@@ -197,7 +197,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 fontSize: 13,
               }}
             >
-              결과가 여기에 표시됩니다
+              Result will be displayed here
             </div>
           )}
 
@@ -323,7 +323,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 borderBottom: "1px solid #e5e7eb",
               }}
             >
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#111827" }}>전체 내용</h2>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#111827" }}>Full Content</h2>
               <button
                 onClick={() => setShowModal(false)}
                 style={{
@@ -364,7 +364,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 minHeight: 0,
               }}
             >
-              {displayResult || "내용이 없습니다."}
+              {displayResult || "No content available."}
             </div>
           </div>
         </div>

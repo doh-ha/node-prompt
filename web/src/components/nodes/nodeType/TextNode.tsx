@@ -52,7 +52,7 @@ export const TextNode: React.FC<TextNodeProps> = ({ data, selected, id }) => {
     <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined} nodeType="text">
       <NodeInput
         ref={textAreaRef}
-        placeholder="자유 텍스트를 입력하세요..."
+        placeholder="Enter additional information..."
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
