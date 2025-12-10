@@ -11,7 +11,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onDragStart, onClose
   return (
     <PaletteContainer>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <PaletteTitle style={{ margin: 0 }}>노드 목록</PaletteTitle>
+        <PaletteTitle style={{ margin: 0 }}>Node Library</PaletteTitle>
         {onClose && (
           <button
             onClick={onClose}

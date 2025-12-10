@@ -173,7 +173,7 @@ function App() {
               textOrientation: "mixed",
             }}
           >
-            노드 목록
+            Node Library
           </div>
         )}
       </AppContainer>
