@@ -65,6 +65,7 @@ export const ResultNode: React.FC<ResultNodeProps> = ({ data, selected, id }) =>
             resize: "none",
             overflow: "auto",
             width: "100%",
+            fontSize: "16px",
           }}
         />
       </NodeShell>

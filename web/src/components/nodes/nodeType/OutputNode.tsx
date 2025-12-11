@@ -20,6 +20,7 @@ interface OutputNodeProps {
     onDeleteNode?: (id: string) => void;
     onSizeChange?: (width: number, height: number) => void;
     width?: number;
+    minWidth?: number | string;
     maxHeight?: number;
   };
   selected?: boolean;
@@ -34,7 +35,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
 
   const [showPanel, setShowPanel] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const maxHeight = data.maxHeight || 600;
+  const maxHeight = data.maxHeight || 1000;
 
   /** Flow result에서 마지막 값 추출 */
   const getDisplayResult = () => {
@@ -96,7 +97,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
   }, [showPanel]);
 
   return (
-    <div ref={nodeRef} style={{ position: "relative" }}>
+    <div ref={nodeRef} style={{ position: "relative", overflow: "visible", zIndex: 10 }}>
       <NodeShell
         id={id}
         selected={selected}
@@ -108,9 +109,14 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
         showNameInput={data.showNameInput}
         onNameChange={data.onNameChange}
         onDelete={id ? () => data.onDeleteNode?.(id) : undefined}
+        nodeType="output"
         containerStyle={{
-          ...(data.width ? { width: data.width, minWidth: data.width, maxWidth: data.width } : {}),
+          ...(data.width ? { width: data.width, maxWidth: data.width } : {}),
+          ...(data.minWidth ? { minWidth: typeof data.minWidth === "number" ? `${data.minWidth}px` : data.minWidth } : { minWidth: "350px" }),
           paddingBottom: 12,
+          overflow: "visible",
+          position: "relative",
+          zIndex: 10,
         }}
       >
         {/* 내부 래퍼 (실제 height 측정 대상) */}
@@ -121,6 +127,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
             flexDirection: "column",
             gap: 8,
             position: "relative",
+            overflow: "visible",
           }}
         >
           {/* Format 드롭다운 */}
@@ -169,14 +176,15 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
               value={displayResult}
               style={{
                 width: "100%",
+                minHeight: "400px",
                 resize: "none",
-                overflowY: "scroll",
-                lineHeight: 1.45,
+                overflowY: "auto",
+                lineHeight: 1.6,
                 background: "#fff",
                 borderRadius: 6,
                 border: "1px solid #e5e7eb",
                 padding: "10px",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: "inherit",
                 boxSizing: "border-box",
               }}
@@ -356,7 +364,7 @@ export const OutputNode: React.FC<OutputNodeProps> = ({ data, selected, id }) =>
                 backgroundColor: "#f9fafb",
                 borderRadius: 8,
                 border: "1px solid #e5e7eb",
-                fontSize: 15,
+                fontSize: 16,
                 lineHeight: 1.9,
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",

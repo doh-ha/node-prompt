@@ -157,12 +157,12 @@ const initialEdges: Edge[] = [
     targetHandle: "top",
   },
   {
-    id: "model-to-task",
-    source: "model_node",
-    target: "task_node",
+    id: "task-to-model",
+    source: "task_node",
+    target: "model_node",
     sourceHandle: "right",
     targetHandle: "left",
-    markerStart: {
+    markerEnd: {
       type: MarkerType.ArrowClosed,
       color: colors.edge.default,
     },
@@ -475,6 +475,26 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
       const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
 
+      // Model의 right handle에서 Task의 left handle로 연결하는 경우만, 방향을 반대로 변경
+      // 다른 모든 연결은 정상적으로 진행 (양방향 연결 가능)
+      const isModelRightToTaskLeft = sourceNode?.type === "model" && targetNode?.type === "promptTemplate" && params.sourceHandle === "right" && params.targetHandle === "left";
+
+      let finalParams = { ...params };
+      if (isModelRightToTaskLeft) {
+        // 연결 방향 반전: Task -> Model (화살표가 Model을 향하도록)
+        finalParams = {
+          source: params.target,
+          target: params.source,
+          sourceHandle: "right",
+          targetHandle: "left",
+        };
+      }
+      // 다른 모든 연결은 정상적으로 진행:
+      // - Model의 left handle -> Task의 right handle
+      // - Task의 right handle -> Model의 left handle
+      // - Model의 right handle -> 다른 노드
+      // - Task의 left handle -> 다른 노드
+
       // 연결점의 색상 타입 확인 (노드 타입과 연결점 위치 기반으로 추정)
       const getHandleTypeFromPosition = (handle: string | null): string | null => {
         if (!handle) return null;
@@ -483,12 +503,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
         return null;
       };
 
-      const sourceHandleType = getHandleTypeFromPosition(params.sourceHandle);
-      const targetHandleType = getHandleTypeFromPosition(params.targetHandle);
+      const sourceHandleType = getHandleTypeFromPosition(finalParams.sourceHandle);
+      const targetHandleType = getHandleTypeFromPosition(finalParams.targetHandle);
 
       // DOM에서도 확인 시도
-      const sourceHandle = document.querySelector(`[data-id="${params.source}"] [data-handle-id="${params.sourceHandle}"]`);
-      const targetHandle = document.querySelector(`[data-id="${params.target}"] [data-handle-id="${params.targetHandle}"]`);
+      const sourceHandle = document.querySelector(`[data-id="${finalParams.source}"] [data-handle-id="${finalParams.sourceHandle}"]`);
+      const targetHandle = document.querySelector(`[data-id="${finalParams.target}"] [data-handle-id="${finalParams.targetHandle}"]`);
 
       const sourceHandleTypeFromDOM = sourceHandle?.getAttribute("data-handle-type");
       const targetHandleTypeFromDOM = targetHandle?.getAttribute("data-handle-type");
@@ -499,18 +519,25 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
 
       // 같은 색상 타입의 연결점끼리만 연결 허용
       if (finalSourceHandleType === finalTargetHandleType) {
+        // 반전된 연결의 경우 노드 정보도 업데이트
+        const finalSourceNode = isModelRightToTaskLeft ? targetNode : sourceNode;
+        const finalTargetNode = isModelRightToTaskLeft ? sourceNode : targetNode;
+
         // primary node 타입 정의
         const primaryNodeTypes = ["start", "input", "model", "output", "promptTemplate"];
-        const isTargetPrimaryNode = targetNode && targetNode.type && primaryNodeTypes.includes(targetNode.type);
-        const isSourcePrimaryNode = sourceNode && sourceNode.type && primaryNodeTypes.includes(sourceNode.type);
+        const isTargetPrimaryNode = finalTargetNode && finalTargetNode.type && primaryNodeTypes.includes(finalTargetNode.type);
+        const isSourcePrimaryNode = finalSourceNode && finalSourceNode.type && primaryNodeTypes.includes(finalSourceNode.type);
 
         // primary node로의 연결에는 화살표 추가
         // - target이 primary node인 경우: markerEnd 사용 (target을 향하는 화살표)
-        // - source가 primary node이고 sourceHandle이 'right'인 경우: markerStart 사용 (source를 향하는 화살표)
+        // - TaskNode (promptTemplate)에서 Model로 가는 연결은 markerEnd만 사용 (화살표가 Model을 향해야 함)
         const shouldAddArrowToTarget = isTargetPrimaryNode;
-        const shouldAddArrowToSource = isSourcePrimaryNode && params.sourceHandle === "right";
+        // source가 primary node이고 sourceHandle이 'right'인 경우 markerStart 추가
+        // 단, TaskNode -> Model 연결은 제외 (화살표가 Model을 향해야 하므로)
+        const isTaskToModel = finalSourceNode?.type === "promptTemplate" && finalTargetNode?.type === "model";
+        const shouldAddArrowToSource = isSourcePrimaryNode && finalParams.sourceHandle === "right" && !isTaskToModel;
 
-        const edgeWithMarker: any = { ...params };
+        const edgeWithMarker: any = { ...finalParams };
 
         if (shouldAddArrowToTarget) {
           edgeWithMarker.markerEnd = {
@@ -711,14 +738,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
                 color: colors.edge.default,
               },
             },
-            // 프롬프트 생성 노드를 Model에 연결 (색상 연결점 사용: left/right)
+            // 프롬프트 생성 노드에서 Model로 연결 (색상 연결점 사용: left/right)
             {
-              id: `e-${flowNodes[2].id}-${flowNodes[4].id}`,
-              source: flowNodes[2].id,
-              target: flowNodes[4].id,
+              id: `e-${flowNodes[4].id}-${flowNodes[2].id}`,
+              source: flowNodes[4].id,
+              target: flowNodes[2].id,
               sourceHandle: "right",
               targetHandle: "left",
-              markerStart: {
+              markerEnd: {
                 type: MarkerType.ArrowClosed,
                 color: colors.edge.default,
               },

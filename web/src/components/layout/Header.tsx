@@ -116,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({ title = "PromptFlow", canvases =
             ) : null}
           </CanvasTab>
         ))}
-        <AddCanvasButton onClick={() => onCanvasCreate?.()}>+ 새 캔버스</AddCanvasButton>
+        <AddCanvasButton onClick={() => onCanvasCreate?.()}>+ New Canvas</AddCanvasButton>
       </CanvasTabs>
     </HeaderContainer>
   );

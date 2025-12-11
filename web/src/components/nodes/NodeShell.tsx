@@ -36,7 +36,7 @@ export const NodeShell: React.FC<NodeShellProps> = ({ id, selected, title, icon 
   // context/instruction 그룹 노드 타입들 (분홍색 연결점)
   const isInstructionNode = nodeType === "role" || nodeType === "promptTemplate";
   // output 그룹 노드 타입들 (초록색 연결점)
-  const isOutputNode = nodeType === "style" || nodeType === "length";
+  const isOutputNode = nodeType === "style" || nodeType === "length" || nodeType === "output";
   // input 그룹 노드 타입들
   const isInputNode = nodeType === "file" || nodeType === "example" || nodeType === "text";
 

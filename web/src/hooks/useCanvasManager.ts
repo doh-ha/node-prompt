@@ -153,12 +153,12 @@ function createInitialFlowNodes(canvasName: string): { nodes: Node[]; edges: Edg
       },
     },
     {
-      id: `e-${modelId}-${taskId}`,
-      source: modelId,
-      target: taskId,
+      id: `e-${taskId}-${modelId}`,
+      source: taskId,
+      target: modelId,
       sourceHandle: "right",
       targetHandle: "left",
-      markerStart: {
+      markerEnd: {
         type: MarkerType.ArrowClosed,
         color: colors.edge.default,
       },
