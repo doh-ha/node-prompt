@@ -229,6 +229,7 @@ export const ToolbarButton = styled.button`
 export const FlowContainer = styled.div`
   height: calc(100vh - 60px);
   position: relative;
+  background: white;
 `;
 
 // 프리뷰 패널 스타일

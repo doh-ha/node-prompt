@@ -107,7 +107,7 @@ export const AudienceNode: React.FC<AudienceNodeProps> = ({ data, selected, id }
       <NodeShell id={id} selected={selected} title={data.label} icon={data.icon} iconColor={data.iconColor} bg={data.nodeBg} onDelete={id ? () => data?.onDeleteNode?.(id) : undefined}>
         <NodeInput
           ref={textAreaRef}
-          placeholder="대상 사용자(학습자)를 입력하세요..."
+          placeholder="Enter target audience..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}

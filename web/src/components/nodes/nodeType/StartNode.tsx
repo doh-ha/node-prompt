@@ -77,7 +77,7 @@ export const StartNode: React.FC<StartNodeProps> = ({ data, selected, id }) => {
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="flow 이름을 입력하세요..."
+          placeholder="Enter flow name..."
           value={flowName}
           onChange={handleFlowNameChange}
           onBlur={handleFlowNameBlur}

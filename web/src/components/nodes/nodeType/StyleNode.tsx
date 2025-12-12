@@ -118,7 +118,7 @@ export const StyleNode: React.FC<StyleNodeProps> = ({ data, selected, id }) => {
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="문체/톤/말투를 입력하세요..."
+          placeholder="Enter writing style/tone..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}

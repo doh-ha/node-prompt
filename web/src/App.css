@@ -34,10 +34,20 @@ body {
 .react-flow__edge-path {
   stroke: #4f46e5;
   stroke-width: 2;
+  z-index: 1;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: #7c3aed;
+}
+
+.react-flow__node {
+  z-index: 10;
+  position: relative;
+}
+
+.react-flow__node[data-id*="output"] {
+  z-index: 20;
 }
 
 .react-flow__controls {
@@ -58,14 +68,20 @@ body {
 }
 
 .react-flow__background {
-  background-color: #f8fafc;
+  background-color: white !important;
 }
 
 /* ReactFlow 성능 최적화 */
 .react-flow__renderer {
   contain: layout size style;
+  background-color: white !important;
 }
 
 .react-flow__viewport {
   contain: layout size style;
+  background-color: white !important;
+}
+
+.react-flow__pane {
+  background-color: white !important;
 }

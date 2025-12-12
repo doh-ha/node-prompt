@@ -119,7 +119,7 @@ export const RoleNode: React.FC<RoleNodeProps> = ({ data, selected, id }) => {
       >
         <NodeInput
           ref={textAreaRef}
-          placeholder="역할 내용을 입력하세요..."
+          placeholder="Enter role description..."
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
