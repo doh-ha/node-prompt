@@ -1373,6 +1373,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
     <EditorContainer>
       <FlowContainer>
         <ReactFlow
+          style={{ background: "white" }}
           nodes={useMemo(() => {
             // 동일한 타입의 노드 개수 계산
             const typeCounts = new Map<string, number>();
@@ -1493,7 +1494,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
           >
-            📋 복사 (Ctrl+C)
+            📋 Copy (Ctrl+C)
           </button>
           {copiedNodes.length > 0 && (
             <button
@@ -1515,7 +1516,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ onNodesChange, onEdgesChang
               onMouseEnter={(e) => copiedNodes.length > 0 && (e.currentTarget.style.backgroundColor = "#f3f4f6")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
             >
-              📄 붙여넣기 (Ctrl+V)
+              📄 Paste (Ctrl+V)
             </button>
           )}
         </div>
